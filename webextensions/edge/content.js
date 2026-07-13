@@ -1,7 +1,10 @@
 'use strict';
 
-chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type === "blocked") {
-    alert(`アップロードがブロックされました:\n${msg.path}`);
-  }
+window.addEventListener('beforeprint', () => {
+  chrome.runtime.sendMessage({
+    type: 'print',
+    url: location.href,
+    title: document.title,
+    timestamp: Date.now(),
+  });
 });
