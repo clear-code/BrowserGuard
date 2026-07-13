@@ -2,10 +2,20 @@
 
 export const UploadFileBridge = {
   SERVER_NAME: 'com.clear_code.upload_file_bridge',
+
+  onBeforeRequest(details) {
+    if (!details.requestBody?.raw) return;
+    for (const part of details.requestBody.raw) {
+      if (part.file) {
+        this.bridgeFile(part.file);
+      }
+    }
+  },
+
   async bridgeFile(path) {
-    const query = new String('S ' + path);
+    const query = 'S ' + path;
     try {
-      const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, query);
+      const resp = await chrome.runtime.sendNativeMessage(this.SERVER_NAME, query);
       if (!resp) {
         console.log('No response from native host', query);
       }

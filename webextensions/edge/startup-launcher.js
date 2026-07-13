@@ -4,7 +4,7 @@ export const StartupLauncher = {
   BROWSER: 'edge',
   SERVER_NAME: 'com.clear_code.browser_startup_launcher',
   onStartup() {
-    const query = new String('Q ' + this.BROWSER);
+    const query = 'Q ' + this.BROWSER;
     chrome.runtime.sendNativeMessage(
       this.SERVER_NAME,
       query,

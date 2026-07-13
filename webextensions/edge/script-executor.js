@@ -1,6 +1,6 @@
 'use strict';
 
-export const StartupLauncher = {
+export const ScriptExecutor = {
   async restoreIfNeeded() {
     if (!chrome.userScripts) return;
     try {

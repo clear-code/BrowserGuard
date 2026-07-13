@@ -21,7 +21,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.webRequest.onBeforeRequest.addListener(
   UploadFileBridge.onBeforeRequest.bind(UploadFileBridge),
   { urls: ["<all_urls>"] },
-  ["blocking", "requestBody"]
+  ["requestBody"]
 );
 
 chrome.runtime.onStartup.addListener(() => {

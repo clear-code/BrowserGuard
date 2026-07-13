@@ -22,7 +22,7 @@ export const NetLogger = {
   },
 
   async _fetchConfig() {
-    const query = new String('C');
+    const query = 'C';
     try {
       const resp = await chrome.runtime.sendNativeMessage(this.SERVER_NAME, query);
       if (!resp) {
