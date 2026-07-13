@@ -1,0 +1,26 @@
+{
+	"manifest_version": 3,
+	"name": "__MSG_extName__",
+	"version": "1.0.0",
+	"description": "__MSG_extDescription__",
+	"permissions": [
+		"webRequest",
+		"webRequestBlocking"
+	],
+	"host_permissions": [
+		"<all_urls>"
+	],
+	"background": {
+		"service_worker": "background.js",
+		"type": "module"
+	},
+	"icons": {
+		"128": "misc/128x128.png"
+	},
+	"content_scripts": [{
+		"matches": ["<all_urls>"],
+		"js": ["content.js"],
+		"run_at": "document_start"
+	}],
+	"default_locale": "ja"
+}
