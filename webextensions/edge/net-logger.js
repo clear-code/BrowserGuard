@@ -1,7 +1,8 @@
 'use strict';
 
+import { SERVER_NAME } from './constants.js';
+
 export const NetLogger = {
-  SERVER_NAME: 'com.clear_code.net_logger',
   _configPromise: null,
 
   init() {
@@ -24,7 +25,7 @@ export const NetLogger = {
   async _fetchConfig() {
     const query = 'C';
     try {
-      const resp = await chrome.runtime.sendNativeMessage(this.SERVER_NAME, query);
+      const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, query);
       if (!resp) {
         console.log('Cannot fetch config: empty response');
         return null;

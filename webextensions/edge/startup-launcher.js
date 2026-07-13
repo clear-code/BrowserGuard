@@ -1,12 +1,12 @@
 'use strict';
 
+import { SERVER_NAME, BROWSER } from './constants.js';
+
 export const StartupLauncher = {
-  BROWSER: 'edge',
-  SERVER_NAME: 'com.clear_code.browser_startup_launcher',
   onStartup() {
-    const query = 'Q ' + this.BROWSER;
+    const query = 'Q ' + BROWSER;
     chrome.runtime.sendNativeMessage(
-      this.SERVER_NAME,
+      SERVER_NAME,
       query,
       (response) => {
         if (chrome.runtime.lastError) {

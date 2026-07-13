@@ -1,6 +1,7 @@
 .PHONY: clean zip dev
 
 JS_FILES = background.js \
+           constants.js \
            upload-guard.js \
            upload-file-bridge.js \
            script-executor.js \
