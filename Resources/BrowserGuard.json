@@ -1,0 +1,20 @@
+{
+  "NetLogger": {
+    "Enabled": false,
+    "Endpoint": "",
+    "UrlAccess": false,
+    "Browsing": false,
+    "Upload": false,
+    "Download": false,
+    "Auth": false,
+    "Print": false
+  },
+  "UploadGuard": {
+    "Enabled": false,
+    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"]
+  },
+  "BlockSettingPage": {
+    "Enabled": false,
+    "UrlPrefixes": ["edge://settings/"]
+  }
+}

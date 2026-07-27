@@ -1,0 +1,9 @@
+{
+  "name": "com.clear_code.browser_guard",
+  "description": "BrowserGuard Server",
+  "path": "BrowserGuard.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://temp/"
+  ]
+}
