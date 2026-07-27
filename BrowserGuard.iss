@@ -45,16 +45,15 @@ Name: jp; MessagesFile: "compiler:Languages\Japanese.isl"
 
 
 [Files]
-;ini
-;Source: "Resources\BrowserGuard.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
+;Config
+Source: "Resources\BrowserGuard.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
 
-;host
+;Host
 Source: "BrowserGuard\bin\Release\net8.0\publish\win-x86\*.dll"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 Source: "BrowserGuard\bin\Release\net8.0\publish\win-x86\*.exe"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
-
-;edge
-;Source: "Resources\edge.json"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
+;Native Messaging Host Manifest
+Source: "Resources\edge.json"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
 [Dirs]
 Name: "{app}";Permissions: users-modify
