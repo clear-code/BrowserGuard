@@ -26,7 +26,7 @@ namespace BrowserGuard
     // 各種操作を Endpoint へ記録する機能。
     internal class NetLoggerConfig
     {
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
         public string Endpoint { get; set; } = "";
         public bool UrlAccess { get; set; }
         public bool Browsing { get; set; }
@@ -41,14 +41,14 @@ namespace BrowserGuard
     // 特定拡張子のアップロードを遮断する機能。
     internal class UploadGuardConfig
     {
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
         public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
     }
 
     // 設定画面などへのアクセスを遮断する機能。
     internal class BlockSettingPageConfig
     {
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
         public string[] UrlPrefixes { get; set; } = ["edge://settings/"];
     }
 
