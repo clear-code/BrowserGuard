@@ -7,11 +7,13 @@ import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
 import { BlockSettingPage } from './block-setting-page.js';
 
+// URLプレフィックスは設定で変わり得るため、フィルタは付けずハンドラ内で判定する。
+BlockSettingPage.init();
 chrome.webNavigation.onBeforeNavigate.addListener(
-  BlockSettingPage.onBeforeNavigate.bind(BlockSettingPage),
-  { url: BlockSettingPage.urlPrefixes }
+  BlockSettingPage.onBeforeNavigate.bind(BlockSettingPage)
 );
 
+UploadGuard.init();
 chrome.webRequest.onBeforeRequest.addListener(
   UploadGuard.onBeforeRequest.bind(UploadGuard),
   { urls: ["<all_urls>"] },

@@ -1,14 +1,11 @@
 'use strict';
 
-import { SERVER_NAME } from './constants.js';
+import { loadConfig } from './config-loader.js';
 
 export const NetLogger = {
-  _configPromise: null,
-
   init() {
-    this._configPromise = null;
     console.log('NetLogger initialized');
-    this._loadConfig();
+    loadConfig();
   },
 
   formatLocal(value) {
@@ -18,30 +15,11 @@ export const NetLogger = {
           `${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
   },
 
-  _loadConfig() {
-    return this._configPromise ??= this._fetchConfig();
-  },
-
-  async _fetchConfig() {
-    const query = 'C';
-    try {
-      const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, query);
-      if (!resp) {
-        console.log('Cannot fetch config: empty response');
-        return null;
-      }
-      console.log('Fetch config', JSON.stringify(resp.Config));
-      return resp.Config;
-    } catch (error) {
-      console.log('Cannot fetch config', JSON.stringify(error?.message));
-      return null;
-    }
-  },
-
   async _getConfig() {
-    const config = await this._loadConfig();
-    if (!config?.Endpoint || !config?.MachineName || !config?.UserName) return null;
-    return config;
+    const config = await loadConfig();
+    const netLogger = config?.NetLogger;
+    if (!netLogger?.Endpoint || !netLogger?.MachineName || !netLogger?.UserName) return null;
+    return netLogger;
   },
 
   _buildPayload(config, operation, name, url, timestamp) {

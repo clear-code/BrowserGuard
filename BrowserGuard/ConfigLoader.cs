@@ -11,11 +11,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BrowserGuard
 {
+    // 拡張機能の大きな機能ごとに設定を分類する。
     internal class Config
+    {
+        public NetLoggerConfig NetLogger { get; set; } = new();
+        public UploadGuardConfig UploadGuard { get; set; } = new();
+        public BlockSettingPageConfig BlockSettingPage { get; set; } = new();
+    }
+
+    // 各種操作を Endpoint へ記録する機能。
+    internal class NetLoggerConfig
     {
         public string Endpoint { get; set; } = "";
         public bool UrlAccess { get; set; }
@@ -26,6 +36,20 @@ namespace BrowserGuard
         public bool Print { get; set; }
         public string UserName { get; set; } = Environment.UserName;
         public string MachineName { get; set; } = Environment.MachineName;
+    }
+
+    // 特定拡張子のアップロードを遮断する機能。
+    internal class UploadGuardConfig
+    {
+        public bool Enabled { get; set; } = true;
+        public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
+    }
+
+    // 設定画面などへのアクセスを遮断する機能。
+    internal class BlockSettingPageConfig
+    {
+        public bool Enabled { get; set; } = true;
+        public string[] UrlPrefixes { get; set; } = ["edge://settings/"];
     }
 
     internal static class ConfigLoader
@@ -78,47 +102,19 @@ namespace BrowserGuard
             }
         }
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true,
+        };
+
         internal static Config ParseConf(string data)
         {
-            var conf = new Config();
-            var lines = data.Split([ "\r\n", "\n" ], StringSplitOptions.None);
-            foreach (var rawLine in lines)
-            {
-                string line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line))
-                    continue;
+            if (string.IsNullOrWhiteSpace(data))
+                return new Config();
 
-                switch (line[0])
-                {
-                    case ';':
-                    case '#':
-                        // コメント行
-                        break;
-                    default:
-                        if (line.StartsWith("Endpoint="))
-                        {
-                            conf.Endpoint = line.Substring("Endpoint=".Length);
-                        }
-                        if (line.StartsWith("UrlAccess="))
-                        {
-                            conf.UrlAccess = line.Substring("UrlAccess=".Length).Trim().ToLower() == "true";
-                        }
-                        if (line.StartsWith("Browsing="))
-                        {
-                            conf.Browsing = line.Substring("Browsing=".Length).Trim().ToLower() == "true";
-                        }
-                        if (line.StartsWith("Upload="))
-                        {
-                            conf.Upload = line.Substring("Upload=".Length).Trim().ToLower() == "true";
-                        }
-                        if (line.StartsWith("Download="))
-                        {
-                            conf.Download = line.Substring("Download=".Length).Trim().ToLower() == "true";
-                        }
-                        break;
-                }
-            }
-            return conf;
+            return JsonSerializer.Deserialize<Config>(data, JsonOptions) ?? new Config();
         }
     }
 }

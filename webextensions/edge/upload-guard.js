@@ -1,10 +1,22 @@
 'use strict';
 
+import { loadConfig } from './config-loader.js';
+
 export const UploadGuard = {
+    // onBeforeRequest は blocking なので同期的に参照できるようキャッシュしておく。
+    enabled: true,
     blockedExtensions: [".exe", ".bat", ".cmd", ".js", ".vbs"],
 
-    init () {
-        // Initialization logic if needed
+    async init () {
+        const config = await loadConfig();
+        const uploadGuard = config?.UploadGuard;
+        if (!uploadGuard) return;
+        if (typeof uploadGuard.Enabled === 'boolean') {
+            this.enabled = uploadGuard.Enabled;
+        }
+        if (Array.isArray(uploadGuard.BlockedExtensions)) {
+            this.blockedExtensions = uploadGuard.BlockedExtensions;
+        }
     },
 
     buildCancelResponse(path, isMainFrame) {
@@ -24,6 +36,9 @@ export const UploadGuard = {
 
     onBeforeRequest(details) {
         console.log('onBeforeRequest', details);
+        if (!this.enabled) {
+            return {};
+        }
         if (!details.requestBody?.raw) {
             return {};
         }
