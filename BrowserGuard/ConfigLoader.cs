@@ -32,13 +32,13 @@ namespace BrowserGuard
     {
         internal static Config LoadConfig()
         {
-            var ruleFilePath = GetRulefilePath();
-            if (string.IsNullOrEmpty(ruleFilePath))
+            var configFilePath = GetConfigPath();
+            if (string.IsNullOrEmpty(configFilePath))
             {
-                Console.Error.WriteLine("Rulefile path is not set in the registry.");
+                Console.Error.WriteLine("ConfigFile path is not set in the registry.");
                 return new Config();
             }
-            using (var fileStream = new FileStream(ruleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var fileStream = new FileStream(configFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var streamReader = new StreamReader(fileStream, Encoding.UTF8, true, 1024, true))
             {
                 string data = streamReader.ReadToEnd();
@@ -46,10 +46,10 @@ namespace BrowserGuard
             }
         }
 
-        internal static string GetRulefilePath()
+        internal static string GetConfigPath()
         {
             const string registryPath = @"SOFTWARE\BrowserGuard";
-            const string valueName = "Rulefile";
+            const string valueName = "ConfigFile";
             try
             {
                 using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
@@ -60,13 +60,13 @@ namespace BrowserGuard
                         return null;
                     }
                     object value = key.GetValue(valueName);
-                    if (value is string rulefile)
+                    if (value is string configFile)
                     {
-                        return rulefile;
+                        return configFile;
                     }
                     else
                     {
-                        Console.Error.WriteLine($"cannot read {registryPath}: 'Rulefile' not found or not string");
+                        Console.Error.WriteLine($"cannot read {registryPath}: 'ConfigFile' not found or not string");
                         return null;
                     }
                 }
