@@ -2,6 +2,7 @@
 
 JS_FILES = background.js \
            constants.js \
+           config-loader.js \
            upload-guard.js \
            upload-file-bridge.js \
            script-executor.js \
