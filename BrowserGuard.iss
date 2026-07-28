@@ -55,6 +55,9 @@ Source: "BrowserGuard\bin\Release\net8.0\publish\win-x86\*.exe"; DestDir: "{app}
 ;Native Messaging Host Manifest
 Source: "Resources\edge.json"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
+;Extension
+Source: "webextensions\BrowserGuardEdge.crx"; DestDir: "{app}\BrowserGuardExtension";Flags: ignoreversion;permissions:users-readexec admins-full system-full
+
 [Dirs]
 Name: "{app}";Permissions: users-modify
 

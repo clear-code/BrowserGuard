@@ -2,7 +2,8 @@
 rem Build everything and produce the installer:
 rem   1. publish the native messaging host (BrowserGuard)
 rem   2. build the browser extension packages
-rem   3. compile the Inno Setup installer into SetupOutput
+rem   3. pack the signed crx bundled with the installer
+rem   4. compile the Inno Setup installer into SetupOutput
 rem
 rem NOTE: keep this file ASCII-only. cmd.exe reads .bat in the OEM code page,
 rem so non-ASCII comments break parsing on non-English Windows.
@@ -11,17 +12,24 @@ setlocal
 set "ROOT=%~dp0"
 
 echo.
-echo === 1/3 Publishing BrowserGuard ===
+echo === 1/4 Publishing BrowserGuard ===
 dotnet publish "%ROOT%BrowserGuard\BrowserGuard.csproj" -p:PublishProfile=FolderProfile --nologo
 if errorlevel 1 goto :failed
 
 echo.
-echo === 2/3 Building the browser extension ===
+echo === 2/4 Building the browser extension ===
 call "%ROOT%webextensions\build.bat" all
 if errorlevel 1 goto :failed
 
 echo.
-echo === 3/3 Compiling the installer ===
+echo === 3/4 Packing the crx ===
+rem Place the designated key at webextensions\pem\edge.pem for a release build,
+rem otherwise the extension ID changes on every build.
+call "%ROOT%webextensions\build.bat" crx
+if errorlevel 1 goto :failed
+
+echo.
+echo === 4/4 Compiling the installer ===
 call :find_iscc
 if not defined ISCC goto :no_iscc
 "%ISCC%" "%ROOT%BrowserGuard.iss"
