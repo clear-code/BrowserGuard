@@ -10,6 +10,11 @@ rem so non-ASCII comments break parsing on non-English Windows.
 
 setlocal
 set "ROOT=%~dp0"
+set "SIGNING_KEY=%ROOT%webextensions\pem\edge.pem"
+
+rem BrowserGuard.iss hardcodes the extension ID, which only matches a crx signed
+rem with the designated key. Check before the long build steps.
+if not exist "%SIGNING_KEY%" goto :no_key
 
 echo.
 echo === 1/4 Publishing BrowserGuard ===
@@ -23,8 +28,6 @@ if errorlevel 1 goto :failed
 
 echo.
 echo === 3/4 Packing the crx ===
-rem Place the designated key at webextensions\pem\edge.pem for a release build,
-rem otherwise the extension ID changes on every build.
 call "%ROOT%webextensions\build.bat" crx
 if errorlevel 1 goto :failed
 
@@ -50,6 +53,16 @@ if exist "%PF86%\Inno Setup 6\ISCC.exe" set "ISCC=%PF86%\Inno Setup 6\ISCC.exe"
 if defined ISCC exit /b 0
 if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles%\Inno Setup 6\ISCC.exe"
 exit /b 0
+
+:no_key
+echo.
+echo Build failed: the extension signing key was not found.
+echo   expected: %SIGNING_KEY%
+echo.
+echo Place the designated release key there and run this script again.
+echo Without it the crx would get a random extension ID, which would not
+echo match the ID registered by the installer policy.
+exit /b 1
 
 :no_iscc
 echo.
