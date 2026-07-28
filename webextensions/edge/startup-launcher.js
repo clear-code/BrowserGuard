@@ -8,7 +8,7 @@ export const StartupLauncher = {
     chrome.runtime.sendNativeMessage(
       SERVER_NAME,
       query,
-      (response) => {
+      (_response) => {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError.message);
         }

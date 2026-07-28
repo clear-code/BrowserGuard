@@ -1,0 +1,7 @@
+node_modules/
+
+# ビルド生成物
+*.zip
+*.xpi
+.build/
+testee/
