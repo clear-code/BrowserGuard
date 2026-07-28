@@ -43,6 +43,9 @@ Root: HKLM; Subkey: "SOFTWARE\Microsoft\Edge\NativeMessagingHosts\com.clear_code
 [Languages]
 Name: jp; MessagesFile: "compiler:Languages\Japanese.isl"
 
+[Tasks]
+Name: "forcelist"; Description: "拡張機能を Edge のポリシーに登録して自動的にインストールする"; GroupDescription: "ブラウザー拡張機能:"
+
 
 [Files]
 ;Config
@@ -77,6 +80,10 @@ const
   ExtensionId = 'ddniogodiahgpmfkljajobgkaecabnif';
   // SOFTWARE\Policies is shared between the 32 and 64 bit registry views.
   ForcelistKey = 'SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist';
+  // Records that this installer wrote the policy, so that an entry set up by
+  // hand or by a group policy is not removed on uninstall.
+  OwnKey = 'Software\BrowserGuard';
+  RegisteredFlag = 'ForcelistRegistered';
 
 function GetProgramFiles(Param: string): string;
   begin
@@ -173,7 +180,9 @@ begin
     ValueName := IntToStr(Slot);
   end;
 
-  if not RegWriteStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName, Entry) then
+  if RegWriteStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName, Entry) then
+    RegWriteStringValue(HKEY_LOCAL_MACHINE, OwnKey, RegisteredFlag, '1')
+  else
     Log('Cannot write policy value: ' + ForcelistKey + '\' + ValueName);
 end;
 
@@ -198,12 +207,21 @@ begin
   if CurStep = ssPostInstall then
   begin
     ExpandUpdateManifest();
-    RegisterForcelist();
+    if WizardIsTaskSelected('forcelist') then
+      RegisterForcelist();
   end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Flag: String;
 begin
-  if CurUninstallStep = usUninstall then
-    UnregisterForcelist();
+  if CurUninstallStep <> usUninstall then
+    Exit;
+  // Leave the policy alone unless this installer was the one that wrote it.
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE, OwnKey, RegisteredFlag, Flag) then
+  begin
+    if Flag = '1' then
+      UnregisterForcelist();
+  end;
 end;
