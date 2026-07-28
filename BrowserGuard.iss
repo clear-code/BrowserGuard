@@ -71,6 +71,13 @@ Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuardHost\edge.json"" /
 [UninstallRun]
 
 [Code]
+const
+  // Determined by the signing key (webextensions\pem\edge.pem).
+  // Must match the appid in Resources\manifest.xml.
+  ExtensionId = 'ddniogodiahgpmfkljajobgkaecabnif';
+  // SOFTWARE\Policies is shared between the 32 and 64 bit registry views.
+  ForcelistKey = 'SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist';
+
 function GetProgramFiles(Param: string): string;
   begin
     if IsWin64 then Result := ExpandConstant('{pf64}')
@@ -125,8 +132,78 @@ begin
     Log('Cannot write update manifest: ' + FilePath);
 end;
 
+// Force installing the extension from the locally hosted update manifest.
+// Entries are named with sequential numbers, so an unused slot is picked,
+// and an entry left by a previous install is reused instead of duplicated.
+function FindOwnForcelistValueName(var ValueName: String): Boolean;
+var
+  Names: TArrayOfString;
+  Data: String;
+  i: Integer;
+begin
+  Result := False;
+  if not RegGetValueNames(HKEY_LOCAL_MACHINE, ForcelistKey, Names) then
+    Exit;
+  for i := 0 to GetArrayLength(Names) - 1 do
+  begin
+    if RegQueryStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, Names[i], Data) then
+    begin
+      if Pos(ExtensionId + ';', Data) = 1 then
+      begin
+        ValueName := Names[i];
+        Result := True;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
+procedure RegisterForcelist();
+var
+  ValueName, Entry: String;
+  Slot: Integer;
+begin
+  Entry := ExtensionId + ';' + GetExtensionFolderUrl() + '/manifest.xml';
+
+  if not FindOwnForcelistValueName(ValueName) then
+  begin
+    Slot := 1;
+    while RegValueExists(HKEY_LOCAL_MACHINE, ForcelistKey, IntToStr(Slot)) do
+      Slot := Slot + 1;
+    ValueName := IntToStr(Slot);
+  end;
+
+  if not RegWriteStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName, Entry) then
+    Log('Cannot write policy value: ' + ForcelistKey + '\' + ValueName);
+end;
+
+// Only the entry belonging to this extension is removed, so policies set for
+// other extensions are left untouched.
+procedure UnregisterForcelist();
+var
+  ValueName: String;
+begin
+  while FindOwnForcelistValueName(ValueName) do
+  begin
+    if not RegDeleteValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName) then
+    begin
+      Log('Cannot delete policy value: ' + ForcelistKey + '\' + ValueName);
+      Exit;
+    end;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
+  begin
     ExpandUpdateManifest();
+    RegisterForcelist();
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    UnregisterForcelist();
 end;
