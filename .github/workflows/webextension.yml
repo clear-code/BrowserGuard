@@ -1,0 +1,43 @@
+name: WebExtension
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # Lint and build the zip packages.
+      - name: Build
+        run: .\build.bat all
+        shell: cmd
+        working-directory: webextensions
+
+      # The signing key is not kept in the repository, so Edge signs with a
+      # throwaway key it generates. The resulting extension ID differs on every
+      # run, which makes this crx a build check rather than a deliverable.
+      # Release crx files for enterprise distribution are built locally with the
+      # designated key placed at pem\edge.pem.
+      - name: Pack crx
+        run: .\build.bat crx
+        shell: cmd
+        working-directory: webextensions
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BrowserGuardEdge
+          if-no-files-found: error
+          path: |
+            webextensions/BrowserGuardEdge.zip
+            webextensions/BrowserGuardEdgeDev.zip
+            webextensions/BrowserGuardEdge.crx
