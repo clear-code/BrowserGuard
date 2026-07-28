@@ -2,7 +2,8 @@
 
 import { SERVER_NAME, BROWSER } from './constants.js';
 
-// ネイティブホストから設定を取得する（全モジュール共通・1回だけ取得してキャッシュ）。
+// Fetch the config from the native host. Shared by every module and fetched
+// only once, so the native host process is not spawned repeatedly.
 let configPromise = null;
 
 export function loadConfig() {

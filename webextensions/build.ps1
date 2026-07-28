@@ -1,10 +1,10 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    BrowserGuard 拡張機能のビルドスクリプト（Windows 用）。
+    Build script for the BrowserGuard browser extension (Windows).
 .DESCRIPTION
-    Makefile の各ターゲットを Windows ネイティブに置き換えたもの。
-    通常は build.bat 経由で呼び出す。
+    A Windows-native replacement for the Makefile targets.
+    Normally invoked through build.bat.
 #>
 [CmdletBinding()]
 param(
@@ -26,7 +26,7 @@ $ProdZip = Join-Path $Root 'BrowserGuardEdge.zip'
 $DevZip  = Join-Path $Root 'BrowserGuardEdgeDev.zip'
 $ProdCrx = Join-Path $Root 'BrowserGuardEdge.crx'
 
-# リリースビルド時のみ、所定の署名鍵をここに配置する（リポジトリには含めない）。
+# Drop the designated signing key here for release builds only; never commit it.
 $ReleaseKey = Join-Path $Root 'pem\edge.pem'
 
 $DevNameSuffix = 'BrowserGuard Enterprise Developer Edition'
@@ -38,7 +38,7 @@ function Write-Step([string]$Message) {
 function Invoke-Tool([string]$Exe, [string[]]$Arguments) {
     & $Exe @Arguments
     if ($LASTEXITCODE -ne 0) {
-        throw "$(Split-Path $Exe -Leaf) が終了コード $LASTEXITCODE で失敗しました。"
+        throw "$(Split-Path $Exe -Leaf) failed with exit code $LASTEXITCODE."
     }
 }
 
@@ -49,7 +49,7 @@ function Invoke-Deps {
     if (Test-Path $eslint) {
         return
     }
-    Write-Step 'npm install (開発用依存関係を取得)'
+    Write-Step 'npm install (fetching dev dependencies)'
     Push-Location $Root
     try {
         Invoke-Tool 'npm.cmd' @('install', '--no-fund', '--no-audit')
@@ -71,9 +71,9 @@ function Get-LintableJsonFile {
 }
 
 function Invoke-JsonLint {
-    Write-Step 'JSON 構文チェック'
-    # package-lock.json のように空文字のプロパティ名を含む JSON は
-    # -AsHashtable が無いと弾かれてしまう (PowerShell 6 以降で利用可能)。
+    Write-Step 'Checking JSON syntax'
+    # JSON with an empty property name (package-lock.json has one) is rejected
+    # unless -AsHashtable is used, which requires PowerShell 6 or later.
     $asHashtable = (Get-Command ConvertFrom-Json).Parameters.ContainsKey('AsHashtable')
     $failed = @()
     foreach ($file in Get-LintableJsonFile) {
@@ -93,7 +93,7 @@ function Invoke-JsonLint {
         }
     }
     if ($failed.Count -gt 0) {
-        throw "JSON 構文エラー: $($failed -join ', ')"
+        throw "Invalid JSON: $($failed -join ', ')"
     }
 }
 
@@ -119,7 +119,7 @@ function Invoke-Lint([switch]$Fix) {
 # --- clean ------------------------------------------------------------------
 
 function Invoke-Clean {
-    Write-Step '生成物を削除'
+    Write-Step 'Removing build artifacts'
     foreach ($path in @($ProdZip, $DevZip, $ProdCrx, $DevDir, $StageDir, (Join-Path $Root 'testee'))) {
         if (Test-Path $path) {
             Remove-Item -LiteralPath $path -Recurse -Force
@@ -132,8 +132,8 @@ function Invoke-Clean {
 
 # --- package ----------------------------------------------------------------
 
-# 拡張機能に同梱するファイルを収集する。
-# JS はディレクトリから自動収集するため、ファイル追加時のリスト更新漏れが起きない。
+# Collect the files shipped with the extension.
+# JS files are discovered from the directory, so adding one cannot be forgotten.
 function Copy-ExtensionFile([string]$Destination) {
     if (Test-Path $Destination) {
         Remove-Item -LiteralPath $Destination -Recurse -Force
@@ -146,7 +146,7 @@ function Copy-ExtensionFile([string]$Destination) {
     Get-ChildItem -Path $EdgeDir -Filter '*.js' -File | Copy-Item -Destination $Destination
 }
 
-# 開発版は拡張機能名を変えて、製品版と併存できるようにする。
+# Rename the dev edition so it can be installed alongside the production one.
 function Rename-ToDevEdition([string]$Directory) {
     $localeDir = Join-Path $Directory '_locales'
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
@@ -162,7 +162,7 @@ function New-ZipFromDirectory([string]$SourceDir, [string]$DestinationZip) {
         Remove-Item -LiteralPath $DestinationZip -Force
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
-    # includeBaseDirectory = $false: zip 直下に manifest.json が来るようにする。
+    # includeBaseDirectory = $false so that manifest.json sits at the zip root.
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         $SourceDir,
         $DestinationZip,
@@ -171,19 +171,19 @@ function New-ZipFromDirectory([string]$SourceDir, [string]$DestinationZip) {
 }
 
 function Invoke-Package {
-    Write-Step '製品版パッケージを作成'
+    Write-Step 'Building the production package'
     $prodStage = Join-Path $StageDir 'edge'
     Copy-ExtensionFile $prodStage
     New-ZipFromDirectory $prodStage $ProdZip
     Write-Host "    $ProdZip"
 
-    Write-Step '開発版パッケージを作成'
-    # edge/dev は「パッケージ化されていない拡張機能を読み込む」でそのまま使える。
+    Write-Step 'Building the developer package'
+    # edge/dev can be loaded directly via "Load unpacked" in the browser.
     Copy-ExtensionFile $DevDir
     Rename-ToDevEdition $DevDir
     New-ZipFromDirectory $DevDir $DevZip
     Write-Host "    $DevZip"
-    Write-Host "    $DevDir (未パッケージ版)"
+    Write-Host "    $DevDir (unpacked)"
 
     if (Test-Path $StageDir) {
         Remove-Item -LiteralPath $StageDir -Recurse -Force
@@ -192,7 +192,8 @@ function Invoke-Package {
 
 # --- crx --------------------------------------------------------------------
 
-# 安定版を優先して探す。レジストリの App Paths は Beta/Dev を指すことがあるため後回しにする。
+# Prefer the stable channel: the App Paths registry entry may point at Beta/Dev,
+# so it is only consulted after the well-known install locations.
 function Get-EdgePath {
     $candidates = @()
     foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
@@ -223,14 +224,14 @@ function Get-EdgePath {
     if ($command) {
         return $command.Source
     }
-    throw 'Microsoft Edge (msedge.exe) が見つかりませんでした。'
+    throw 'Could not find Microsoft Edge (msedge.exe).'
 }
 
 function Invoke-Crx {
     $edge = Get-EdgePath
     Write-Step "Edge: $edge"
 
-    # Edge は <ディレクトリ名>.crx を出力するため、成果物名でステージングする。
+    # Edge writes <directory name>.crx, so stage under the artifact name.
     $stage = Join-Path $StageDir 'BrowserGuardEdge'
     Copy-ExtensionFile $stage
 
@@ -248,29 +249,29 @@ function Invoke-Crx {
     $useReleaseKey = Test-Path $ReleaseKey
     if ($useReleaseKey) {
         $edgeArgs += "--pack-extension-key=$ReleaseKey"
-        Write-Step "署名鍵: $ReleaseKey (拡張機能 ID は固定)"
+        Write-Step "Signing key: $ReleaseKey (extension ID is stable)"
     }
     else {
-        Write-Warning "pem\edge.pem がないため Edge が鍵を自動生成します。拡張機能 ID はビルドごとに変わります。"
-        Write-Warning '企業内配布用のリリースビルドでは、所定の鍵を pem\edge.pem に配置してください。'
+        Write-Warning 'pem\edge.pem is missing, so Edge will generate a key. The extension ID changes on every build.'
+        Write-Warning 'For an enterprise release build, place the designated key at pem\edge.pem.'
     }
 
-    Write-Step 'crx を作成'
+    Write-Step 'Building the crx'
     & $edge @edgeArgs
 
-    # msedge.exe は即座に制御を返すため、出力ファイルの生成をポーリングで待つ。
+    # msedge.exe returns immediately, so poll until the output file shows up.
     $timeoutSeconds = 120
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     while (-not (Test-Path $producedCrx)) {
         if ($stopwatch.Elapsed.TotalSeconds -gt $timeoutSeconds) {
-            throw "crx が $timeoutSeconds 秒以内に生成されませんでした。manifest.json の内容を確認してください。"
+            throw "The crx was not produced within $timeoutSeconds seconds. Check the contents of manifest.json."
         }
         Start-Sleep -Milliseconds 250
     }
 
     Move-Item -LiteralPath $producedCrx -Destination $ProdCrx -Force
     if (-not $useReleaseKey -and (Test-Path $producedPem)) {
-        # 自動生成された鍵は使い捨てなので残さない。
+        # The auto-generated key is throwaway; do not leave it behind.
         Remove-Item -LiteralPath $producedPem -Force
     }
     Remove-Item -LiteralPath $StageDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -282,40 +283,40 @@ function Invoke-Crx {
 function Install-GitHook {
     $hookDir = Join-Path $Root '..\.git\hooks'
     if (-not (Test-Path $hookDir)) {
-        throw "git hooks ディレクトリが見つかりません: $hookDir"
+        throw "git hooks directory not found: $hookDir"
     }
     $hookPath = Join-Path $hookDir 'pre-commit'
     $content = "#!/bin/sh`nexec cmd.exe /c `"`$(dirname `"`$0`")/../../webextensions/build.bat`" lint`n"
     [System.IO.File]::WriteAllText($hookPath, $content, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Step "pre-commit フックを設置: $hookPath"
+    Write-Step "Installed the pre-commit hook: $hookPath"
 }
 
 # --- help -------------------------------------------------------------------
 
 function Show-Help {
     @'
-使い方: build.bat [ターゲット]
+Usage: build.bat [target]
 
-  all           deps, lint, clean, package を順に実行 (既定)
-  packages      all と同じ
-  deps          npm install (未インストール時のみ)
-  lint          ESLint + JSON 構文チェック
+  all           Run deps, lint, clean and package in order (default)
+  packages      Same as all
+  deps          npm install (only when not installed yet)
+  lint          ESLint plus a JSON syntax check
   format        ESLint --fix
-  clean         zip や dev ディレクトリなどの生成物を削除
-  package       lint を行わずにパッケージのみ作成
-  crx           Edge で crx を作成 (企業内配布用)
-  install_hook  git の pre-commit フックに lint を設定
-  help          このヘルプを表示
+  clean         Remove the zip files, the dev directory and other artifacts
+  package       Build the packages without running lint
+  crx           Build a crx with Edge (for enterprise distribution)
+  install_hook  Register lint as the git pre-commit hook
+  help          Show this help
 
-生成物:
-  BrowserGuardEdge.zip      製品版
-  BrowserGuardEdgeDev.zip   開発版 (拡張機能名が異なる)
-  BrowserGuardEdge.crx      企業内配布用 (crx ターゲット時のみ)
-  edge/dev/                 開発版の未パッケージ版
+Artifacts:
+  BrowserGuardEdge.zip      Production
+  BrowserGuardEdgeDev.zip   Developer edition (different extension name)
+  BrowserGuardEdge.crx      Enterprise distribution (crx target only)
+  edge/dev/                 Unpacked developer edition
 
-署名鍵:
-  pem\edge.pem があればそれで署名し、拡張機能 ID が固定されます。
-  無い場合は Edge が鍵を自動生成するため ID は毎回変わります。
+Signing key:
+  When pem\edge.pem exists it is used to sign, keeping the extension ID stable.
+  Otherwise Edge generates a key and the ID changes on every build.
 '@ | Write-Host
 }
 
@@ -337,12 +338,12 @@ try {
             Invoke-Clean
             Invoke-Package
             Write-Host ''
-            Write-Host 'ビルドが完了しました。' -ForegroundColor Green
+            Write-Host 'Build completed.' -ForegroundColor Green
         }
     }
 }
 catch {
     Write-Host ''
-    Write-Host "ビルドに失敗しました: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Build failed: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }

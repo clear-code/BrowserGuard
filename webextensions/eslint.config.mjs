@@ -5,7 +5,7 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    // ビルド生成物は対象外。
+    // Exclude build artifacts.
     ignores: ["**/dev/**", ".build/**"],
   },
   {
@@ -16,7 +16,7 @@ export default defineConfig([
   {
     files: ["**/*.{js,mjs,cjs}"],
     rules: {
-      // 先頭が _ の引数・変数は「意図的に未使用」とみなす。
+      // Treat a leading underscore as "intentionally unused".
       "no-unused-vars": ["error", {
         argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",

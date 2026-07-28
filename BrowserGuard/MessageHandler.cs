@@ -7,7 +7,7 @@ namespace BrowserGuard
         public bool Success { get; set; }
         public string? Error { get; set; }
 
-        // 派生クラスのプロパティも出力するため実行時型でシリアライズする。
+        // Serialize by runtime type so that derived properties are emitted too.
         public override string ToString() => JsonSerializer.Serialize(this, GetType());
     }
 

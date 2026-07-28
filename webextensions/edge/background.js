@@ -7,7 +7,8 @@ import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
 import { BlockSettingPage } from './block-setting-page.js';
 
-// URLプレフィックスは設定で変わり得るため、フィルタは付けずハンドラ内で判定する。
+// The URL prefixes come from the config, so register without a filter and
+// decide inside the handler instead.
 BlockSettingPage.init();
 chrome.webNavigation.onBeforeNavigate.addListener(
   BlockSettingPage.onBeforeNavigate.bind(BlockSettingPage)

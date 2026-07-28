@@ -23,7 +23,7 @@ namespace BrowserGuard
         public BlockSettingPageConfig BlockSettingPage { get; set; } = new();
     }
 
-    // 各種操作を Endpoint へ記録する機能。
+    // Records each kind of operation to the configured endpoint.
     internal class NetLoggerConfig
     {
         public bool Enabled { get; set; }
@@ -38,14 +38,14 @@ namespace BrowserGuard
         public string MachineName { get; set; } = Environment.MachineName;
     }
 
-    // 特定拡張子のアップロードを遮断する機能。
+    // Blocks uploads of files with the listed extensions.
     internal class UploadGuardConfig
     {
         public bool Enabled { get; set; }
         public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
     }
 
-    // 設定画面などへのアクセスを遮断する機能。
+    // Blocks navigation to the browser settings pages and similar URLs.
     internal class BlockSettingPageConfig
     {
         public bool Enabled { get; set; }

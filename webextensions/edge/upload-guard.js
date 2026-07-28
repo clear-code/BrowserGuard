@@ -3,7 +3,7 @@
 import { loadConfig } from './config-loader.js';
 
 export const UploadGuard = {
-    // onBeforeRequest は blocking なので同期的に参照できるようキャッシュしておく。
+    // onBeforeRequest is blocking, so cache the config for synchronous access.
     enabled: true,
     blockedExtensions: [".exe", ".bat", ".cmd", ".js", ".vbs"],
 
