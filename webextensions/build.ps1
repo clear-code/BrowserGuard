@@ -9,7 +9,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('all', 'packages', 'deps', 'lint', 'format', 'clean', 'package', 'crx', 'install_hook', 'help')]
+    [ValidateSet('all', 'packages', 'deps', 'lint', 'format', 'clean', 'package', 'crx', 'help')]
     [string]$Target = 'all'
 )
 
@@ -278,19 +278,6 @@ function Invoke-Crx {
     Write-Host "    $ProdCrx"
 }
 
-# --- install_hook -----------------------------------------------------------
-
-function Install-GitHook {
-    $hookDir = Join-Path $Root '..\.git\hooks'
-    if (-not (Test-Path $hookDir)) {
-        throw "git hooks directory not found: $hookDir"
-    }
-    $hookPath = Join-Path $hookDir 'pre-commit'
-    $content = "#!/bin/sh`nexec cmd.exe /c `"`$(dirname `"`$0`")/../../webextensions/build.bat`" lint`n"
-    [System.IO.File]::WriteAllText($hookPath, $content, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Step "Installed the pre-commit hook: $hookPath"
-}
-
 # --- help -------------------------------------------------------------------
 
 function Show-Help {
@@ -305,7 +292,6 @@ Usage: build.bat [target]
   clean         Remove the zip files, the dev directory and other artifacts
   package       Build the packages without running lint
   crx           Build a crx with Edge (for enterprise distribution)
-  install_hook  Register lint as the git pre-commit hook
   help          Show this help
 
 Artifacts:
@@ -331,7 +317,6 @@ try {
         'clean'        { Invoke-Clean }
         'package'      { Invoke-Clean; Invoke-Package }
         'crx'          { Invoke-Crx }
-        'install_hook' { Install-GitHook }
         default {
             Invoke-Deps
             Invoke-Lint
