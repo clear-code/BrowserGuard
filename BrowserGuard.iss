@@ -58,6 +58,9 @@ Source: "Resources\edge.json"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreve
 ;Extension
 Source: "webextensions\BrowserGuardEdge.crx"; DestDir: "{app}\BrowserGuardExtension";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
+;Update Manifest
+Source: "Resources\manifest.xml"; DestDir: "{app}\BrowserGuardExtension";Flags: ignoreversion;permissions:users-readexec admins-full system-full
+
 [Dirs]
 Name: "{app}";Permissions: users-modify
 
@@ -81,8 +84,49 @@ begin
     Exec(ExpandConstant('taskkill.exe'), '/f /im ' + '"' + FileName + '"', '', SW_HIDE,ewWaitUntilTerminated, ResultCode);
 end;
 function InitializeSetup():Boolean;
-begin 
+begin
 	TaskKill('msedge.exe');
 	TaskKill('BrowserGuard.exe');
-	Result := True; 
-end; 
+	Result := True;
+end;
+
+// Inno Setup does not expand constants inside file contents, so the
+// {InstallFolder} placeholder in manifest.xml is replaced after installing.
+// The result is a file URL, which is what the browser expects for update_url.
+function GetExtensionFolderUrl(): String;
+var
+  Path: String;
+begin
+  Path := ExpandConstant('{app}\BrowserGuardExtension');
+  StringChangeEx(Path, '\', '/', True);
+  StringChangeEx(Path, ' ', '%20', True);
+  Result := 'file:///' + Path;
+end;
+
+procedure ExpandUpdateManifest();
+var
+  FilePath: String;
+  Lines: TArrayOfString;
+  Url: String;
+  i: Integer;
+begin
+  FilePath := ExpandConstant('{app}\BrowserGuardExtension\manifest.xml');
+  if not LoadStringsFromFile(FilePath, Lines) then
+  begin
+    Log('Cannot read update manifest: ' + FilePath);
+    Exit;
+  end;
+
+  Url := GetExtensionFolderUrl();
+  for i := 0 to GetArrayLength(Lines) - 1 do
+    StringChangeEx(Lines[i], '{InstallFolder}', Url, True);
+
+  if not SaveStringsToFile(FilePath, Lines, False) then
+    Log('Cannot write update manifest: ' + FilePath);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    ExpandUpdateManifest();
+end;
