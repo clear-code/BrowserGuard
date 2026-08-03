@@ -44,7 +44,9 @@ Root: HKLM; Subkey: "SOFTWARE\Microsoft\Edge\NativeMessagingHosts\com.clear_code
 Name: jp; MessagesFile: "compiler:Languages\Japanese.isl"
 
 [Tasks]
-Name: "forcelist"; Description: "拡張機能を Edge のポリシーに登録して自動的にインストールする"; GroupDescription: "ブラウザー拡張機能:"
+; 既定は OFF。グループポリシーで管理する運用を標準とし、
+; レジストリ直接書き込みは明示的に選択した場合のみ行う。
+Name: "forcelist"; Description: "拡張機能を Edge のポリシーに登録して自動的にインストールする"; GroupDescription: "ブラウザー拡張機能:"; Flags: unchecked
 
 
 [Files]
@@ -102,6 +104,31 @@ begin
 	TaskKill('msedge.exe');
 	TaskKill('BrowserGuard.exe');
 	Result := True;
+end;
+
+// Both this installer and a group policy write to the same registry location,
+// so the note explains which one ends up winning.
+procedure InitializeWizard();
+var
+  Note: TNewStaticText;
+  NoteHeight: Integer;
+begin
+  NoteHeight := ScaleY(64);
+  WizardForm.TasksList.Height := WizardForm.TasksList.Height - NoteHeight - ScaleY(8);
+
+  Note := TNewStaticText.Create(WizardForm);
+  Note.Parent := WizardForm.SelectTasksPage;
+  Note.AutoSize := False;
+  Note.WordWrap := True;
+  Note.Left := WizardForm.TasksList.Left;
+  Note.Top := WizardForm.TasksList.Top + WizardForm.TasksList.Height + ScaleY(8);
+  Note.Width := WizardForm.TasksList.Width;
+  Note.Height := NoteHeight;
+  Note.Caption :=
+    'グループポリシーで「サイレント インストールされる拡張機能を制御する」' +
+    '(ExtensionInstallForcelist) が構成されている環境では、' +
+    'グループポリシーの設定が優先され、ここで登録した内容は上書きされます。' +
+    'グループポリシーで管理する場合は、チェックを外したままにしてください。';
 end;
 
 // Inno Setup does not expand constants inside file contents, so the
