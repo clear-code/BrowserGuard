@@ -11,7 +11,10 @@
   },
   "UploadGuard": {
     "Enabled": false,
-    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"]
+    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
+    "AllowedExtensions": [],
+    "AllowedPaths": [],
+    "BlockedPaths": []
   },
   "BlockSettingPage": {
     "Enabled": false,

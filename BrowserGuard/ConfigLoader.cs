@@ -38,11 +38,26 @@ namespace BrowserGuard
         public string MachineName { get; set; } = Environment.MachineName;
     }
 
-    // Blocks uploads of files with the listed extensions.
+    // Controls which local files may be uploaded.
+    // The blocked lists are checked first, so they win over the allowed ones.
+    // An empty allowed list means "no restriction from this rule".
     internal class UploadGuardConfig
     {
         public bool Enabled { get; set; }
+
+        // Rejected even when listed in AllowedExtensions.
         public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
+
+        // When not empty, the extension must appear here.
+        public string[] AllowedExtensions { get; set; } = [];
+
+        // Regular expressions matched against the full local path of the file.
+        // When not empty, the path must match one of them.
+        public string[] AllowedPaths { get; set; } = [];
+
+        // Regular expressions that exclude paths, including folders inside an
+        // otherwise allowed location.
+        public string[] BlockedPaths { get; set; } = [];
     }
 
     // Blocks navigation to the browser settings pages and similar URLs.
