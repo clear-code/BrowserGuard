@@ -28,6 +28,15 @@
     With -Uninstall, deletes the install directory including the test key.
     The next install then generates a new key, and therefore a new ID.
 
+.PARAMETER ForceReinstall
+    Deletes the copy Edge already installed so that the policy installs the
+    current build from scratch on the next start. The extension ID is unchanged.
+    Edge's own update check is slow and throttled, so this is the reliable way
+    to pick up a rebuild.
+
+    Edge is terminated first, because it would otherwise rewrite the files being
+    removed. Any unsaved work in the browser is lost.
+
 .PARAMETER InstallRoot
     Where the packed crx, the manifests, the test config and the test key are
     kept. Defaults to .testinstall in the repository root.
@@ -47,6 +56,7 @@
 param(
     [switch]$Uninstall,
     [switch]$Purge,
+    [switch]$ForceReinstall,
     [string]$InstallRoot
 )
 
@@ -133,6 +143,35 @@ function Get-ProductionExtensionId {
     return $null
 }
 
+# Edge only re-downloads a force installed extension when the update manifest
+# advertises a newer version, so every run gets a version derived from the clock.
+# Components have to stay below 65536, hence days and minutes rather than a
+# full timestamp.
+function Get-TestVersion([string]$BaseVersion) {
+    $parts = $BaseVersion.Split('.')
+    $major = $parts[0]
+    $minor = if ($parts.Length -gt 1) { $parts[1] } else { '0' }
+    $now = Get-Date
+    $days = [int]($now.Date - [datetime]'2020-01-01').TotalDays
+    $minutes = $now.Hour * 60 + $now.Minute
+    return "$major.$minor.$days.$minutes"
+}
+
+# Rewrites just the version member, leaving the rest of the file untouched.
+function Set-ManifestVersion([string]$ManifestPath, [string]$Version) {
+    $text = [System.IO.File]::ReadAllText($ManifestPath)
+    $updated = [regex]::Replace($text, '("version"\s*:\s*")[^"]*(")', "`${1}$Version`${2}")
+    [System.IO.File]::WriteAllText($ManifestPath, $updated, (New-Object System.Text.UTF8Encoding($false)))
+}
+
+function Get-ManifestVersion([string]$ManifestPath) {
+    $match = [regex]::Match([System.IO.File]::ReadAllText($ManifestPath), '"version"\s*:\s*"([^"]*)"')
+    if (-not $match.Success) {
+        throw "No version found in $ManifestPath"
+    }
+    return $match.Groups[1].Value
+}
+
 function Invoke-EdgePack([string]$Directory, [string]$KeyPath) {
     $edge = Get-EdgePath
     $produced = "$Directory.crx"
@@ -161,6 +200,59 @@ function Invoke-EdgePack([string]$Directory, [string]$KeyPath) {
         Start-Sleep -Milliseconds 250
     }
     return $produced
+}
+
+function Stop-Edge {
+    $processes = Get-Process -Name 'msedge' -ErrorAction SilentlyContinue
+    if (-not $processes) {
+        Write-Host '    Edge is not running'
+        return
+    }
+    if (-not $PSCmdlet.ShouldProcess('msedge', "Stop $($processes.Count) process(es)")) {
+        return
+    }
+
+    Write-Host "    stopping $($processes.Count) Edge process(es)"
+    $processes | Stop-Process -Force -ErrorAction SilentlyContinue -WhatIf:$false
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    while (Get-Process -Name 'msedge' -ErrorAction SilentlyContinue) {
+        if ($stopwatch.Elapsed.TotalSeconds -gt 30) {
+            throw 'Edge is still running after 30 seconds.'
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    # Give Windows a moment to release the profile files.
+    Start-Sleep -Milliseconds 500
+}
+
+# Edge only replaces a force installed extension when its own update check runs,
+# which it delays and throttles. Dropping the installed copy makes the policy
+# install the current crx from scratch on the next start, keeping the same ID.
+function Remove-InstalledExtension([string]$ExtensionId) {
+    # Edge would rewrite the files being removed, so it is stopped first.
+    Stop-Edge
+
+    $userData = Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\User Data'
+    if (-not (Test-Path $userData)) {
+        Write-Warning "No Edge user data found at $userData"
+        return
+    }
+
+    $removed = 0
+    Get-ChildItem $userData -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $installed = Join-Path $_.FullName "Extensions\$ExtensionId"
+        if (Test-Path $installed) {
+            if ($PSCmdlet.ShouldProcess($installed, 'Delete the installed extension')) {
+                Remove-Item -LiteralPath $installed -Recurse -Force -WhatIf:$false
+                Write-Host "    removed from profile $($_.Name)"
+                $removed++
+            }
+        }
+    }
+    if ($removed -eq 0) {
+        Write-Host '    nothing installed yet'
+    }
 }
 
 function Get-ForcelistValueName([string]$ExtensionId) {
@@ -275,12 +367,15 @@ if ($Uninstall) {
 
 Assert-Elevated
 
+# Always rebuild: reusing a stale edge\dev would silently package the previous
+# version of the extension.
+Write-Step 'Building the extension'
+& (Join-Path $WebExtRoot 'build.bat') all
+if ($LASTEXITCODE -ne 0) {
+    throw 'Building the extension failed.'
+}
 if (-not (Test-Path $SourceDir)) {
-    Write-Step 'edge\dev is missing, building the extension first'
-    & (Join-Path $WebExtRoot 'build.bat') all
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Building the extension failed.'
-    }
+    throw "The extension was not staged: $SourceDir"
 }
 
 New-Item -ItemType Directory -Path $InstallRoot -Force -WhatIf:$false | Out-Null
@@ -306,11 +401,16 @@ if (Test-Path $StageDir) {
     Remove-Item -LiteralPath $StageDir -Recurse -Force -WhatIf:$false
 }
 Copy-Item $SourceDir -Destination $StageDir -Recurse -Force -WhatIf:$false
+
+$stagedManifest = Join-Path $StageDir 'manifest.json'
+$version = Get-TestVersion (Get-ManifestVersion $stagedManifest)
+Set-ManifestVersion $stagedManifest $version
+Write-Host "    version $version"
+
 $null = Invoke-EdgePack $StageDir $TestKey
 Write-Host "    $CrxPath"
 
 Write-Step 'Writing the update manifest'
-$version = (Get-Content (Join-Path $SourceDir 'manifest.json') -Raw | ConvertFrom-Json).version
 $xml = @"
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
@@ -360,6 +460,11 @@ Write-Host "    $TestConfig"
 
 # --- registry ---------------------------------------------------------------
 
+if ($ForceReinstall) {
+    Write-Step 'Stopping Edge and dropping the copy it installed'
+    Remove-InstalledExtension $extensionId
+}
+
 Write-Step 'Registering the ExtensionInstallForcelist policy'
 $entry = "$extensionId;$(ConvertTo-FileUrl $UpdateXml)"
 $valueName = Get-ForcelistValueName $extensionId
@@ -401,9 +506,24 @@ if ($PSCmdlet.ShouldProcess("$OwnKey\Configfile", "Set to $TestConfig")) {
 # --- done -------------------------------------------------------------------
 
 Write-Host ''
-Write-Host 'Done. Restart Edge, then check:' -ForegroundColor Green
-Write-Host "  edge://extensions  - the extension should be listed as $extensionId"
-Write-Host '  edge://policy      - ExtensionInstallForcelist should show the entry'
+Write-Host "Done. Packaged version $version" -ForegroundColor Green
+Write-Host ''
+if ($ForceReinstall) {
+    Write-Host 'Edge was stopped and its copy removed. Start Edge to install this build.'
+    Write-Host ''
+}
+else {
+    Write-Host 'Edge keeps the copy it already installed until its own update check'
+    Write-Host 'runs, which is delayed and throttled. To pick up this build reliably,'
+    Write-Host 'run (this terminates Edge):'
+    Write-Host '  .\tools\install-test-extension.ps1 -ForceReinstall'
+    Write-Host ''
+}
+Write-Host 'Then confirm on edge://extensions that the version reads'
+Write-Host "  $version"
+Write-Host 'If it still reads the old version, the running code is the old build.'
+Write-Host ''
+Write-Host "  edge://policy      - ExtensionInstallForcelist should list $extensionId"
 Write-Host ''
 Write-Host 'The native messaging host now runs from the Debug build:'
 Write-Host "  $HostExe"
