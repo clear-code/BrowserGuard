@@ -107,6 +107,65 @@ dotnet test BrowserGuard.Tests\BrowserGuard.Tests.csproj
 
 拡張機能側に単体テストはありません。`build.bat lint` が静的チェックを行います。
 
+### 仮の ID で Edge に登録して動作を確認する
+
+リリース用の署名鍵を使わずに、拡張機能とネイティブメッセージングホストの動作を
+実機で確認するためのスクリプトです。
+
+```powershell
+.\tools\install-test-extension.ps1
+```
+
+以下を行います。
+
+1. 初回実行時にテスト用の署名鍵を生成 (**製品版とは異なる拡張機能 ID** になります)
+2. 開発版を crx にパッケージングし、更新マニフェストを生成
+3. `ExtensionInstallForcelist` に登録
+4. ネイティブメッセージングホストを `-c Debug` でビルド
+5. `bin\Debug\net8.0\BrowserGuard.exe` を指すホストマニフェストを生成して登録
+6. テスト用の設定ファイルを生成し、ホストがそれを読むよう登録
+
+HKLM を書き換えるため、**管理者権限の PowerShell** で実行してください。
+実行後は Edge を再起動し、`edge://extensions` と `edge://policy` で確認します。
+
+| コマンド | 内容 |
+| --- | --- |
+| `install-test-extension.ps1` | ビルドと登録 |
+| `install-test-extension.ps1 -WhatIf` | レジストリを変更せずに内容を確認 |
+| `install-test-extension.ps1 -Uninstall` | 登録を解除し、元のレジストリ値に戻す |
+| `install-test-extension.ps1 -Uninstall -Purge` | 生成物とテスト鍵も削除 (次回は別の ID になります) |
+
+生成物は `.testinstall\` に置かれます (git 管理外)。
+`-WhatIf` はレジストリ変更のみを抑止し、crx などの生成は実際に行います。
+
+#### ネイティブメッセージングホストのデバッグ
+
+ホストマニフェストの `path` が `bin\Debug\net8.0\BrowserGuard.exe` を指すため、
+ホストを修正したら再ビルドするだけで反映されます。スクリプトの再実行は不要です。
+
+```bash
+dotnet build BrowserGuard\BrowserGuard.csproj -c Debug
+```
+
+Edge はメッセージのたびにホストを起動するため、再ビルド後の最初のメッセージから
+新しいバイナリが使われます。動作は `%APPDATA%\BrowserGuard\BrowserGuard.log` で確認できます。
+
+有効にする機能は `.testinstall\BrowserGuard.json` を編集して切り替えます。
+
+#### 既存の登録の扱い
+
+ネイティブメッセージングホストの登録名は 1 つしかないため、
+**製品版がインストール済みの場合はその登録を置き換えます**。
+置き換える前の値は `.testinstall\registry-backup.json` に保存し、
+`-Uninstall` で元に戻します (設定ファイルのパスも同様)。
+
+ホストマニフェストの `allowed_origins` にはテスト用と製品版の両方の拡張機能 ID を
+書き込むため、製品版の拡張機能も引き続きホストと通信できます。
+
+`ExtensionInstallForcelist` は空き番号を探して登録し、
+同じ拡張機能 ID のエントリが既にあれば更新します。
+他の拡張機能のエントリには触れません。
+
 ## インストーラーの動作
 
 ### 拡張機能の強制インストール
