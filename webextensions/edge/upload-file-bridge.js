@@ -15,14 +15,15 @@ export const UploadFileBridge = {
   async bridgeFile(path) {
     const query = 'S ' + path;
     try {
-      const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, query);
+      // sendNativeMessage only accepts an object, so the command is wrapped.
+      const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, { message: query });
       if (!resp) {
         console.log('No response from native host', query);
       }
-      else if (resp.result === 'OK') {
+      else if (resp.Success) {
         console.log('File copied successfully', query);
       } else {
-        console.log('Failed to copy file', query, resp);
+        console.log('Failed to copy file', query, resp.Error);
       }
     } catch (e) {
       console.log('Cannot copy file', query, e.message);

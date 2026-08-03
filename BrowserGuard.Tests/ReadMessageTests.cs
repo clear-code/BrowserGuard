@@ -9,10 +9,16 @@ namespace BrowserGuard.Tests
 {
     public class ReadMessageTests
     {
-        // Native messaging delivers the payload as a JSON-encoded value.
+        // The browser wraps the command in an object, because
+        // runtime.sendNativeMessage does not accept a bare string.
         static MessageCommunicator MakeCommunicator(string text)
         {
-            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(text));
+            return MakeRawCommunicator(JsonSerializer.Serialize(new { message = text }));
+        }
+
+        static MessageCommunicator MakeRawCommunicator(string json)
+        {
+            var body = Encoding.UTF8.GetBytes(json);
             var stream = new MemoryStream();
             stream.Write(BitConverter.GetBytes((uint)body.Length), 0, 4);
             stream.Write(body, 0, body.Length);
@@ -54,6 +60,27 @@ namespace BrowserGuard.Tests
         public void ThrowsFormatExceptionWhenTooShort(string text)
         {
             Assert.Throws<InvalidDataException>(() => MakeCommunicator(text).ReadMessage());
+        }
+
+        [Theory]
+        [InlineData("{}")]
+        [InlineData("""{ "message": null }""")]
+        public void ThrowsWhenTheMessageMemberIsMissing(string json)
+        {
+            Assert.Throws<InvalidDataException>(() => MakeRawCommunicator(json).ReadMessage());
+        }
+
+        [Fact]
+        public void ThrowsWhenTheBodyIsNotJson()
+        {
+            Assert.Throws<InvalidDataException>(() => MakeRawCommunicator("not json").ReadMessage());
+        }
+
+        // The browser sends a lowercase member name.
+        [Fact]
+        public void MemberNameIsCaseInsensitive()
+        {
+            Assert.Equal("C edge", MakeRawCommunicator("""{ "Message": "C edge" }""").ReadMessage());
         }
 
 

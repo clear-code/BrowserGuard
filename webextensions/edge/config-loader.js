@@ -13,7 +13,8 @@ export function loadConfig() {
 async function fetchConfig() {
   const query = 'C ' + BROWSER;
   try {
-    const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, query);
+    // sendNativeMessage only accepts an object, so the command is wrapped.
+    const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, { message: query });
     if (!resp) {
       console.log('Cannot fetch config: empty response');
       return null;

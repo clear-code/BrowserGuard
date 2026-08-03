@@ -5,8 +5,20 @@ using System.Text.Json;
 
 namespace BrowserGuard
 {
+    // runtime.sendNativeMessage only accepts an object, so the browser wraps the
+    // command in one instead of sending a bare JSON string.
+    internal class Request
+    {
+        public string? Message { get; set; }
+    }
+
     internal class MessageCommunicator
     {
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
         private readonly BinaryReader reader;
         private readonly BinaryWriter writer;
         private readonly Logger? logger;
@@ -32,8 +44,16 @@ namespace BrowserGuard
             if (body.Length < len)
                 throw new EndOfStreamException();
 
-            // Native messaging delivers the payload as a JSON-encoded value.
-            string? text = JsonSerializer.Deserialize<string>(body)?.Trim();
+            // Native messaging delivers the payload as JSON.
+            string? text;
+            try
+            {
+                text = JsonSerializer.Deserialize<Request>(body, JsonOptions)?.Message?.Trim();
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidDataException($"Message is not valid JSON: {ex.Message}");
+            }
             logger?.Log($"text: {text}");
             if (string.IsNullOrEmpty(text))
                 throw new InvalidDataException("Message is empty");
