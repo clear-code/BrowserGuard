@@ -83,7 +83,6 @@ $BackupFile   = Join-Path $InstallRoot 'registry-backup.json'
 
 $HostName      = 'com.clear_code.browser_guard'
 $PolicyKey     = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
-$ForcelistKey  = "$PolicyKey\ExtensionInstallForcelist"
 $SettingsValue = 'ExtensionSettings'
 $NativeHostKey = "HKLM:\SOFTWARE\Microsoft\Edge\NativeMessagingHosts\$HostName"
 $OwnKey        = 'HKLM:\Software\BrowserGuard'
@@ -298,19 +297,6 @@ function Remove-ExtensionSettingsEntry([string]$ExtensionId) {
             Write-Step 'Dropped this extension from ExtensionSettings'
         }
     }
-}
-
-function Get-ForcelistValueName([string]$ExtensionId) {
-    if (-not (Test-Path $ForcelistKey)) {
-        return $null
-    }
-    $item = Get-Item $ForcelistKey
-    foreach ($name in $item.GetValueNames()) {
-        if ($item.GetValue($name) -like "$ExtensionId;*") {
-            return $name
-        }
-    }
-    return $null
 }
 
 function Get-RegistryValue([string]$Key, [string]$Name) {

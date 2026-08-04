@@ -80,12 +80,13 @@ const
   // Determined by the signing key (webextensions\pem\edge.pem).
   // Must match the appid in Resources\manifest.xml.
   ExtensionId = 'ddniogodiahgpmfkljajobgkaecabnif';
-  // SOFTWARE\Policies is shared between the 32 and 64 bit registry views.
-  ForcelistKey = 'SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist';
+  // The policy itself is written by the host executable's "policy" subcommand;
+  // see BrowserGuard\PolicyCommand.cs for why ExtensionSettings is used rather
+  // than ExtensionInstallForcelist.
   // Records that this installer wrote the policy, so that an entry set up by
   // hand or by a group policy is not removed on uninstall.
   OwnKey = 'Software\BrowserGuard';
-  RegisteredFlag = 'ForcelistRegistered';
+  RegisteredFlag = 'ExtensionSettingsRegistered';
 
 function GetProgramFiles(Param: string): string;
   begin
@@ -125,9 +126,9 @@ begin
   Note.Width := WizardForm.TasksList.Width;
   Note.Height := NoteHeight;
   Note.Caption :=
-    'グループポリシーで「サイレント インストールされる拡張機能を制御する」' +
-    '(ExtensionInstallForcelist) が構成されている環境では、' +
-    'グループポリシーの設定が優先され、ここで登録した内容は上書きされます。' +
+    'グループポリシーで「拡張機能の管理設定を構成する」(ExtensionSettings) が' +
+    '構成されている環境では、グループポリシーの設定が優先され、' +
+    'ここで登録した内容は上書きされます。' +
     'グループポリシーで管理する場合は、チェックを外したままにしてください。';
 end;
 
@@ -166,67 +167,37 @@ begin
     Log('Cannot write update manifest: ' + FilePath);
 end;
 
-// Force installing the extension from the locally hosted update manifest.
-// Entries are named with sequential numbers, so an unused slot is picked,
-// and an entry left by a previous install is reused instead of duplicated.
-function FindOwnForcelistValueName(var ValueName: String): Boolean;
+// ExtensionSettings holds one JSON object covering every extension, so the
+// existing value has to be merged rather than overwritten. Pascal Script has no
+// JSON support, so the host executable does that part as a subcommand.
+function RunPolicyCommand(const Arguments: String): Boolean;
 var
-  Names: TArrayOfString;
-  Data: String;
-  i: Integer;
+  ResultCode: Integer;
 begin
-  Result := False;
-  if not RegGetValueNames(HKEY_LOCAL_MACHINE, ForcelistKey, Names) then
-    Exit;
-  for i := 0 to GetArrayLength(Names) - 1 do
+  Result := Exec(
+    ExpandConstant('{app}\BrowserGuardHost\BrowserGuard.exe'),
+    'policy ' + Arguments,
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  if not Result then
+    Log('Cannot start BrowserGuard.exe')
+  else if ResultCode <> 0 then
   begin
-    if RegQueryStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, Names[i], Data) then
-    begin
-      if Pos(ExtensionId + ';', Data) = 1 then
-      begin
-        ValueName := Names[i];
-        Result := True;
-        Exit;
-      end;
-    end;
+    Log('BrowserGuard.exe policy returned ' + IntToStr(ResultCode) + ' for: ' + Arguments);
+    Result := False;
   end;
 end;
 
-procedure RegisterForcelist();
-var
-  ValueName, Entry: String;
-  Slot: Integer;
+procedure RegisterExtensionSettings();
 begin
-  Entry := ExtensionId + ';' + GetExtensionFolderUrl() + '/manifest.xml';
-
-  if not FindOwnForcelistValueName(ValueName) then
-  begin
-    Slot := 1;
-    while RegValueExists(HKEY_LOCAL_MACHINE, ForcelistKey, IntToStr(Slot)) do
-      Slot := Slot + 1;
-    ValueName := IntToStr(Slot);
-  end;
-
-  if RegWriteStringValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName, Entry) then
-    RegWriteStringValue(HKEY_LOCAL_MACHINE, OwnKey, RegisteredFlag, '1')
-  else
-    Log('Cannot write policy value: ' + ForcelistKey + '\' + ValueName);
+  if RunPolicyCommand('register ' + ExtensionId +
+                      ' "' + GetExtensionFolderUrl() + '/manifest.xml"') then
+    RegWriteStringValue(HKEY_LOCAL_MACHINE, OwnKey, RegisteredFlag, '1');
 end;
 
-// Only the entry belonging to this extension is removed, so policies set for
-// other extensions are left untouched.
-procedure UnregisterForcelist();
-var
-  ValueName: String;
+procedure UnregisterExtensionSettings();
 begin
-  while FindOwnForcelistValueName(ValueName) do
-  begin
-    if not RegDeleteValue(HKEY_LOCAL_MACHINE, ForcelistKey, ValueName) then
-    begin
-      Log('Cannot delete policy value: ' + ForcelistKey + '\' + ValueName);
-      Exit;
-    end;
-  end;
+  RunPolicyCommand('unregister ' + ExtensionId);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -235,7 +206,7 @@ begin
   begin
     ExpandUpdateManifest();
     if WizardIsTaskSelected('forcelist') then
-      RegisterForcelist();
+      RegisterExtensionSettings();
   end;
 end;
 
@@ -249,6 +220,6 @@ begin
   if RegQueryStringValue(HKEY_LOCAL_MACHINE, OwnKey, RegisteredFlag, Flag) then
   begin
     if Flag = '1' then
-      UnregisterForcelist();
+      UnregisterExtensionSettings();
   end;
 end;

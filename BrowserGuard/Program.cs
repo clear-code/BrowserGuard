@@ -4,7 +4,21 @@ namespace BrowserGuard
     {
         static Logger Logger { get; } = new Logger();
 
-        static void Main()
+        static int Main(string[] args)
+        {
+            // The browser starts the host with the calling origin as an argument,
+            // so only the explicit subcommand name is treated as one.
+            if (args.Length > 0 &&
+                args[0].Equals(PolicyCommand.CommandName, StringComparison.OrdinalIgnoreCase))
+            {
+                return PolicyCommand.Run(args);
+            }
+
+            RunNativeMessagingHost();
+            return 0;
+        }
+
+        static void RunNativeMessagingHost()
         {
             using var stdin = Console.OpenStandardInput();
             using var stdout = Console.OpenStandardOutput();

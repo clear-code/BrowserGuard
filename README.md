@@ -120,7 +120,7 @@ dotnet test BrowserGuard.Tests\BrowserGuard.Tests.csproj
 
 1. 初回実行時にテスト用の署名鍵を生成 (**製品版とは異なる拡張機能 ID** になります)
 2. 開発版を crx にパッケージングし、更新マニフェストを生成
-3. `ExtensionInstallForcelist` に登録
+3. `ExtensionSettings` に登録
 4. ネイティブメッセージングホストを `-c Debug` でビルド
 5. `bin\Debug\net8.0\BrowserGuard.exe` を指すホストマニフェストを生成して登録
 6. テスト用の設定ファイルを生成し、ホストがそれを読むよう登録
@@ -185,9 +185,9 @@ Edge はメッセージのたびにホストを起動するため、再ビルド
 ホストマニフェストの `allowed_origins` にはテスト用と製品版の両方の拡張機能 ID を
 書き込むため、製品版の拡張機能も引き続きホストと通信できます。
 
-`ExtensionInstallForcelist` は空き番号を探して登録し、
-同じ拡張機能 ID のエントリが既にあれば更新します。
-他の拡張機能のエントリには触れません。
+`ExtensionSettings` は全拡張機能をひとつの JSON 値で表すため、
+既存の内容を読み込んでこの拡張機能のメンバーだけを追加・更新します。
+他の拡張機能の設定には触れません。
 
 ## インストーラーの動作
 
@@ -195,7 +195,7 @@ Edge はメッセージのたびにホストを起動するため、再ビルド
 
 インストーラーは crx と更新マニフェストを `{app}\BrowserGuardExtension` に配置します。
 配置するだけでは Edge は拡張機能をインストールしないため、
-Edge のポリシー `ExtensionInstallForcelist` への登録が別途必要です。
+Edge のポリシー `ExtensionSettings` への登録が別途必要です。
 
 タスク選択画面のチェックボックスでこの登録を行えますが、**既定はオフ**です。
 グループポリシーで管理する運用を標準とし、レジストリの直接書き込みは
@@ -204,11 +204,24 @@ Edge のポリシー `ExtensionInstallForcelist` への登録が別途必要で�
 チェックを入れた場合、以下に登録します。
 
 ```
-HKLM\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist
-  <空き番号> = <拡張機能ID>;file:///<インストール先>/BrowserGuardExtension/manifest.xml
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+  ExtensionSettings (REG_SZ) =
+    {"<拡張機能ID>":{"installation_mode":"force_installed",
+     "update_url":"file:///<インストール先>/BrowserGuardExtension/manifest.xml",
+     "override_update_url":true}}
 ```
 
-同じ拡張機能 ID のエントリが既にあればそれを更新し、重複登録はしません。
+`override_update_url` が必要な理由は、`ExtensionInstallForcelist` の update_url が
+初回インストールにしか使われず、更新時には拡張機能自身の `manifest.json` の
+`update_url` が参照されるためです。自己ホストのビルドにはそれが無いため、
+`ExtensionSettings` でこの URL を更新時にも使わせています。
+
+`ExtensionSettings` は全拡張機能をひとつの JSON 値で表すため、
+既存の内容を読み込んでこの拡張機能のメンバーだけを追加・削除します。
+他の拡張機能の設定は保持し、空になった場合のみ値ごと削除します。
+JSON の操作は `BrowserGuard.exe policy` サブコマンドが行います
+([PolicyCommand.cs](BrowserGuard/PolicyCommand.cs))。
+
 アンインストール時は、このインストーラーが登録した場合にのみ削除します
 (手動設定やグループポリシー由来のエントリは残します)。
 
