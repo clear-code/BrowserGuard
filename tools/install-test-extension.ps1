@@ -6,7 +6,7 @@
 .DESCRIPTION
     Packs the developer edition of the extension with a throwaway signing key
     generated on first run, writes a matching update manifest, and registers it
-    in the ExtensionInstallForcelist policy so that Edge installs it.
+    in the ExtensionSettings policy so that Edge installs it.
 
     The native messaging host is registered from bin\Debug\net8.0 so that the
     host can be rebuilt and debugged without reinstalling anything.
@@ -82,7 +82,9 @@ $TestConfig   = Join-Path $InstallRoot 'BrowserGuard.json'
 $BackupFile   = Join-Path $InstallRoot 'registry-backup.json'
 
 $HostName      = 'com.clear_code.browser_guard'
-$ForcelistKey  = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist'
+$PolicyKey     = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
+$ForcelistKey  = "$PolicyKey\ExtensionInstallForcelist"
+$SettingsValue = 'ExtensionSettings'
 $NativeHostKey = "HKLM:\SOFTWARE\Microsoft\Edge\NativeMessagingHosts\$HostName"
 $OwnKey        = 'HKLM:\Software\BrowserGuard'
 
@@ -229,6 +231,75 @@ function Restart-Edge {
     }
 }
 
+# ExtensionInstallForcelist would only supply the update URL for the first
+# install; afterwards Edge looks at update_url inside the extension's own
+# manifest, which a self hosted build does not have. ExtensionSettings with
+# override_update_url makes Edge keep using this URL for update checks too,
+# which is why it is used on its own here.
+#
+# The value covers every extension, so the existing JSON is preserved and only
+# this extension's entry is added.
+function Set-ExtensionSettingsEntry([string]$ExtensionId, [string]$UpdateUrl) {
+    $settings = [ordered]@{}
+    $existing = Get-RegistryValue $PolicyKey $SettingsValue
+    if ($existing) {
+        try {
+            foreach ($member in ($existing | ConvertFrom-Json).PSObject.Properties) {
+                $settings[$member.Name] = $member.Value
+            }
+        }
+        catch {
+            Write-Warning 'The existing ExtensionSettings value is not valid JSON and will be replaced.'
+        }
+    }
+
+    $settings[$ExtensionId] = [ordered]@{
+        installation_mode   = 'force_installed'
+        update_url          = $UpdateUrl
+        override_update_url = $true
+    }
+
+    $json = $settings | ConvertTo-Json -Depth 10 -Compress
+    if ($PSCmdlet.ShouldProcess("$PolicyKey\$SettingsValue", "Set to $json")) {
+        Set-ItemProperty -Path $PolicyKey -Name $SettingsValue -Value $json -Type String -WhatIf:$false
+        Write-Host "    $json"
+    }
+}
+
+function Remove-ExtensionSettingsEntry([string]$ExtensionId) {
+    $existing = Get-RegistryValue $PolicyKey $SettingsValue
+    if (-not $existing) {
+        return
+    }
+
+    $settings = [ordered]@{}
+    try {
+        foreach ($member in ($existing | ConvertFrom-Json).PSObject.Properties) {
+            if ($member.Name -ne $ExtensionId) {
+                $settings[$member.Name] = $member.Value
+            }
+        }
+    }
+    catch {
+        Write-Warning 'The existing ExtensionSettings value is not valid JSON, leaving it alone.'
+        return
+    }
+
+    if ($settings.Count -eq 0) {
+        if ($PSCmdlet.ShouldProcess("$PolicyKey\$SettingsValue", 'Remove value')) {
+            Remove-ItemProperty -Path $PolicyKey -Name $SettingsValue -WhatIf:$false
+            Write-Step 'Removed the ExtensionSettings value'
+        }
+    }
+    else {
+        $json = $settings | ConvertTo-Json -Depth 10 -Compress
+        if ($PSCmdlet.ShouldProcess("$PolicyKey\$SettingsValue", 'Drop this extension from ExtensionSettings')) {
+            Set-ItemProperty -Path $PolicyKey -Name $SettingsValue -Value $json -Type String -WhatIf:$false
+            Write-Step 'Dropped this extension from ExtensionSettings'
+        }
+    }
+}
+
 function Get-ForcelistValueName([string]$ExtensionId) {
     if (-not (Test-Path $ForcelistKey)) {
         return $null
@@ -308,16 +379,7 @@ if ($Uninstall) {
 
     if (Test-Path $TestKey) {
         $extensionId = Get-ExtensionIdFromKey $TestKey
-        $valueName = Get-ForcelistValueName $extensionId
-        if ($valueName) {
-            if ($PSCmdlet.ShouldProcess("$ForcelistKey\$valueName", 'Remove policy value')) {
-                Remove-ItemProperty -Path $ForcelistKey -Name $valueName -WhatIf:$false
-                Write-Step "Removed the policy entry for $extensionId"
-            }
-        }
-        else {
-            Write-Step "No policy entry found for $extensionId"
-        }
+        Remove-ExtensionSettingsEntry $extensionId
     }
     else {
         Write-Warning "No test key at $TestKey, so no policy entry could be identified."
@@ -442,29 +504,8 @@ Write-Host "    $TestConfig"
 
 # --- registry ---------------------------------------------------------------
 
-Write-Step 'Registering the ExtensionInstallForcelist policy'
-$entry = "$extensionId;$(ConvertTo-FileUrl $UpdateXml)"
-$valueName = Get-ForcelistValueName $extensionId
-if (-not $valueName) {
-    if (-not (Test-Path $ForcelistKey)) {
-        if ($PSCmdlet.ShouldProcess($ForcelistKey, 'Create registry key')) {
-            New-Item -Path $ForcelistKey -Force -WhatIf:$false | Out-Null
-        }
-    }
-    # Value names are sequential numbers; take the first free one.
-    $slot = 1
-    if (Test-Path $ForcelistKey) {
-        $existing = (Get-Item $ForcelistKey).GetValueNames()
-        while ($existing -contains [string]$slot) {
-            $slot++
-        }
-    }
-    $valueName = [string]$slot
-}
-if ($PSCmdlet.ShouldProcess("$ForcelistKey\$valueName", "Set to $entry")) {
-    Set-ItemProperty -Path $ForcelistKey -Name $valueName -Value $entry -Type String -WhatIf:$false
-    Write-Host "    $valueName = $entry"
-}
+Write-Step 'Registering ExtensionSettings'
+Set-ExtensionSettingsEntry $extensionId (ConvertTo-FileUrl $UpdateXml)
 
 Write-Step 'Registering the native messaging host'
 if ($PSCmdlet.ShouldProcess($NativeHostKey, "Set to $HostManifest")) {
@@ -504,7 +545,7 @@ Write-Host 'Then confirm on edge://extensions that the version reads'
 Write-Host "  $version"
 Write-Host 'If it still reads the old version, the running code is the old build.'
 Write-Host ''
-Write-Host "  edge://policy      - ExtensionInstallForcelist should list $extensionId"
+Write-Host "  edge://policy      - ExtensionSettings should list $extensionId"
 Write-Host ''
 Write-Host 'The native messaging host now runs from the Debug build:'
 Write-Host "  $HostExe"
