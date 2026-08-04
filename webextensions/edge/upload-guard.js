@@ -12,7 +12,12 @@ export const UploadGuard = {
 
     async init () {
         const config = await loadConfig();
-        const uploadGuard = config?.UploadGuard;
+        this.applyConfig(config?.UploadGuard);
+    },
+
+    // Separated from init so that it can be exercised without the browser.
+    // Members the config leaves out keep their current value.
+    applyConfig(uploadGuard) {
         if (!uploadGuard) return;
         if (typeof uploadGuard.Enabled === 'boolean') {
             this.enabled = uploadGuard.Enabled;

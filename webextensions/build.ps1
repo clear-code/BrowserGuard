@@ -9,7 +9,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('all', 'packages', 'deps', 'lint', 'format', 'clean', 'package', 'crx', 'help')]
+    [ValidateSet('all', 'packages', 'deps', 'lint', 'test', 'format', 'clean', 'package', 'crx', 'help')]
     [string]$Target = 'all'
 )
 
@@ -113,6 +113,29 @@ function Invoke-Lint([switch]$Fix) {
     }
     if (-not $Fix) {
         Invoke-JsonLint
+    }
+}
+
+# --- test -------------------------------------------------------------------
+
+# Node's own runner, so the unit tests need no extra dependency.
+# The files are listed explicitly because passing the directory does not
+# discover them reliably.
+function Invoke-Test {
+    Write-Step 'Running the unit tests'
+    $testDir = Join-Path $Root 'test'
+    $files = @(Get-ChildItem -Path $testDir -Filter '*.test.js' -File -ErrorAction SilentlyContinue |
+        ForEach-Object { $_.FullName })
+    if ($files.Count -eq 0) {
+        Write-Host '    no tests found'
+        return
+    }
+    Push-Location $Root
+    try {
+        Invoke-Tool 'node.exe' (@('--test') + $files)
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -284,10 +307,11 @@ function Show-Help {
     @'
 Usage: build.bat [target]
 
-  all           Run deps, lint, clean and package in order (default)
+  all           Run deps, lint, test, clean and package in order (default)
   packages      Same as all
   deps          npm install (only when not installed yet)
   lint          ESLint plus a JSON syntax check
+  test          Unit tests (node --test)
   format        ESLint --fix
   clean         Remove the zip files, the dev directory and other artifacts
   package       Build the packages without running lint
@@ -314,12 +338,14 @@ try {
         'deps'         { Invoke-Deps }
         'lint'         { Invoke-Lint }
         'format'       { Invoke-Lint -Fix }
+        'test'         { Invoke-Test }
         'clean'        { Invoke-Clean }
         'package'      { Invoke-Clean; Invoke-Package }
         'crx'          { Invoke-Crx }
         default {
             Invoke-Deps
             Invoke-Lint
+            Invoke-Test
             Invoke-Clean
             Invoke-Package
             Write-Host ''

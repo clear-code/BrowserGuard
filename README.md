@@ -77,9 +77,10 @@ build.bat help
 
 | ターゲット | 内容 |
 | --- | --- |
-| `all` (既定) | `deps` → `lint` → `clean` → パッケージ作成 |
+| `all` (既定) | `deps` → `lint` → `test` → `clean` → パッケージ作成 |
 | `deps` | `npm install` (未インストール時のみ) |
 | `lint` | ESLint と JSON の構文チェック |
+| `test` | 単体テスト (`node --test`) |
 | `format` | ESLint `--fix` |
 | `clean` | 生成物の削除 |
 | `package` | lint を行わずパッケージのみ作成 |
@@ -105,7 +106,18 @@ crx と zip を先に作っておく必要があります。
 dotnet test BrowserGuard.Tests\BrowserGuard.Tests.csproj
 ```
 
-拡張機能側に単体テストはありません。`build.bat lint` が静的チェックを行います。
+拡張機能側の単体テストは `webextensions\test\` にあります。
+
+```bash
+cd webextensions && build.bat test
+```
+
+Node 標準のテストランナー (`node --test`) を使うため、追加の依存はありません。
+`build.bat all` からも実行されます。
+
+ブラウザーの API に触れない部分だけを対象にしています。たとえば
+[upload-guard.js](webextensions/edge/upload-guard.js) は `init()` から設定適用を
+`applyConfig()` に切り出してあるので、ブラウザーなしで判定ロジックを検証できます。
 
 ### 仮の ID で Edge に登録して動作を確認する
 
