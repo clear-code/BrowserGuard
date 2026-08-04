@@ -23,12 +23,12 @@ if errorlevel 1 goto :failed
 
 echo.
 echo === 2/4 Building the browser extension ===
-call "%ROOT%webextensions\build.bat" all
+call "%ROOT%webextensions\make.bat" all
 if errorlevel 1 goto :failed
 
 echo.
 echo === 3/4 Packing the crx ===
-call "%ROOT%webextensions\build.bat" crx
+call "%ROOT%webextensions\make.bat" crx
 if errorlevel 1 goto :failed
 
 echo.

@@ -400,7 +400,7 @@ Assert-Elevated
 # Always rebuild: reusing a stale edge\dev would silently package the previous
 # version of the extension.
 Write-Step 'Building the extension'
-& (Join-Path $WebExtRoot 'build.bat') all
+& (Join-Path $WebExtRoot 'make.bat') all
 if ($LASTEXITCODE -ne 0) {
     throw 'Building the extension failed.'
 }

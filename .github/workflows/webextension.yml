@@ -19,7 +19,7 @@ jobs:
 
       # Lint and build the zip packages.
       - name: Build
-        run: .\build.bat all
+        run: .\make.bat all
         shell: cmd
         working-directory: webextensions
 
@@ -29,7 +29,7 @@ jobs:
       # Release crx files for enterprise distribution are built locally with the
       # designated key placed at pem\edge.pem.
       - name: Pack crx
-        run: .\build.bat crx
+        run: .\make.bat crx
         shell: cmd
         working-directory: webextensions
 

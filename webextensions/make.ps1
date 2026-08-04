@@ -4,7 +4,7 @@
     Build script for the BrowserGuard browser extension (Windows).
 .DESCRIPTION
     A Windows-native replacement for the Makefile targets.
-    Normally invoked through build.bat.
+    Normally invoked through make.bat.
 #>
 [CmdletBinding()]
 param(
@@ -305,7 +305,7 @@ function Invoke-Crx {
 
 function Show-Help {
     @'
-Usage: build.bat [target]
+Usage: make.bat [target]
 
   all           Run deps, lint, test, clean and package in order (default)
   packages      Same as all

@@ -28,14 +28,14 @@ Microsoft Edge 向けのブラウザー拡張機能と、それと通信する�
 [Resources/manifest.xml](Resources/manifest.xml) に記載された ID と一致しなくなるため、インストーラーのポリシー登録が機能しません。
 
 鍵はリポジトリに含ていないため、組織で管理しているものを都度配置してください。
-配置されていない場合、ルートの `build.bat` は何もせずエラー終了します。
+配置されていない場合、ルートの `make.bat` は何もせずエラー終了します。
 
 ## 一括ビルド
 
 リポジトリのルートで実行します。
 
 ```bash
-build.bat
+make.bat
 ```
 
 以下を順に行います。途中で失敗した場合はそこで停止します。
@@ -72,7 +72,7 @@ dotnet publish BrowserGuard\BrowserGuard.csproj -p:PublishProfile=FolderProfile
 `webextensions` ディレクトリで実行します。
 
 ```bash
-build.bat help
+make.bat help
 ```
 
 | ターゲット | 内容 |
@@ -109,11 +109,11 @@ dotnet test BrowserGuard.Tests\BrowserGuard.Tests.csproj
 拡張機能側の単体テストは `webextensions\test\` にあります。
 
 ```bash
-cd webextensions && build.bat test
+cd webextensions && make.bat test
 ```
 
 Node 標準のテストランナー (`node --test`) を使うため、追加の依存はありません。
-`build.bat all` からも実行されます。
+`make.bat all` からも実行されます。
 
 ブラウザーの API に触れない部分だけを対象にしています。たとえば
 [upload-guard.js](webextensions/edge/upload-guard.js) は `init()` から設定適用を
