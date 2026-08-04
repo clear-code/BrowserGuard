@@ -17,9 +17,21 @@ jobs:
         with:
           node-version: 22
 
-      # Lint and build the zip packages.
-      - name: Build
-        run: .\make.bat all
+      # Run the stages separately rather than through "all", so that a failure
+      # points straight at the step it happened in. Lint pulls in the npm
+      # dependencies, which is why it comes first.
+      - name: Lint
+        run: .\make.bat lint
+        shell: cmd
+        working-directory: webextensions
+
+      - name: Test
+        run: .\make.bat test
+        shell: cmd
+        working-directory: webextensions
+
+      - name: Package
+        run: .\make.bat package
         shell: cmd
         working-directory: webextensions
 
