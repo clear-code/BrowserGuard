@@ -147,9 +147,16 @@ Edge は起動直後ではなく数分後にチェックし、以降は数時間
 | コマンド | 内容 |
 | --- | --- |
 | `install-test-extension.ps1` | ビルドと登録 |
+| `install-test-extension.ps1 -RestartEdge` | 登録後に Edge を再起動する |
 | `install-test-extension.ps1 -WhatIf` | レジストリを変更せずに内容を確認 |
 | `install-test-extension.ps1 -Uninstall` | 登録を解除し、元のレジストリ値に戻す |
 | `install-test-extension.ps1 -Uninstall -Purge` | 生成物とテスト鍵も削除 (次回は別の ID になります) |
+
+`-RestartEdge` は Edge のプロセスを終了して起動し直すだけで、プロファイルには触れません。
+未保存の作業は失われます。`-Uninstall` と組み合わせることもできます。
+
+`-Purge` を使うと拡張機能 ID が変わります。`edge://extensions` や `edge://policy` で
+確認する際は、スクリプトが出力した ID と一致しているか注意してください。
 
 生成物は `.testinstall\` に置かれます (git 管理外)。
 `-WhatIf` はレジストリ変更のみを抑止し、crx などの生成は実際に行います。

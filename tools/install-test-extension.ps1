@@ -28,14 +28,14 @@
     With -Uninstall, deletes the install directory including the test key.
     The next install then generates a new key, and therefore a new ID.
 
-.PARAMETER ForceReinstall
-    Deletes the copy Edge already installed so that the policy installs the
-    current build from scratch on the next start. The extension ID is unchanged.
-    Edge's own update check is slow and throttled, so this is the reliable way
-    to pick up a rebuild.
+.PARAMETER RestartEdge
+    Stops every Edge process and starts it again once everything is registered,
+    so that Edge picks up the registrations without closing it by hand. Only the
+    processes are touched, nothing in the profile. Unsaved work in the browser
+    is lost.
 
-    Edge is terminated first, because it would otherwise rewrite the files being
-    removed. Any unsaved work in the browser is lost.
+    Note that restarting does not by itself pull in a rebuilt extension: Edge
+    keeps the copy it installed until its own update check runs.
 
 .PARAMETER InstallRoot
     Where the packed crx, the manifests, the test config and the test key are
@@ -56,7 +56,7 @@
 param(
     [switch]$Uninstall,
     [switch]$Purge,
-    [switch]$ForceReinstall,
+    [switch]$RestartEdge,
     [string]$InstallRoot
 )
 
@@ -202,56 +202,30 @@ function Invoke-EdgePack([string]$Directory, [string]$KeyPath) {
     return $produced
 }
 
-function Stop-Edge {
+# Only the processes are touched; nothing in the profile is modified.
+function Restart-Edge {
     $processes = Get-Process -Name 'msedge' -ErrorAction SilentlyContinue
-    if (-not $processes) {
-        Write-Host '    Edge is not running'
-        return
-    }
-    if (-not $PSCmdlet.ShouldProcess('msedge', "Stop $($processes.Count) process(es)")) {
-        return
-    }
+    if ($processes) {
+        if ($PSCmdlet.ShouldProcess('msedge', "Stop $($processes.Count) process(es)")) {
+            Write-Host "    stopping $($processes.Count) process(es)"
+            $processes | Stop-Process -Force -ErrorAction SilentlyContinue -WhatIf:$false
 
-    Write-Host "    stopping $($processes.Count) Edge process(es)"
-    $processes | Stop-Process -Force -ErrorAction SilentlyContinue -WhatIf:$false
-
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    while (Get-Process -Name 'msedge' -ErrorAction SilentlyContinue) {
-        if ($stopwatch.Elapsed.TotalSeconds -gt 30) {
-            throw 'Edge is still running after 30 seconds.'
-        }
-        Start-Sleep -Milliseconds 250
-    }
-    # Give Windows a moment to release the profile files.
-    Start-Sleep -Milliseconds 500
-}
-
-# Edge only replaces a force installed extension when its own update check runs,
-# which it delays and throttles. Dropping the installed copy makes the policy
-# install the current crx from scratch on the next start, keeping the same ID.
-function Remove-InstalledExtension([string]$ExtensionId) {
-    # Edge would rewrite the files being removed, so it is stopped first.
-    Stop-Edge
-
-    $userData = Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\User Data'
-    if (-not (Test-Path $userData)) {
-        Write-Warning "No Edge user data found at $userData"
-        return
-    }
-
-    $removed = 0
-    Get-ChildItem $userData -Directory -ErrorAction SilentlyContinue | ForEach-Object {
-        $installed = Join-Path $_.FullName "Extensions\$ExtensionId"
-        if (Test-Path $installed) {
-            if ($PSCmdlet.ShouldProcess($installed, 'Delete the installed extension')) {
-                Remove-Item -LiteralPath $installed -Recurse -Force -WhatIf:$false
-                Write-Host "    removed from profile $($_.Name)"
-                $removed++
+            $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (Get-Process -Name 'msedge' -ErrorAction SilentlyContinue) {
+                if ($stopwatch.Elapsed.TotalSeconds -gt 30) {
+                    throw 'Edge is still running after 30 seconds.'
+                }
+                Start-Sleep -Milliseconds 250
             }
         }
     }
-    if ($removed -eq 0) {
-        Write-Host '    nothing installed yet'
+    else {
+        Write-Host '    Edge was not running'
+    }
+
+    if ($PSCmdlet.ShouldProcess('Microsoft Edge', 'Start')) {
+        Start-Process -FilePath (Get-EdgePath) -WhatIf:$false | Out-Null
+        Write-Host '    started'
     }
 }
 
@@ -358,8 +332,16 @@ if ($Uninstall) {
         }
     }
 
-    Write-Host ''
-    Write-Host 'Restart Edge for the change to take effect.' -ForegroundColor Green
+    if ($RestartEdge) {
+        Write-Step 'Restarting Edge'
+        Restart-Edge
+        Write-Host ''
+        Write-Host 'Done.' -ForegroundColor Green
+    }
+    else {
+        Write-Host ''
+        Write-Host 'Restart Edge for the change to take effect.' -ForegroundColor Green
+    }
     return
 }
 
@@ -460,11 +442,6 @@ Write-Host "    $TestConfig"
 
 # --- registry ---------------------------------------------------------------
 
-if ($ForceReinstall) {
-    Write-Step 'Stopping Edge and dropping the copy it installed'
-    Remove-InstalledExtension $extensionId
-}
-
 Write-Step 'Registering the ExtensionInstallForcelist policy'
 $entry = "$extensionId;$(ConvertTo-FileUrl $UpdateXml)"
 $valueName = Get-ForcelistValueName $extensionId
@@ -503,22 +480,26 @@ if ($PSCmdlet.ShouldProcess("$OwnKey\Configfile", "Set to $TestConfig")) {
     Write-Host "    $TestConfig"
 }
 
+if ($RestartEdge) {
+    Write-Step 'Restarting Edge'
+    Restart-Edge
+}
+
 # --- done -------------------------------------------------------------------
 
 Write-Host ''
 Write-Host "Done. Packaged version $version" -ForegroundColor Green
 Write-Host ''
-if ($ForceReinstall) {
-    Write-Host 'Edge was stopped and its copy removed. Start Edge to install this build.'
+if (-not $RestartEdge) {
+    Write-Host 'Restart Edge so it sees the registrations, or pass -RestartEdge'
+    Write-Host 'to have this script do it.'
     Write-Host ''
 }
-else {
-    Write-Host 'Edge keeps the copy it already installed until its own update check'
-    Write-Host 'runs, which is delayed and throttled. To pick up this build reliably,'
-    Write-Host 'run (this terminates Edge):'
-    Write-Host '  .\tools\install-test-extension.ps1 -ForceReinstall'
-    Write-Host ''
-}
+Write-Host 'Restarting is not enough to pull in a rebuilt extension: Edge keeps'
+Write-Host 'the copy it installed until its own update check runs, which can take'
+Write-Host 'hours. To apply this build now, open edge://extensions, turn on'
+Write-Host 'Developer mode and press Update.'
+Write-Host ''
 Write-Host 'Then confirm on edge://extensions that the version reads'
 Write-Host "  $version"
 Write-Host 'If it still reads the old version, the running code is the old build.'
