@@ -240,7 +240,7 @@ SetupOutput\BrowserGuardSetup.exe /VERYSILENT
 この場合もポリシー登録は行われません。登録するには明示的に指定します。
 
 ```bash
-SetupOutput\BrowserGuardSetup.exe /VERYSILENT /TASKS="forcelist"
+SetupOutput\BrowserGuardSetup.exe /VERYSILENT /TASKS="extensionpolicy"
 ```
 
 ### 設定ファイル

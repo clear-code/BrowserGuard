@@ -46,7 +46,7 @@ Name: jp; MessagesFile: "compiler:Languages\Japanese.isl"
 [Tasks]
 ; 既定は OFF。グループポリシーで管理する運用を標準とし、
 ; レジストリ直接書き込みは明示的に選択した場合のみ行う。
-Name: "forcelist"; Description: "拡張機能を Edge のポリシーに登録して自動的にインストールする"; GroupDescription: "ブラウザー拡張機能:"; Flags: unchecked
+Name: "extensionpolicy"; Description: "拡張機能を Edge のポリシーに登録して自動的にインストールする"; GroupDescription: "ブラウザー拡張機能:"; Flags: unchecked
 
 
 [Files]
@@ -205,7 +205,7 @@ begin
   if CurStep = ssPostInstall then
   begin
     ExpandUpdateManifest();
-    if WizardIsTaskSelected('forcelist') then
+    if WizardIsTaskSelected('extensionpolicy') then
       RegisterExtensionSettings();
   end;
 end;
