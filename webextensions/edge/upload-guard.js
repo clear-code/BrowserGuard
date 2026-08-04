@@ -78,12 +78,8 @@ export const UploadGuard = {
         return null;
     },
 
-    isBlocked(file) {
-        return this.getBlockReason(file) !== null;
-    },
-
     onBeforeRequest(details) {
-        console.log('onBeforeRequest', details);
+        console.log('UploadGuard onBeforeRequest', details);
         if (!this.enabled) {
             return {};
         }
