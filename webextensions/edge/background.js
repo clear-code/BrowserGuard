@@ -30,14 +30,6 @@ chrome.runtime.onStartup.addListener(() => {
   StartupLauncher.onStartup.bind(StartupLauncher)();
 });
 
-chrome.runtime.onStartup.addListener(
-  ScriptExecutor.restoreIfNeeded.bind(ScriptExecutor)
-);
-
-chrome.runtime.onInstalled.addListener(
-  ScriptExecutor.restoreIfNeeded.bind(ScriptExecutor)
-);
-
 NetLogger.init();
 
 chrome.webNavigation.onCompleted.addListener(
