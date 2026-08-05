@@ -13,7 +13,7 @@ export const UploadFileBridge = {
   },
 
   async bridgeFile(path) {
-    const query = 'S ' + path;
+    const query = 'U ' + path;
     try {
       // sendNativeMessage only accepts an object, so the command is wrapped.
       const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, { message: query });

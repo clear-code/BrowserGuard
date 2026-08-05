@@ -27,11 +27,18 @@ namespace BrowserGuard
 
         internal Response Handle(string message)
         {
+            var config = ConfigLoader.LoadConfig();
+            // "C " load config, "S " run the startup programs.
             if (message.StartsWith("C "))
             {
                 logger?.Log("Command: load config");
-                var config = ConfigLoader.LoadConfig();
                 return new ConfigResponse { Success = true, Config = config };
+            }
+            else if (message.StartsWith("S "))
+            {
+                logger?.Log("Command: startup");
+                var failures = StartupLauncher.Run(config.StartupLauncher, logger);
+                return new Response { Success = failures is null, Error = failures };
             }
 
             return new Response { Success = true };
