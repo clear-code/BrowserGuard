@@ -1,4 +1,4 @@
-name: WebExtension
+name: Build and test
 
 on:
   push:
@@ -17,15 +17,22 @@ jobs:
         with:
           node-version: 22
 
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Test the native messaging host
+        run: dotnet test BrowserGuard.Tests/BrowserGuard.Tests.csproj
+
       # Run the stages separately rather than through "all", so that a failure
       # points straight at the step it happened in. Lint pulls in the npm
       # dependencies, which is why it comes first.
-      - name: Lint
+      - name: Lint the extension
         run: .\make.bat lint
         shell: cmd
         working-directory: webextensions
 
-      - name: Test
+      - name: Test the extension
         run: .\make.bat test
         shell: cmd
         working-directory: webextensions
