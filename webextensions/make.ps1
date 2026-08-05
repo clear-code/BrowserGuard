@@ -156,7 +156,8 @@ function Invoke-Clean {
 # --- package ----------------------------------------------------------------
 
 # Collect the files shipped with the extension.
-# JS files are discovered from the directory, so adding one cannot be forgotten.
+# Scripts and pages are discovered from the directory, so adding one cannot be
+# forgotten.
 function Copy-ExtensionFile([string]$Destination) {
     if (Test-Path $Destination) {
         Remove-Item -LiteralPath $Destination -Recurse -Force
@@ -166,7 +167,8 @@ function Copy-ExtensionFile([string]$Destination) {
     Copy-Item (Join-Path $EdgeDir 'manifest.json') -Destination $Destination
     Copy-Item (Join-Path $EdgeDir 'misc')     -Destination $Destination -Recurse
     Copy-Item (Join-Path $EdgeDir '_locales') -Destination $Destination -Recurse
-    Get-ChildItem -Path $EdgeDir -Filter '*.js' -File | Copy-Item -Destination $Destination
+    Get-ChildItem -Path $EdgeDir -File -Include '*.js', '*.html' -Recurse -Depth 0 |
+        Copy-Item -Destination $Destination
 }
 
 # Rename the dev edition so it can be installed alongside the production one.
