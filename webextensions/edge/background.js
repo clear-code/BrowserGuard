@@ -2,7 +2,6 @@
 
 import { UploadGuard } from './upload-guard.js';
 import { StartupLauncher } from './startup-launcher.js';
-import { ScriptExecutor } from './script-executor.js';
 import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
 import { SettingPageFilter } from './setting-page-filter.js';
