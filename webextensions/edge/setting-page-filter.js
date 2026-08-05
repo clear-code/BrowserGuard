@@ -3,11 +3,11 @@
 import { loadConfig } from './config-loader.js';
 
 export const SettingPageFilter = {
-  enabled: true,
+  enabled: false,
   notifyOnBlocked: true,
   blockedPrefixes: [
     'edge://settings',
-    'edge://extensions',
+    //'edge://extensions',
     'edge://flags',
     'edge://policy',
   ],
@@ -29,7 +29,6 @@ export const SettingPageFilter = {
     if (Array.isArray(settingPageFilter.BlockedPrefixes)) {
       this.blockedPrefixes = settingPageFilter.BlockedPrefixes;
     }
-
   },
 
   isBlockedUrl(url) {

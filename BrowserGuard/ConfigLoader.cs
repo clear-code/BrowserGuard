@@ -23,7 +23,6 @@ namespace BrowserGuard
         public SettingPageFilterConfig SettingPageFilter { get; set; } = new();
     }
 
-    // Records each kind of operation to the configured endpoint.
     internal class NetLoggerConfig
     {
         public bool Enabled { get; set; }
@@ -44,29 +43,21 @@ namespace BrowserGuard
     internal class UploadGuardConfig
     {
         public bool Enabled { get; set; }
-
-        // Rejected even when listed in AllowedExtensions.
         public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
-
-        // When not empty, the extension must appear here.
         public string[] AllowedExtensions { get; set; } = [];
-
-        // Regular expressions matched against the full local path of the file.
-        // When not empty, the path must match one of them.
         public string[] AllowedPaths { get; set; } = [];
-
-        // Regular expressions that exclude paths, including folders inside an
-        // otherwise allowed location.
         public string[] BlockedPaths { get; set; } = [];
     }
 
-    // Blocks navigation to the browser settings pages and similar URLs.
     internal class SettingPageFilterConfig
     {
         public bool Enabled { get; set; }
-
-        // Navigation is blocked when the URL starts with one of these.
-        public string[] BlockedPrefixes { get; set; } = ["edge://settings/"];
+        public bool NotifyOnBlocked { get; set; }
+        public string[] BlockedPrefixes { get; set; } = [
+                "edge://settings",
+                "edge://flags",
+                "edge://policy"
+            ];
     }
 
     internal static class ConfigLoader

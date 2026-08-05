@@ -39,10 +39,29 @@
   #url:empty {
     display: none;
   }
+  #back {
+    margin-top: 1.5rem;
+    padding: 0.5rem 1.5rem;
+    font: inherit;
+    color: #fff;
+    background: #0f6cbd;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #back:hover {
+    background: #115ea3;
+  }
+  #back:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
   @media (prefers-color-scheme: dark) {
     body { color: #e8eaed; background: #202124; }
     main { background: #292a2d; border-color: #5f6368; }
     #url { background: #35363a; }
+    #back { background: #4cabff; color: #202124; }
+    #back:hover { background: #6fbcff; }
   }
 </style>
 </head>
@@ -51,6 +70,7 @@
   <h1>アクセスがブロックされました</h1>
   <p>拡張機能のポリシーにより、このページは表示できません。</p>
   <span id="url"></span>
+  <div><button id="back" type="button">前のページに戻る</button></div>
 </main>
 <!-- The extension page CSP forbids inline scripts, so this lives in a file. -->
 <script src="blocked.js"></script>
