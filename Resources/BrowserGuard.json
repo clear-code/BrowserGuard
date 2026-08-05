@@ -25,5 +25,9 @@
       "edge://flags",
       "edge://policy"
     ]
+  },
+  "StartupLauncher": {
+    "Enabled": false,
+    "Programs": []
   }
 }

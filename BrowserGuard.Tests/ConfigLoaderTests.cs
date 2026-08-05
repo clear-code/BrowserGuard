@@ -84,6 +84,81 @@ namespace BrowserGuard.Tests
         }
 
         [Fact]
+        public void ParsesStartupPrograms()
+        {
+            var json = """
+            {
+              "StartupLauncher": {
+                "Enabled": true,
+                "Programs": [
+                  {
+                    "Path": "C:\\Program Files\\Contoso\\agent.exe",
+                    "Arguments": ["--mode", "kiosk"],
+                    "WorkingDirectory": "C:\\Program Files\\Contoso",
+                    "EnvironmentVariables": { "CONTOSO_PROFILE": "default", "LANG": "ja" },
+                    "TimeoutSeconds": 30,
+                    "Sha256": "abc123"
+                  },
+                  {
+                    "Path": "C:\\Tools\\notify.exe"
+                  }
+                ]
+              }
+            }
+            """;
+
+            var config = ConfigLoader.ParseConf(json);
+
+            Assert.True(config.StartupLauncher.Enabled);
+            Assert.Equal(2, config.StartupLauncher.Programs.Length);
+
+            var first = config.StartupLauncher.Programs[0];
+            Assert.Equal(@"C:\Program Files\Contoso\agent.exe", first.Path);
+            Assert.Equal(new[] { "--mode", "kiosk" }, first.Arguments);
+            Assert.Equal(@"C:\Program Files\Contoso", first.WorkingDirectory);
+            Assert.Equal("default", first.EnvironmentVariables["CONTOSO_PROFILE"]);
+            Assert.Equal("ja", first.EnvironmentVariables["LANG"]);
+            Assert.Equal(30, first.TimeoutSeconds);
+            Assert.Equal("abc123", first.Sha256);
+
+            // Everything but the path may be left out.
+            var second = config.StartupLauncher.Programs[1];
+            Assert.Equal(@"C:\Tools\notify.exe", second.Path);
+            Assert.Empty(second.Arguments);
+            Assert.Equal("", second.WorkingDirectory);
+            Assert.Empty(second.EnvironmentVariables);
+            Assert.Equal(0, second.TimeoutSeconds);
+            Assert.Equal("", second.Sha256);
+        }
+
+        // The files that ship with the installer have to stay loadable.
+        [Theory]
+        [InlineData("Resources/BrowserGuard.json")]
+        [InlineData("BrowserGuard/BrowserGuard.sample.json")]
+        public void ParsesTheShippedConfigFiles(string relativePath)
+        {
+            var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            var path = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Assert.True(File.Exists(path), $"not found: {path}");
+
+            var config = ConfigLoader.ParseConf(File.ReadAllText(path));
+
+            // A member that failed to bind would come back as the default, so a
+            // group is spot checked rather than only asserting no exception.
+            Assert.NotNull(config.StartupLauncher.Programs);
+            Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
+        }
+
+        [Fact]
+        public void StartupLauncherDefaultsToDisabledWithNoPrograms()
+        {
+            var config = ConfigLoader.ParseConf("{}");
+
+            Assert.False(config.StartupLauncher.Enabled);
+            Assert.Empty(config.StartupLauncher.Programs);
+        }
+
+        [Fact]
         public void OmittedGroupsFallBackToDefaults()
         {
             var json = """{ "NetLogger": { "Endpoint": "https://example.com/log" } }""";
@@ -95,7 +170,11 @@ namespace BrowserGuard.Tests
             Assert.False(config.UploadGuard.Enabled);
             Assert.Equal(new[] { ".exe", ".bat", ".cmd", ".js", ".vbs" }, config.UploadGuard.BlockedExtensions);
             Assert.False(config.SettingPageFilter.Enabled);
-            Assert.Equal(new[] { "edge://settings/" }, config.SettingPageFilter.BlockedPrefixes);
+            Assert.Equal(
+                new[] { "edge://settings", "edge://flags", "edge://policy" },
+                config.SettingPageFilter.BlockedPrefixes);
+            Assert.False(config.StartupLauncher.Enabled);
+            Assert.Empty(config.StartupLauncher.Programs);
         }
 
         [Fact]
