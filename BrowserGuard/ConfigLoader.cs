@@ -20,7 +20,7 @@ namespace BrowserGuard
     {
         public NetLoggerConfig NetLogger { get; set; } = new();
         public UploadGuardConfig UploadGuard { get; set; } = new();
-        public BlockSettingPageConfig BlockSettingPage { get; set; } = new();
+        public SettingPageFilterConfig SettingPageFilter { get; set; } = new();
     }
 
     // Records each kind of operation to the configured endpoint.
@@ -61,10 +61,12 @@ namespace BrowserGuard
     }
 
     // Blocks navigation to the browser settings pages and similar URLs.
-    internal class BlockSettingPageConfig
+    internal class SettingPageFilterConfig
     {
         public bool Enabled { get; set; }
-        public string[] UrlPrefixes { get; set; } = ["edge://settings/"];
+
+        // Navigation is blocked when the URL starts with one of these.
+        public string[] BlockedPrefixes { get; set; } = ["edge://settings/"];
     }
 
     internal static class ConfigLoader

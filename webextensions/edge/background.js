@@ -5,13 +5,13 @@ import { StartupLauncher } from './startup-launcher.js';
 import { ScriptExecutor } from './script-executor.js';
 import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
-import { BlockSettingPage } from './block-setting-page.js';
+import { SettingPageFilter } from './setting-page-filter.js';
 
 // The URL prefixes come from the config, so register without a filter and
 // decide inside the handler instead.
-BlockSettingPage.init();
+SettingPageFilter.init();
 chrome.webNavigation.onBeforeNavigate.addListener(
-  BlockSettingPage.onBeforeNavigate.bind(BlockSettingPage)
+  SettingPageFilter.onBeforeNavigate.bind(SettingPageFilter)
 );
 
 UploadGuard.init();

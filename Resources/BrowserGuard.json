@@ -16,8 +16,8 @@
     "AllowedPaths": [],
     "BlockedPaths": []
   },
-  "BlockSettingPage": {
+  "SettingPageFilter": {
     "Enabled": false,
-    "UrlPrefixes": ["edge://settings/"]
+    "BlockedPrefixes": ["edge://settings/"]
   }
 }

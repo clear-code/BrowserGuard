@@ -2,24 +2,28 @@
 
 import { loadConfig } from './config-loader.js';
 
-export const BlockSettingPage = {
+export const SettingPageFilter = {
   enabled: true,
-  urlPrefixes: ['edge://settings/'],
+  blockedPrefixes: ['edge://settings/'],
 
   async init() {
     const config = await loadConfig();
-    const blockSettingPage = config?.BlockSettingPage;
-    if (!blockSettingPage) return;
-    if (typeof blockSettingPage.Enabled === 'boolean') {
-      this.enabled = blockSettingPage.Enabled;
+    this.applyConfig(config?.SettingPageFilter);
+  },
+
+  // Separated from init so that it can be exercised without the browser.
+  applyConfig(settingPageFilter) {
+    if (!settingPageFilter) return;
+    if (typeof settingPageFilter.Enabled === 'boolean') {
+      this.enabled = settingPageFilter.Enabled;
     }
-    if (Array.isArray(blockSettingPage.UrlPrefixes)) {
-      this.urlPrefixes = blockSettingPage.UrlPrefixes;
+    if (Array.isArray(settingPageFilter.BlockedPrefixes)) {
+      this.blockedPrefixes = settingPageFilter.BlockedPrefixes;
     }
   },
 
   isBlockedUrl(url) {
-    return this.urlPrefixes.some(prefix => url.startsWith(prefix));
+    return this.blockedPrefixes.some(prefix => url.startsWith(prefix));
   },
 
   onBeforeNavigate(details) {

@@ -24,9 +24,9 @@ namespace BrowserGuard.Tests
                 "Enabled": false,
                 "BlockedExtensions": [".exe", ".zip"]
               },
-              "BlockSettingPage": {
+              "SettingPageFilter": {
                 "Enabled": true,
-                "UrlPrefixes": ["edge://settings/", "edge://flags/"]
+                "BlockedPrefixes": ["edge://settings/", "edge://flags/"]
               }
             }
             """;
@@ -41,8 +41,8 @@ namespace BrowserGuard.Tests
             Assert.False(config.UploadGuard.Enabled);
             Assert.Equal(new[] { ".exe", ".zip" }, config.UploadGuard.BlockedExtensions);
 
-            Assert.True(config.BlockSettingPage.Enabled);
-            Assert.Equal(new[] { "edge://settings/", "edge://flags/" }, config.BlockSettingPage.UrlPrefixes);
+            Assert.True(config.SettingPageFilter.Enabled);
+            Assert.Equal(new[] { "edge://settings/", "edge://flags/" }, config.SettingPageFilter.BlockedPrefixes);
         }
 
         [Fact]
@@ -94,8 +94,8 @@ namespace BrowserGuard.Tests
             // Groups that are absent keep their default values.
             Assert.False(config.UploadGuard.Enabled);
             Assert.Equal(new[] { ".exe", ".bat", ".cmd", ".js", ".vbs" }, config.UploadGuard.BlockedExtensions);
-            Assert.False(config.BlockSettingPage.Enabled);
-            Assert.Equal(new[] { "edge://settings/" }, config.BlockSettingPage.UrlPrefixes);
+            Assert.False(config.SettingPageFilter.Enabled);
+            Assert.Equal(new[] { "edge://settings/" }, config.SettingPageFilter.BlockedPrefixes);
         }
 
         [Fact]
