@@ -4,7 +4,13 @@ import { loadConfig } from './config-loader.js';
 
 export const SettingPageFilter = {
   enabled: true,
-  blockedPrefixes: ['edge://settings/'],
+  notifyOnBlocked: true,
+  blockedPrefixes: [
+    'edge://settings',
+    'edge://extensions',
+    'edge://flags',
+    'edge://policy',
+  ],
 
   async init() {
     const config = await loadConfig();
@@ -17,9 +23,13 @@ export const SettingPageFilter = {
     if (typeof settingPageFilter.Enabled === 'boolean') {
       this.enabled = settingPageFilter.Enabled;
     }
+    if (typeof settingPageFilter.NotifyOnBlocked === 'boolean') {
+      this.notifyOnBlocked = settingPageFilter.NotifyOnBlocked;
+    }
     if (Array.isArray(settingPageFilter.BlockedPrefixes)) {
       this.blockedPrefixes = settingPageFilter.BlockedPrefixes;
     }
+
   },
 
   isBlockedUrl(url) {
@@ -33,12 +43,14 @@ export const SettingPageFilter = {
     chrome.tabs.goBack(details.tabId).catch(() =>
       chrome.tabs.update(details.tabId, { url: 'about:blank' })
     );
-    chrome.notifications.create('settings-blocked', {
-      type: 'basic',
-      iconUrl: 'misc/128x128.png',
-      title: '設定画面へのアクセスはブロックされています',
-      message: '拡張機能のポリシーにより edge://settings/ は表示できません。',
-    });
+    if (this.notifyOnBlocked) {
+      chrome.notifications.create('settings-blocked', {
+        type: 'basic',
+        iconUrl: 'misc/128x128.png',
+        title: '設定画面へのアクセスはブロックされています',
+        message: `拡張機能のポリシーにより ${details.url} は表示できません。`,
+      });
+    }
   },
 }
 

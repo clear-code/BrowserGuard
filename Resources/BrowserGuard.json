@@ -18,6 +18,12 @@
   },
   "SettingPageFilter": {
     "Enabled": false,
-    "BlockedPrefixes": ["edge://settings/"]
+    "NotifyOnBlocked": true,
+    "BlockedPrefixes": [
+      "edge://settings",
+      "edge://extensions",
+      "edge://flags",
+      "edge://policy"
+    ]
   }
 }
