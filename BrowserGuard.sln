@@ -7,6 +7,10 @@ Project("{404DD7B1-9623-42CB-8504-B9700DC52753}") = "BrowserGuard", "BrowserGuar
 EndProject
 Project("{404DD7B1-9623-42CB-8504-B9700DC52753}") = "BrowserGuard.Tests", "BrowserGuard.Tests\BrowserGuard.Tests.csproj", "{CF8CEA51-3C8A-43B2-B6ED-07D74AD4ED59}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnvDump", "tools\EnvDump\EnvDump.csproj", "{1914AF6E-425F-446E-8F95-1102B33E2A17}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,9 +45,24 @@ Global
 		{CF8CEA51-3C8A-43B2-B6ED-07D74AD4ED59}.Release|x64.Build.0 = Release|Any CPU
 		{CF8CEA51-3C8A-43B2-B6ED-07D74AD4ED59}.Release|x86.ActiveCfg = Release|Any CPU
 		{CF8CEA51-3C8A-43B2-B6ED-07D74AD4ED59}.Release|x86.Build.0 = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|x64.Build.0 = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Debug|x86.Build.0 = Debug|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|x64.ActiveCfg = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|x64.Build.0 = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|x86.ActiveCfg = Release|Any CPU
+		{1914AF6E-425F-446E-8F95-1102B33E2A17}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1914AF6E-425F-446E-8F95-1102B33E2A17} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CFE10506-DF38-4A2A-83BA-5115D7FC91FF}

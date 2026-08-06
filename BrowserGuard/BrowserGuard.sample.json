@@ -1,0 +1,36 @@
+{
+  "NetLogger": {
+    "Enabled": false,
+    "Endpoint": "",
+    "UrlAccess": false,
+    "Browsing": false,
+    "Upload": false,
+    "Download": false,
+    "Auth": false,
+    "Print": false
+  },
+  "UploadGuard": {
+    "Enabled": false,
+    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
+    "AllowedExtensions": [".pdf", ".docx", ".xlsx"],
+    "AllowedPaths": ["^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\", "^D:\\\\Share\\\\"],
+    "BlockedPaths": ["\\\\Confidential\\\\"]
+  },
+  "SettingPageFilter": {
+    "Enabled": false,
+    "NotifyOnBlocked": true,
+    "BlockedPrefixes": ["edge://settings/"]
+  },
+  "StartupLauncher": {
+    "Enabled": false,
+    "Programs": [
+      {
+        "Path": "C:\\Tools\\EnvDump.exe",
+        "Arguments": [],
+        "WorkingDirectory": "C:\\Temp\\envdump",
+        "EnvironmentVariables": { "BROWSERGUARD_STARTUP_TEST": "from-config" },
+        "Sha256": ""
+      }
+    ]
+  }
+}

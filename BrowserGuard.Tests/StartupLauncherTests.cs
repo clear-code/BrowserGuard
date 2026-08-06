@@ -16,7 +16,7 @@ namespace BrowserGuard.Tests
 
         public StartupLauncherTests()
         {
-            tempDir = Path.Combine(Path.GetTempPath(), "bg-startup-" + Guid.NewGuid().ToString("N"));
+            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-startup-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
         }
 
@@ -111,7 +111,7 @@ namespace BrowserGuard.Tests
                 Path = cmd,
                 Arguments = ["/c", "echo hello world"],
                 WorkingDirectory = tempDir,
-                EnvironmentVariables = new Dictionary<string, string> { ["BG_TEST"] = "1" },
+                EnvironmentVariables = new Dictionary<string, string> { ["BROWSERGUARD_TEST"] = "1" },
             };
 
             var info = StartupLauncher.BuildStartInfo(program);
@@ -119,7 +119,7 @@ namespace BrowserGuard.Tests
             Assert.Equal(cmd, info.FileName);
             Assert.Equal(["/c", "echo hello world"], info.ArgumentList);
             Assert.Equal(tempDir, info.WorkingDirectory);
-            Assert.Equal("1", info.Environment["BG_TEST"]);
+            Assert.Equal("1", info.Environment["BROWSERGUARD_TEST"]);
             // Required for the environment to be handed to the child.
             Assert.False(info.UseShellExecute);
         }
@@ -167,8 +167,8 @@ namespace BrowserGuard.Tests
         public void PassesTheEnvironmentToTheProgram()
         {
             var marker = Path.Combine(tempDir, "env.txt");
-            var program = BatchProgram("env.bat", "@echo %BG_TEST% > env.txt");
-            program.EnvironmentVariables = new Dictionary<string, string> { ["BG_TEST"] = "from-config" };
+            var program = BatchProgram("env.bat", "@echo %BROWSERGUARD_TEST% > env.txt");
+            program.EnvironmentVariables = new Dictionary<string, string> { ["BROWSERGUARD_TEST"] = "from-config" };
             var config = new StartupLauncherConfig { Enabled = true, Programs = [program] };
 
             Assert.Null(StartupLauncher.Run(config));
