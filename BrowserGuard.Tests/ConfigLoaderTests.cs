@@ -96,7 +96,6 @@ namespace BrowserGuard.Tests
                     "Arguments": ["--mode", "kiosk"],
                     "WorkingDirectory": "C:\\Program Files\\Contoso",
                     "EnvironmentVariables": { "CONTOSO_PROFILE": "default", "LANG": "ja" },
-                    "TimeoutSeconds": 30,
                     "Sha256": "abc123"
                   },
                   {
@@ -118,7 +117,6 @@ namespace BrowserGuard.Tests
             Assert.Equal(@"C:\Program Files\Contoso", first.WorkingDirectory);
             Assert.Equal("default", first.EnvironmentVariables["CONTOSO_PROFILE"]);
             Assert.Equal("ja", first.EnvironmentVariables["LANG"]);
-            Assert.Equal(30, first.TimeoutSeconds);
             Assert.Equal("abc123", first.Sha256);
 
             // Everything but the path may be left out.
@@ -127,7 +125,6 @@ namespace BrowserGuard.Tests
             Assert.Empty(second.Arguments);
             Assert.Equal("", second.WorkingDirectory);
             Assert.Empty(second.EnvironmentVariables);
-            Assert.Equal(0, second.TimeoutSeconds);
             Assert.Equal("", second.Sha256);
         }
 

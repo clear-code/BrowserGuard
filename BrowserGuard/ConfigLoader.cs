@@ -74,7 +74,6 @@ namespace BrowserGuard
         public string[] Arguments { get; set; } = [];
         public string WorkingDirectory { get; set; } = "";
         public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
-        public int TimeoutSeconds { get; set; }
         public string Sha256 { get; set; } = "";
     }
 

@@ -19,7 +19,7 @@ namespace BrowserGuard
             var failures = new List<string>();
             foreach (var program in config.Programs)
             {
-                var failure = Start(program, logger);
+                var failure = Start(program);
                 if (failure is not null)
                 {
                     logger?.Log($"StartupLauncher: {failure}");
@@ -34,7 +34,7 @@ namespace BrowserGuard
             return failures.Count == 0 ? null : string.Join("; ", failures);
         }
 
-        private static string? Start(StartupProgramConfig program, Logger? logger)
+        private static string? Start(StartupProgramConfig program)
         {
             var rejection = Verify(program);
             if (rejection is not null)
@@ -46,7 +46,7 @@ namespace BrowserGuard
             {
                 using var process = Process.Start(BuildStartInfo(program))
                     ?? throw new InvalidOperationException("no process was started");
-                return WaitUntilStarted(process, program, logger);
+                return null;
             }
             catch (Exception ex)
             {
@@ -105,37 +105,6 @@ namespace BrowserGuard
             }
 
             return info;
-        }
-
-
-        /// <summary>
-        /// Wait until the program is ready to receive input, or until the timeout expires.
-        /// TimeoutSeconds bounds how long we wait for the program to finish starting, not how long it may run. 
-        /// </summary>
-        /// <param name="process"></param>
-        /// <param name="program"></param>
-        /// <param name="logger"></param>
-        /// <returns></returns>
-        private static string? WaitUntilStarted(Process process, StartupProgramConfig program, Logger? logger)
-        {
-            if (program.TimeoutSeconds <= 0)
-            {
-                return null;
-            }
-
-            try
-            {
-                if (!process.WaitForInputIdle(program.TimeoutSeconds * 1000))
-                {
-                    return $"{program.Path}: still not ready after {program.TimeoutSeconds}s";
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                // No message loop, so there is no idle state to wait for.
-                logger?.Log($"StartupLauncher: {program.Path} has no UI, not waiting");
-            }
-            return null;
         }
     }
 }
