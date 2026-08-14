@@ -26,14 +26,14 @@ namespace BrowserGuard
 
         // The logging configuration can be handed in so that it does not have to
         // be found through the registry.
-        internal MessageHandler(Logger? logger = null, NetLogFileConfig? netLogConfig = null)
+        internal MessageHandler(Logger? logger = null, NetLoggerConfig? netLoggerConfig = null)
         {
             this.logger = logger;
-            if (netLogConfig is null)
+            if (netLoggerConfig is null)
             {
                 return;
             }
-            netLog = Create(netLogConfig);
+            netLog = Create(netLoggerConfig);
             netLogResolved = true;
         }
 
@@ -91,18 +91,20 @@ namespace BrowserGuard
                 return netLog;
             }
             netLogResolved = true;
-            netLog = Create(ConfigLoader.LoadConfig().NetLogger.LocalFile);
+            netLog = Create(ConfigLoader.LoadConfig().NetLogger);
             return netLog;
         }
 
-        private NetLogWriter? Create(NetLogFileConfig config)
+        // Both switches have to be on: NetLogger turns the whole feature off,
+        // LocalFile only the copy kept on this machine.
+        private NetLogWriter? Create(NetLoggerConfig config)
         {
-            if (!config.Enabled)
+            if (!config.Enabled || !config.LocalFile.Enabled)
             {
                 logger?.Log("Command: log entry, but local logging is disabled");
                 return null;
             }
-            var writer = new NetLogWriter(config, logger);
+            var writer = new NetLogWriter(config.LocalFile, logger);
             logger?.Log($"Command: log entry, writing to {writer.FilePath}");
             return writer;
         }

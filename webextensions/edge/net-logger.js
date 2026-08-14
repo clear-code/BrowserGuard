@@ -1,6 +1,7 @@
 'use strict';
 
 import { loadConfig } from './config-loader.js';
+import { NetLogPort } from './net-log-port.js';
 
 export const NetLogger = {
   init() {
@@ -15,11 +16,34 @@ export const NetLogger = {
           `${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
   },
 
+  // Where an entry should go, or null when it should not be recorded at all.
+  // The two destinations are independent, so either one on its own is enough.
+  _targets(netLogger) {
+    if (!netLogger?.Enabled) return null;
+    if (!netLogger.MachineName || !netLogger.UserName) return null;
+    const endpoint = Boolean(netLogger.Endpoint);
+    const localFile = Boolean(netLogger.LocalFile?.Enabled);
+    if (!endpoint && !localFile) return null;
+    return { endpoint, localFile };
+  },
+
   async _getConfig() {
     const config = await loadConfig();
     const netLogger = config?.NetLogger;
-    if (!netLogger?.Endpoint || !netLogger?.MachineName || !netLogger?.UserName) return null;
-    return netLogger;
+    return this._targets(netLogger) ? netLogger : null;
+  },
+
+  async _send(config, payload) {
+    const targets = this._targets(config);
+    if (!targets) return;
+    if (targets.endpoint) await this.sendToEndpoint(config.Endpoint, payload);
+    // Not awaited: the port is fire and forget, and the host answers only on
+    // a failure.
+    if (targets.localFile) this.sendToHost(payload);
+  },
+
+  sendToHost(payload) {
+    NetLogPort.send(payload);
   },
 
   _buildPayload(config, operation, name, url, timestamp) {
@@ -64,7 +88,7 @@ export const NetLogger = {
       }
       for (const part of details.requestBody.raw) {
         if (part.file) {
-          await this.sendToEndpoint(config.Endpoint,
+          await this._send(config,
             this._buildPayload(config, 'upload',
               part.file.split(/[/\\]/).pop() || '',
               uploadUrl,
@@ -74,7 +98,7 @@ export const NetLogger = {
     }
 
     if (config.UrlAccess && (url.protocol === 'http:' || url.protocol === 'https:')) {
-      await this.sendToEndpoint(config.Endpoint,
+      await this._send(config,
         this._buildPayload(config, 'urlaccess',
           url.hostname,
           url.href,
@@ -98,7 +122,7 @@ export const NetLogger = {
 
     if (config.Browsing) {
       const tab = await chrome.tabs.get(details.tabId);
-      await this.sendToEndpoint(config.Endpoint,
+      await this._send(config,
         this._buildPayload(config, 'browsing',
           tab.title || url.hostname,
           url.href,
@@ -111,7 +135,7 @@ export const NetLogger = {
     if (!config) return;
 
     if (config.Print) {
-      await this.sendToEndpoint(config.Endpoint,
+      await this._send(config,
         this._buildPayload(config, 'print',
           msg.title || '',
           msg.url,
@@ -124,7 +148,7 @@ export const NetLogger = {
     if (!config) return;
 
     if (config.Auth) {
-      await this.sendToEndpoint(config.Endpoint,
+      await this._send(config,
         this._buildPayload(config, 'auth',
           details.scheme || '',
           details.url,
@@ -142,7 +166,7 @@ export const NetLogger = {
     if (!item) return;
 
     if (config.Download) {
-      await this.sendToEndpoint(config.Endpoint,
+      await this._send(config,
         this._buildPayload(config, 'download',
           item.filename || '',
           item.url || '',
