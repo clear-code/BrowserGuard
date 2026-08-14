@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Threading;
 
 namespace BrowserGuard
@@ -28,13 +26,6 @@ namespace BrowserGuard
         private const int WriteAttempts = 10;
         private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(50);
 
-        // The log is read back as text, so the escaping is relaxed to leave
-        // Japanese page titles legible rather than as \uXXXX escapes.
-        private static readonly JsonSerializerOptions WriteOptions = new()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        };
-
         private readonly object gate = new();
         private readonly string directory;
         private readonly long maxSize;
@@ -59,26 +50,10 @@ namespace BrowserGuard
 
         internal string FilePath => GenerationPath(0);
 
-        // null when the entry was written, otherwise why it was not.
-        internal string? Write(string entry)
+        // Takes an entry already checked and put on one line by NetLogEntry.
+        // null when it was written, otherwise why it was not.
+        internal string? Write(string line)
         {
-            string line;
-            try
-            {
-                using var document = JsonDocument.Parse(entry);
-                if (document.RootElement.ValueKind != JsonValueKind.Object)
-                {
-                    return "entry is not a JSON object";
-                }
-                // Reserializing puts the entry on a single line whatever the
-                // sender did with its whitespace.
-                line = JsonSerializer.Serialize(document.RootElement, WriteOptions);
-            }
-            catch (JsonException ex)
-            {
-                return $"entry is not valid JSON: {ex.Message}";
-            }
-
             lock (gate)
             {
                 try
