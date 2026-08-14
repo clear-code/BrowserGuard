@@ -32,5 +32,18 @@
         "Sha256": ""
       }
     ]
+  },
+  "UsageTimeLimit": {
+    "Enabled": false,
+    "MaxContinuousMinutes": 240,
+    "AllowedTimeRanges": [
+      { "Start": "09:00", "End": "12:00" },
+      { "Start": "13:00", "End": "18:00" }
+    ],
+    "OnExceeded": {
+      "Action": "Terminate",
+      "GraceSeconds": 60,
+      "ReWarnIntervalMinutes": 10
+    }
   }
 }

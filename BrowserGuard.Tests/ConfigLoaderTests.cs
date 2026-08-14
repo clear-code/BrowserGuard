@@ -144,6 +144,53 @@ namespace BrowserGuard.Tests
             // group is spot checked rather than only asserting no exception.
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
+            Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
+            Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
+        }
+
+        [Fact]
+        public void ReadsTheUsageTimeLimit()
+        {
+            var json = """
+            {
+              "UsageTimeLimit": {
+                "Enabled": true,
+                "MaxContinuousMinutes": 240,
+                "AllowedTimeRanges": [
+                  { "Start": "09:00", "End": "12:00" },
+                  { "Start": "13:00", "End": "18:00" }
+                ],
+                "OnExceeded": {
+                  "Action": "Terminate",
+                  "GraceSeconds": 90,
+                  "ReWarnIntervalMinutes": 5
+                }
+              }
+            }
+            """;
+
+            var config = ConfigLoader.ParseConf(json);
+
+            Assert.True(config.UsageTimeLimit.Enabled);
+            Assert.Equal(240, config.UsageTimeLimit.MaxContinuousMinutes);
+            Assert.Equal(2, config.UsageTimeLimit.AllowedTimeRanges.Length);
+            Assert.Equal("09:00", config.UsageTimeLimit.AllowedTimeRanges[0].Start);
+            Assert.Equal("18:00", config.UsageTimeLimit.AllowedTimeRanges[1].End);
+            Assert.Equal("Terminate", config.UsageTimeLimit.OnExceeded.Action);
+            Assert.Equal(90, config.UsageTimeLimit.OnExceeded.GraceSeconds);
+            Assert.Equal(5, config.UsageTimeLimit.OnExceeded.ReWarnIntervalMinutes);
+        }
+
+        // Nothing may start closing the browser unless it was asked for.
+        [Fact]
+        public void UsageTimeLimitDefaultsToDisabledAndWarningOnly()
+        {
+            var config = ConfigLoader.ParseConf("{}");
+
+            Assert.False(config.UsageTimeLimit.Enabled);
+            Assert.Equal(0, config.UsageTimeLimit.MaxContinuousMinutes);
+            Assert.Empty(config.UsageTimeLimit.AllowedTimeRanges);
+            Assert.Equal("WarnOnly", config.UsageTimeLimit.OnExceeded.Action);
         }
 
         [Fact]

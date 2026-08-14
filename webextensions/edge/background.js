@@ -5,6 +5,7 @@ import { StartupLauncher } from './startup-launcher.js';
 import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
 import { SettingPageFilter } from './setting-page-filter.js';
+import { UsageTimeLimit } from './usage-time-limit.js';
 
 // The URL prefixes come from the config, so register without a filter and
 // decide inside the handler instead.
@@ -28,6 +29,16 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 chrome.runtime.onStartup.addListener(() => {
   StartupLauncher.onStartup.bind(StartupLauncher)();
+  UsageTimeLimit.onStartup();
+});
+
+// The service worker is unloaded when idle, so the limits are re-evaluated
+// from stored state on an alarm rather than from a timer held in memory.
+UsageTimeLimit.init();
+
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name !== UsageTimeLimit.ALARM_NAME) return;
+  UsageTimeLimit.check();
 });
 
 NetLogger.init();
@@ -49,6 +60,9 @@ chrome.downloads.onChanged.addListener(
 chrome.runtime.onMessage.addListener((msg, _sender) => {
   if (msg.type === 'print') {
     NetLogger.onPrint(msg);
+  }
+  if (msg.type === 'usage-time-limit:expired') {
+    UsageTimeLimit.onDeadlineReached();
   }
 });
 

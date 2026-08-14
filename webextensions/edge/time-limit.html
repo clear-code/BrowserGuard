@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>使用時間の制限</title>
+<style>
+  body {
+    margin: 0;
+    padding: 3rem 1.5rem;
+    font-family: "Segoe UI", "Meiryo", sans-serif;
+    color: #202124;
+    background: #f8f9fa;
+  }
+  main {
+    max-width: 34rem;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 2rem;
+  }
+  h1 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+  }
+  p {
+    margin: 0 0 1rem;
+    line-height: 1.7;
+  }
+  #countdown {
+    display: block;
+    padding: 0.75rem;
+    background: #fce8e6;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #a50e0e;
+  }
+  #countdown:empty {
+    display: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8eaed; background: #202124; }
+    main { background: #292a2d; border-color: #5f6368; }
+    #countdown { background: #3f2422; color: #f6aea9; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>使用時間の制限</h1>
+  <p id="reason"></p>
+  <span id="countdown"></span>
+  <p id="note"></p>
+</main>
+<!-- The extension page CSP forbids inline scripts, so this lives in a file. -->
+<script src="time-limit.js"></script>
+</body>
+</html>

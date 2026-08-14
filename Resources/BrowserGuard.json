@@ -29,5 +29,15 @@
   "StartupLauncher": {
     "Enabled": false,
     "Programs": []
+  },
+  "UsageTimeLimit": {
+    "Enabled": false,
+    "MaxContinuousMinutes": 0,
+    "AllowedTimeRanges": [],
+    "OnExceeded": {
+      "Action": "WarnOnly",
+      "GraceSeconds": 60,
+      "ReWarnIntervalMinutes": 10
+    }
   }
 }

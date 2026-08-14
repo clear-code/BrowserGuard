@@ -12,7 +12,8 @@
 		"notifications",
 		"nativeMessaging",
 		"userScripts",
-		"storage"
+		"storage",
+		"alarms"
 	],
 	"host_permissions": [
 		"<all_urls>"
