@@ -1,39 +1,49 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace BrowserGuard
 {
     internal class Logger
     {
-        private static readonly int MaxGeneration = 10;
+        private const int MaxGeneration = 10;
 
-        private static readonly long MaxLogSize = 10 * 1024 * 1024;
+        private const long DefaultMaxLogSize = 10 * 1024 * 1024;
 
-        private static readonly object LockObject = new object();
+        private const string LogFileNameBase = "BrowserGuard";
 
-        private StreamWriter LogStream { get; set; }
+        // The browser starts a host process per message, and a long lived one
+        // once a port is opened, so several of them write here at the same time.
+        // The file is therefore opened only for the moment of the write, and
+        // this mutex keeps a rotation from happening underneath another writer.
+        private static readonly Mutex FileMutex = new(false, @"Local\BrowserGuard.Logger");
 
-        private string FilePath { get; set; } = "";
+        private static readonly TimeSpan MutexTimeout = TimeSpan.FromSeconds(5);
 
-        private string LogFileNameBase { get; } = "BrowserGuard";
+        private readonly long maxLogSize;
+
+        private string FilePath { get; } = "";
+
+        private string LogDirectory { get; } = "";
 
         private bool EnableLogging { get; }
 
         internal void Log(string message) => NoException(() => LogImpl(message));
         internal void Log(Exception e) => NoException(() => LogImpl(e));
 
-        internal Logger()
+        internal Logger() : this(DefaultDirectory()) { }
+
+        // The directory and the size are arguments so that the rotation can be
+        // exercised without writing to the real log.
+        internal Logger(string directory, long maxLogSize = DefaultMaxLogSize)
         {
+            this.maxLogSize = maxLogSize;
             EnableLogging = false;
             try
             {
-                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var logDirectory = Path.Combine(appDataPath, "BrowserGuard");
-                if (!Directory.Exists(logDirectory))
-                {
-                    Directory.CreateDirectory(logDirectory);
-                }
-                FilePath = Path.Combine(logDirectory, $"{LogFileNameBase}.log");
+                System.IO.Directory.CreateDirectory(directory);
+                LogDirectory = directory;
+                FilePath = Path.Combine(directory, $"{LogFileNameBase}.log");
                 EnableLogging = true;
             }
             catch
@@ -41,6 +51,11 @@ namespace BrowserGuard
                 // ログ出力できないが、全体の処理は続行する。
             }
         }
+
+        private static string DefaultDirectory() =>
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "BrowserGuard");
 
         private void NoException(Action func)
         {
@@ -53,12 +68,7 @@ namespace BrowserGuard
             {
                 return;
             }
-            lock (LockObject)
-            {
-                RotateIfNeed();
-                LogStream.WriteLine($"{GetTimestamp()} : {message}");
-                LogStream.Flush();
-            }
+            Write($"{GetTimestamp()} : {message}");
         }
 
         private void LogImpl(Exception e)
@@ -70,70 +80,76 @@ namespace BrowserGuard
             LogImpl(e.ToString());
         }
 
+        private void Write(string line)
+        {
+            var held = false;
+            try
+            {
+                try
+                {
+                    held = FileMutex.WaitOne(MutexTimeout);
+                }
+                catch (AbandonedMutexException)
+                {
+                    // A host process died holding it; the file itself is fine.
+                    held = true;
+                }
+
+                RotateIfNeeded();
+                // Sharing the file is what lets the other host processes keep
+                // logging while a port is open.
+                using var stream = new FileStream(
+                    FilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine(line);
+            }
+            finally
+            {
+                if (held)
+                {
+                    FileMutex.ReleaseMutex();
+                }
+            }
+        }
+
         private string GetTimestamp()
         {
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
-        private void RotateIfNeed()
+        private void RotateIfNeeded()
         {
-            if (!File.Exists(FilePath))
-            {
-                LogStream?.Close();
-                LogStream = null;
-            }
-
-            if (LogStream is null)
-            {
-                var fileStream = new FileStream(FilePath, FileMode.OpenOrCreate);
-                fileStream.Seek(0, SeekOrigin.End);
-                LogStream = new StreamWriter(fileStream);
-            }
-
-            var fi = new FileInfo(FilePath);
-            if (fi.Length > MaxLogSize)
+            var info = new FileInfo(FilePath);
+            if (info.Exists && info.Length > maxLogSize)
             {
                 Rotate();
             }
         }
 
+        // The generations live beside the log itself. Reading them from
+        // somewhere else would find nothing to move and then truncate the log.
         private void Rotate()
         {
-            lock (LockObject)
+            var oldest = GenerationPath(MaxGeneration);
+            if (File.Exists(oldest))
             {
-                LogStream?.Close();
+                File.Delete(oldest);
+            }
 
-                string previousFileName;
-                string previousFilePath;
-                string rotatedFileName;
-                string rotatedFilePath;
-                string userDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                for (int i = MaxGeneration - 1; i >= 0; i--)
+            for (var i = MaxGeneration - 1; i >= 0; i--)
+            {
+                var from = GenerationPath(i);
+                if (!File.Exists(from))
                 {
-                    if (i > 0)
-                    {
-                        previousFileName = $"{LogFileNameBase}_{i}.log";
-                    }
-                    else
-                    {
-                        previousFileName = $"{LogFileNameBase}.log";
-                    }
-
-                    previousFilePath = Path.Combine(userDir, previousFileName);
-
-                    if (!File.Exists(previousFilePath))
-                    {
-                        continue;
-                    }
-                    rotatedFileName = $"{LogFileNameBase}_{i + 1}.log";
-                    rotatedFilePath = Path.Combine(userDir, rotatedFileName);
-
-                    File.Copy(previousFilePath, rotatedFilePath, true);
-                    File.Delete(previousFilePath);
+                    continue;
                 }
-
-                LogStream = new StreamWriter(new FileStream(FilePath, FileMode.Create));
+                File.Move(from, GenerationPath(i + 1), true);
             }
         }
+
+        private string GenerationPath(int generation) =>
+            Path.Combine(LogDirectory, generation == 0
+                ? $"{LogFileNameBase}.log"
+                : $"{LogFileNameBase}_{generation}.log");
     }
 }
