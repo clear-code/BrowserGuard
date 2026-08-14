@@ -24,8 +24,12 @@ namespace BrowserGuard.Tests
 
         // The configuration is handed in so the test does not go through the
         // registry to find out where it lives.
-        MessageHandler Handler(bool enabled = true) =>
-            new(null, new NetLogFileConfig { Enabled = enabled, Directory = tempDir });
+        MessageHandler Handler(bool enabled = true, bool localFile = true) =>
+            new(null, new NetLoggerConfig
+            {
+                Enabled = enabled,
+                LocalFile = new NetLogFileConfig { Enabled = localFile, Directory = tempDir },
+            });
 
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
 
@@ -72,7 +76,18 @@ namespace BrowserGuard.Tests
         [Fact]
         public void StaysSilentWhenLocalLoggingIsTurnedOff()
         {
-            var handler = Handler(enabled: false);
+            var handler = Handler(localFile: false);
+
+            Assert.Null(handler.Handle("L " + Entry));
+
+            Assert.False(File.Exists(LogPath));
+        }
+
+        // NetLogger turns the whole feature off, whatever LocalFile says.
+        [Fact]
+        public void StaysSilentWhenTheWholeLoggerIsTurnedOff()
+        {
+            var handler = Handler(enabled: false, localFile: true);
 
             Assert.Null(handler.Handle("L " + Entry));
 
