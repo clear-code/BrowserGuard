@@ -7,7 +7,13 @@
     "Upload": false,
     "Download": false,
     "Auth": false,
-    "Print": false
+    "Print": false,
+    "LocalFile": {
+      "Enabled": false,
+      "Directory": "",
+      "MaxSizeMB": 10,
+      "MaxGenerations": 10
+    }
   },
   "UploadGuard": {
     "Enabled": false,
