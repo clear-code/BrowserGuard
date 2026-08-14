@@ -36,6 +36,18 @@ namespace BrowserGuard
         public bool Print { get; set; }
         public string UserName { get; set; } = Environment.UserName;
         public string MachineName { get; set; } = Environment.MachineName;
+        public NetLogFileConfig LocalFile { get; set; } = new();
+    }
+
+    // Keeping the log on this machine, as one JSON object per line.
+    internal class NetLogFileConfig
+    {
+        public bool Enabled { get; set; }
+        // Empty means %ProgramData%\BrowserGuard\netlog.
+        public string Directory { get; set; } = "";
+        public int MaxSizeMB { get; set; } = 10;
+        // How many rotated files are kept. 0 discards the log instead.
+        public int MaxGenerations { get; set; } = 10;
     }
 
     // Controls which local files may be uploaded.

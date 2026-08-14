@@ -7,7 +7,13 @@
     "Upload": false,
     "Download": false,
     "Auth": false,
-    "Print": false
+    "Print": false,
+    "LocalFile": {
+      "Enabled": true,
+      "Directory": "C:\\ProgramData\\BrowserGuard\\netlog",
+      "MaxSizeMB": 10,
+      "MaxGenerations": 10
+    }
   },
   "UploadGuard": {
     "Enabled": false,
