@@ -17,11 +17,12 @@ namespace BrowserGuard
         public Config? Config { get; set; }
     }
 
-    internal class MessageHandler
+    internal class MessageHandler : IDisposable
     {
         private readonly Logger? logger;
 
-        private NetLogWriter? netLog;
+        private NetLogWriter? netLogFile;
+        private NetLogSender? netLogSender;
         private bool netLogResolved;
 
         // The logging configuration can be handed in so that it does not have to
@@ -33,8 +34,7 @@ namespace BrowserGuard
             {
                 return;
             }
-            netLog = Create(netLoggerConfig);
-            netLogResolved = true;
+            ResolveNetLog(netLoggerConfig);
         }
 
         // null means nothing is sent back to the browser. Log entries arrive for
@@ -69,13 +69,25 @@ namespace BrowserGuard
 
         private Response? HandleLogEntry(string entry)
         {
-            var writer = NetLog();
-            if (writer is null)
+            ResolveNetLog();
+            if (netLogFile is null && netLogSender is null)
             {
                 return null;
             }
 
-            var failure = writer.Write(entry);
+            // Checked once here, so that both destinations are handed the same
+            // single line and a bad entry is refused before either sees it.
+            var rejection = NetLogEntry.Compact(entry, out var line);
+            if (rejection is not null)
+            {
+                return new Response { Success = false, Error = rejection };
+            }
+
+            // The collector is best effort; only the file reports a failure,
+            // because that is the copy the entry was meant to survive in.
+            netLogSender?.Enqueue(line);
+
+            var failure = netLogFile?.Write(line);
             if (failure is null)
             {
                 return null;
@@ -84,29 +96,38 @@ namespace BrowserGuard
         }
 
         // Read once and remembered, including the decision not to log at all.
-        private NetLogWriter? NetLog()
+        private void ResolveNetLog()
         {
             if (netLogResolved)
             {
-                return netLog;
+                return;
             }
-            netLogResolved = true;
-            netLog = Create(ConfigLoader.LoadConfig().NetLogger);
-            return netLog;
+            ResolveNetLog(ConfigLoader.LoadConfig().NetLogger);
         }
 
-        // Both switches have to be on: NetLogger turns the whole feature off,
-        // LocalFile only the copy kept on this machine.
-        private NetLogWriter? Create(NetLoggerConfig config)
+        // NetLogger turns the whole feature off; the two destinations are
+        // independent of each other below that.
+        private void ResolveNetLog(NetLoggerConfig config)
         {
-            if (!config.Enabled || !config.LocalFile.Enabled)
+            netLogResolved = true;
+            if (!config.Enabled)
             {
-                logger?.Log("Command: log entry, but local logging is disabled");
-                return null;
+                logger?.Log("Command: log entry, but logging is disabled");
+                return;
             }
-            var writer = new NetLogWriter(config.LocalFile, logger);
-            logger?.Log($"Command: log entry, writing to {writer.FilePath}");
-            return writer;
+
+            if (config.LocalFile.Enabled)
+            {
+                netLogFile = new NetLogWriter(config.LocalFile, logger);
+                logger?.Log($"Command: log entry, writing to {netLogFile.FilePath}");
+            }
+            if (!string.IsNullOrWhiteSpace(config.Endpoint))
+            {
+                netLogSender = new NetLogSender(config.Endpoint, logger);
+                logger?.Log($"Command: log entry, sending to {config.Endpoint}");
+            }
         }
+
+        public void Dispose() => netLogSender?.Dispose();
     }
 }

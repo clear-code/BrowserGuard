@@ -23,7 +23,9 @@ namespace BrowserGuard
             using var stdin = Console.OpenStandardInput();
             using var stdout = Console.OpenStandardOutput();
             var communicator = new MessageCommunicator(stdin, stdout, Logger);
-            var handler = new MessageHandler(Logger);
+            // Disposed on the way out so that queued entries still reach the
+            // collector after the browser has closed the port.
+            using var handler = new MessageHandler(Logger);
 
             while (true)
             {

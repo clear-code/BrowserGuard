@@ -3,9 +3,10 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// net-logger fans an entry out to an endpoint, to the native host, or to both,
-// so both destinations are stubbed and the calls recorded.
-const calls = { posted: [], hosted: [] };
+// Everything an entry does now goes through the native host, so the port is
+// stubbed and the calls recorded. fetch is stubbed to fail the test if the
+// extension ever posts anything itself again.
+const calls = { hosted: [], fetched: [] };
 
 globalThis.chrome = {
   runtime: {
@@ -17,8 +18,8 @@ globalThis.chrome = {
   },
 };
 
-globalThis.fetch = (url, options) => {
-  calls.posted.push({ url, body: JSON.parse(options.body) });
+globalThis.fetch = url => {
+  calls.fetched.push(url);
   return Promise.resolve({ ok: true });
 };
 
@@ -39,79 +40,74 @@ function config(overrides = {}) {
 const PAYLOAD = { operation: 'browsing', url: 'https://example.com/' };
 
 beforeEach(() => {
-  calls.posted = [];
   calls.hosted = [];
+  calls.fetched = [];
 });
 
-describe('_targets', () => {
-  it('sends to both when both are configured', () => {
-    assert.deepEqual(NetLogger._targets(config()), { endpoint: true, localFile: true });
+describe('_shouldLog', () => {
+  it('logs when both destinations are configured', () => {
+    assert.equal(NetLogger._shouldLog(config()), true);
   });
 
-  it('sends to the endpoint alone', () => {
-    assert.deepEqual(
-      NetLogger._targets(config({ LocalFile: { Enabled: false } })),
-      { endpoint: true, localFile: false });
+  it('logs when only the endpoint is configured', () => {
+    assert.equal(NetLogger._shouldLog(config({ LocalFile: { Enabled: false } })), true);
   });
 
   // Local logging used to be impossible without an endpoint as well.
-  it('sends to the file alone', () => {
-    assert.deepEqual(
-      NetLogger._targets(config({ Endpoint: '' })),
-      { endpoint: false, localFile: true });
+  it('logs when only the file is configured', () => {
+    assert.equal(NetLogger._shouldLog(config({ Endpoint: '' })), true);
   });
 
-  it('records nothing when neither is configured', () => {
-    assert.equal(NetLogger._targets(config({ Endpoint: '', LocalFile: { Enabled: false } })), null);
-    assert.equal(NetLogger._targets(config({ Endpoint: '', LocalFile: undefined })), null);
+  it('logs nothing when the host has nowhere to put it', () => {
+    assert.equal(
+      NetLogger._shouldLog(config({ Endpoint: '', LocalFile: { Enabled: false } })), false);
+    assert.equal(NetLogger._shouldLog(config({ Endpoint: '', LocalFile: undefined })), false);
   });
 
   // The entry carries these, so there is nothing worth recording without them.
-  it('records nothing without a machine or a user', () => {
-    assert.equal(NetLogger._targets(config({ MachineName: '' })), null);
-    assert.equal(NetLogger._targets(config({ UserName: '' })), null);
+  it('logs nothing without a machine or a user', () => {
+    assert.equal(NetLogger._shouldLog(config({ MachineName: '' })), false);
+    assert.equal(NetLogger._shouldLog(config({ UserName: '' })), false);
   });
 
   // Enabled turns the whole feature off, whatever the destinations say.
-  it('records nothing while disabled', () => {
-    assert.equal(NetLogger._targets(config({ Enabled: false })), null);
-    assert.equal(NetLogger._targets(config({ Enabled: undefined })), null);
+  it('logs nothing while disabled', () => {
+    assert.equal(NetLogger._shouldLog(config({ Enabled: false })), false);
+    assert.equal(NetLogger._shouldLog(config({ Enabled: undefined })), false);
   });
 
-  it('records nothing when there is no configuration at all', () => {
-    assert.equal(NetLogger._targets(undefined), null);
-    assert.equal(NetLogger._targets(null), null);
+  it('logs nothing when there is no configuration at all', () => {
+    assert.equal(NetLogger._shouldLog(undefined), false);
+    assert.equal(NetLogger._shouldLog(null), false);
   });
 });
 
 describe('_send', () => {
-  it('posts to the endpoint and hands the entry to the host', async () => {
-    await NetLogger._send(config(), PAYLOAD);
+  it('hands the entry to the host', () => {
+    NetLogger._send(config(), PAYLOAD);
 
-    assert.equal(calls.posted.length, 1);
-    assert.equal(calls.posted[0].url, CONFIG.Endpoint);
-    assert.deepEqual(calls.posted[0].body, PAYLOAD);
     assert.deepEqual(calls.hosted, [{ message: 'L ' + JSON.stringify(PAYLOAD) }]);
   });
 
-  it('leaves the host alone when only the endpoint is configured', async () => {
-    await NetLogger._send(config({ LocalFile: { Enabled: false } }), PAYLOAD);
+  // Posting from the extension would put the log into the browser's own
+  // traffic, where webRequest sees it and logs it again.
+  it('never posts to the collector itself', () => {
+    NetLogger._send(config(), PAYLOAD);
+    NetLogger._send(config({ LocalFile: { Enabled: false } }), PAYLOAD);
 
-    assert.equal(calls.posted.length, 1);
-    assert.deepEqual(calls.hosted, []);
+    assert.deepEqual(calls.fetched, []);
+    assert.equal(calls.hosted.length, 2);
   });
 
-  it('leaves the endpoint alone when only the file is configured', async () => {
-    await NetLogger._send(config({ Endpoint: '' }), PAYLOAD);
+  it('sends the entry once even with both destinations configured', () => {
+    NetLogger._send(config(), PAYLOAD);
 
-    assert.deepEqual(calls.posted, []);
     assert.equal(calls.hosted.length, 1);
   });
 
-  it('does nothing when nothing is configured', async () => {
-    await NetLogger._send(config({ Endpoint: '', LocalFile: { Enabled: false } }), PAYLOAD);
+  it('does nothing when nothing is configured', () => {
+    NetLogger._send(config({ Endpoint: '', LocalFile: { Enabled: false } }), PAYLOAD);
 
-    assert.deepEqual(calls.posted, []);
     assert.deepEqual(calls.hosted, []);
   });
 });

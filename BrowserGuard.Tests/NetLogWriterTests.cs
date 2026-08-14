@@ -70,50 +70,6 @@ namespace BrowserGuard.Tests
             Assert.True(File.Exists(Path.Combine(tempDir, "nested", "netlog.jsonl")));
         }
 
-        // A sender that pretty printed its entry must not break the one line per
-        // entry rule the file depends on.
-        [Fact]
-        public void PutsAPrettyPrintedEntryOnASingleLine()
-        {
-            var writer = Writer();
-
-            writer.Write("{\n  \"operation\": \"browsing\",\n  \"url\": \"https://example.com/\"\n}");
-
-            Assert.Single(File.ReadAllLines(LogPath));
-        }
-
-        [Fact]
-        public void LeavesJapaneseLegible()
-        {
-            var writer = Writer();
-
-            writer.Write("""{"operation":"browsing","name":"ページ名"}""");
-
-            Assert.Contains("ページ名", File.ReadAllText(LogPath));
-        }
-
-        [Fact]
-        public void RefusesSomethingThatIsNotJson()
-        {
-            var writer = Writer();
-
-            var failure = writer.Write("not json at all");
-
-            Assert.Contains("not valid JSON", failure);
-            Assert.False(File.Exists(LogPath));
-        }
-
-        // A bare string or number is valid JSON but not a log entry.
-        [Fact]
-        public void RefusesJsonThatIsNotAnObject()
-        {
-            var writer = Writer();
-
-            Assert.Contains("not a JSON object", writer.Write("\"browsing\""));
-            Assert.Contains("not a JSON object", writer.Write("[1,2,3]"));
-            Assert.False(File.Exists(LogPath));
-        }
-
         [Fact]
         public void KeepsTheEarlierEntriesWhenItRotates()
         {

@@ -16,33 +16,25 @@ export const NetLogger = {
           `${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
   },
 
-  // Where an entry should go, or null when it should not be recorded at all.
-  // The two destinations are independent, so either one on its own is enough.
-  _targets(netLogger) {
-    if (!netLogger?.Enabled) return null;
-    if (!netLogger.MachineName || !netLogger.UserName) return null;
-    const endpoint = Boolean(netLogger.Endpoint);
-    const localFile = Boolean(netLogger.LocalFile?.Enabled);
-    if (!endpoint && !localFile) return null;
-    return { endpoint, localFile };
+  // Whether an entry is worth handing to the host at all. The host decides
+  // where it then goes, so this only asks whether it has anywhere to put it.
+  _shouldLog(netLogger) {
+    if (!netLogger?.Enabled) return false;
+    if (!netLogger.MachineName || !netLogger.UserName) return false;
+    return Boolean(netLogger.Endpoint) || Boolean(netLogger.LocalFile?.Enabled);
   },
 
   async _getConfig() {
     const config = await loadConfig();
     const netLogger = config?.NetLogger;
-    return this._targets(netLogger) ? netLogger : null;
+    return this._shouldLog(netLogger) ? netLogger : null;
   },
 
-  async _send(config, payload) {
-    const targets = this._targets(config);
-    if (!targets) return;
-    if (targets.endpoint) await this.sendToEndpoint(config.Endpoint, payload);
-    // Not awaited: the port is fire and forget, and the host answers only on
-    // a failure.
-    if (targets.localFile) this.sendToHost(payload);
-  },
-
-  sendToHost(payload) {
+  // Everything goes to the host, including what is bound for the collector.
+  // Posting from here would put the log into the browser's own traffic, where
+  // webRequest would see it and log it again.
+  _send(config, payload) {
+    if (!this._shouldLog(config)) return;
     NetLogPort.send(payload);
   },
 
@@ -55,18 +47,6 @@ export const NetLogger = {
       url,
       timestamp: this.formatLocal(timestamp),
     };
-  },
-
-  async sendToEndpoint(endpoint, data) {
-    try {
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    } catch (error) {
-      console.error('sendToEndpoint failed', error?.message);
-    }
   },
 
   async onBeforeRequest(details) {
@@ -88,7 +68,7 @@ export const NetLogger = {
       }
       for (const part of details.requestBody.raw) {
         if (part.file) {
-          await this._send(config,
+          this._send(config,
             this._buildPayload(config, 'upload',
               part.file.split(/[/\\]/).pop() || '',
               uploadUrl,
@@ -98,7 +78,7 @@ export const NetLogger = {
     }
 
     if (config.UrlAccess && (url.protocol === 'http:' || url.protocol === 'https:')) {
-      await this._send(config,
+      this._send(config,
         this._buildPayload(config, 'urlaccess',
           url.hostname,
           url.href,
@@ -122,7 +102,7 @@ export const NetLogger = {
 
     if (config.Browsing) {
       const tab = await chrome.tabs.get(details.tabId);
-      await this._send(config,
+      this._send(config,
         this._buildPayload(config, 'browsing',
           tab.title || url.hostname,
           url.href,
@@ -135,7 +115,7 @@ export const NetLogger = {
     if (!config) return;
 
     if (config.Print) {
-      await this._send(config,
+      this._send(config,
         this._buildPayload(config, 'print',
           msg.title || '',
           msg.url,
@@ -148,7 +128,7 @@ export const NetLogger = {
     if (!config) return;
 
     if (config.Auth) {
-      await this._send(config,
+      this._send(config,
         this._buildPayload(config, 'auth',
           details.scheme || '',
           details.url,
@@ -166,7 +146,7 @@ export const NetLogger = {
     if (!item) return;
 
     if (config.Download) {
-      await this._send(config,
+      this._send(config,
         this._buildPayload(config, 'download',
           item.filename || '',
           item.url || '',
