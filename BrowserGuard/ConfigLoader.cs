@@ -58,17 +58,16 @@ namespace BrowserGuard
     // Keeping the log on this machine, as one JSON object per line.
     internal class NetLogFileConfig
     {
-        internal const int DefaultMaxSizeMB = 10;
-
         public bool Enabled { get; set; }
         // Empty means %ProgramData%\BrowserGuard\netlog.
         public string Directory { get; set; } = "";
-        // The size at which the log is rotated. The file has to be rotated at
-        // some size, so anything but a positive number falls back to the
-        // default rather than meaning "no limit" as it does for the spool.
-        public int MaxSizeMB { get; set; } = DefaultMaxSizeMB;
-        // How many rotated files are kept. 0 discards the log instead.
-        public int MaxGenerations { get; set; } = 10;
+        // The log is rotated at the turn of the day, and a day's file is kept
+        // for this many days. 0 keeps every day for good.
+        public int MaxDays { get; set; } = 30;
+        // A day that grows past this is split, so that one busy day cannot
+        // produce a file too large to handle. 0 leaves the day whole however
+        // large it gets.
+        public int MaxSizeMB { get; set; }
     }
 
     // Controls which local files may be uploaded.
