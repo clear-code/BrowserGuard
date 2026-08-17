@@ -5,6 +5,37 @@ import assert from 'node:assert/strict';
 
 import { UploadGuard } from '../edge/upload-guard.js';
 
+// A blocked upload is reported through net-logger, which reaches the host over
+// a port. Both ends are stubbed so the report can be observed.
+const reported = [];
+
+globalThis.chrome = {
+  runtime: {
+    sendNativeMessage: () => Promise.resolve({
+      Config: {
+        NetLogger: { Enabled: true, Endpoint: 'https://collector.example.com/log' },
+      },
+    }),
+    connectNative: () => ({
+      onDisconnect: { addListener: () => {} },
+      onMessage: { addListener: () => {} },
+      postMessage: message => reported.push(JSON.parse(message.message.slice(2))),
+    }),
+  },
+};
+
+// The report is not awaited by the listener, so it lands a few turns later.
+// Every test that blocks an upload reports it, so the one wanted is picked out
+// rather than assuming it is the only one to have arrived.
+async function waitForReport(match) {
+  for (let i = 0; i < 50; i++) {
+    const found = reported.find(match);
+    if (found) return found;
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  return undefined;
+}
+
 // UploadGuard is a singleton, so every test starts from a known configuration
 // rather than whatever the previous one left behind.
 const EMPTY = {
@@ -22,6 +53,8 @@ function configure(overrides) {
 function upload(path, type = 'sub_frame') {
   return UploadGuard.onBeforeRequest({
     type,
+    url: 'https://example.com/upload',
+    timeStamp: Date.parse('2026-08-07T12:34:56'),
     requestBody: { raw: [{ file: path }] },
   });
 }
@@ -179,6 +212,31 @@ describe('onBeforeRequest', () => {
       type: 'sub_frame',
       requestBody: { raw: [{ file: 'C:\\a\\notes.txt' }, { file: 'C:\\a\\setup.exe' }] },
     });
+
+    assert.ok(response.redirectUrl);
+  });
+});
+
+describe('the audit trail', () => {
+  it('reports a blocked upload to the host', async () => {
+    configure({ BlockedExtensions: ['.exe'] });
+
+    upload('C:\\tmp\\setup.exe');
+
+    const entry = await waitForReport(e => e.name === 'C:\\tmp\\setup.exe');
+    assert.ok(entry, 'the block should have been reported');
+    assert.equal(entry.operation, 'uploadblocked');
+    assert.equal(entry.name, 'C:\\tmp\\setup.exe');
+    assert.equal(entry.url, 'https://example.com/upload');
+    assert.equal(entry.reason, '禁止された拡張子です');
+    assert.equal(entry.timestamp, '2026-08-07 12:34:56');
+  });
+
+  // The report goes out on its own; the upload is refused straight away.
+  it('answers the listener without waiting for the report', () => {
+    configure({ BlockedExtensions: ['.exe'] });
+
+    const response = upload('C:\\tmp\\setup.exe');
 
     assert.ok(response.redirectUrl);
   });

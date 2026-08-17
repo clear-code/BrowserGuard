@@ -39,13 +39,26 @@ export const NetLogger = {
 
   // The machine and the user are added by the host, which is the only side
   // that knows them for certain.
-  _buildPayload(operation, name, url, timestamp) {
+  _buildPayload(operation, name, url, timestamp, extra) {
     return {
       operation,
       name,
       url,
       timestamp: this.formatLocal(timestamp),
+      ...extra,
     };
+  },
+
+  // Called by upload-guard from a blocking listener that cannot wait for the
+  // config, so this is not awaited. A block is recorded whenever the logger is
+  // on at all: it is a refused action rather than one of the ordinary events
+  // the individual switches turn on and off.
+  async onUploadBlocked({ file, url, reason, timestamp }) {
+    const config = await this._getConfig();
+    if (!config) return;
+
+    this._send(config,
+      this._buildPayload('uploadblocked', file, url, timestamp, { reason }));
   },
 
   async onBeforeRequest(details) {
