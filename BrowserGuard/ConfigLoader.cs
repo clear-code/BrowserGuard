@@ -35,8 +35,7 @@ namespace BrowserGuard
         public bool Download { get; set; }
         public bool Auth { get; set; }
         public bool Print { get; set; }
-        public string UserName { get; set; } = Environment.UserName;
-        public string MachineName { get; set; } = Environment.MachineName;
+
         public NetLogFileConfig LocalFile { get; set; } = new();
         public NetLogFailureConfig OnSendFailure { get; set; } = new();
     }

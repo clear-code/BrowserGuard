@@ -28,8 +28,6 @@ const { NetLogger } = await import('../edge/net-logger.js');
 const CONFIG = {
   Enabled: true,
   Endpoint: 'https://collector.example.com/log',
-  MachineName: 'PC-1',
-  UserName: 'user1',
   LocalFile: { Enabled: true },
 };
 
@@ -64,12 +62,6 @@ describe('_shouldLog', () => {
     assert.equal(NetLogger._shouldLog(config({ Endpoint: '', LocalFile: undefined })), false);
   });
 
-  // The entry carries these, so there is nothing worth recording without them.
-  it('logs nothing without a machine or a user', () => {
-    assert.equal(NetLogger._shouldLog(config({ MachineName: '' })), false);
-    assert.equal(NetLogger._shouldLog(config({ UserName: '' })), false);
-  });
-
   // Enabled turns the whole feature off, whatever the destinations say.
   it('logs nothing while disabled', () => {
     assert.equal(NetLogger._shouldLog(config({ Enabled: false })), false);
@@ -79,6 +71,26 @@ describe('_shouldLog', () => {
   it('logs nothing when there is no configuration at all', () => {
     assert.equal(NetLogger._shouldLog(undefined), false);
     assert.equal(NetLogger._shouldLog(null), false);
+  });
+});
+
+describe('_buildPayload', () => {
+  it('carries what the browser knows', () => {
+    const payload = NetLogger._buildPayload(
+      'browsing', 'Example', 'https://example.com/', Date.parse('2026-08-07T12:34:56'));
+
+    assert.equal(payload.operation, 'browsing');
+    assert.equal(payload.name, 'Example');
+    assert.equal(payload.url, 'https://example.com/');
+    assert.equal(payload.timestamp, '2026-08-07 12:34:56');
+  });
+
+  // The host stamps these on, and is never told them from here.
+  it('leaves the machine and the user to the host', () => {
+    const payload = NetLogger._buildPayload('browsing', 'Example', 'https://example.com/', 0);
+
+    assert.equal('pcname' in payload, false);
+    assert.equal('userid' in payload, false);
   });
 });
 
