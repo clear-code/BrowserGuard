@@ -1,6 +1,7 @@
 'use strict';
 
 import { loadConfig } from './config-loader.js';
+import { NetLogger } from './net-logger.js';
 
 export const UploadGuard = {
     // onBeforeRequest is blocking, so cache the config for synchronous access.
@@ -98,6 +99,14 @@ export const UploadGuard = {
             }
             const reason = this.getBlockReason(part.file);
             if (reason) {
+                // Not awaited: this listener is blocking and has to answer at
+                // once. net-logger records nothing unless it is turned on.
+                NetLogger.onUploadBlocked({
+                    file: part.file,
+                    url: details.url,
+                    reason,
+                    timestamp: details.timeStamp,
+                });
                 return this.buildCancelResponse(part.file, reason, isMainFrame);
             }
         }
