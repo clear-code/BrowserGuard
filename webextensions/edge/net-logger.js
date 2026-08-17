@@ -135,19 +135,6 @@ export const NetLogger = {
     }
   },
 
-  async onAuthRequired(details) {
-    const config = await this._getConfig();
-    if (!config) return;
-
-    if (config.Auth) {
-      this._send(config,
-        this._buildPayload('auth',
-          details.scheme || '',
-          details.url,
-          details.timeStamp));
-    }
-  },
-
   async onDownloadChanged(delta) {
     if (delta.state?.current !== 'complete') return;
 

@@ -32,7 +32,6 @@ namespace BrowserGuard
         public bool Browsing { get; set; }
         public bool Upload { get; set; }
         public bool Download { get; set; }
-        public bool Auth { get; set; }
         public bool Print { get; set; }
 
         public NetLogFileConfig LocalFile { get; set; } = new();

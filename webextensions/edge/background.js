@@ -51,8 +51,3 @@ chrome.runtime.onMessage.addListener((msg, _sender) => {
     NetLogger.onPrint(msg);
   }
 });
-
-chrome.webRequest.onAuthRequired.addListener(
-  NetLogger.onAuthRequired.bind(NetLogger),
-  { urls: ['<all_urls>'] }
-);
