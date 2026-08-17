@@ -11,8 +11,8 @@
     "LocalFile": {
       "Enabled": true,
       "Directory": "C:\\ProgramData\\BrowserGuard\\netlog",
-      "MaxSizeMB": 10,
-      "MaxGenerations": 10
+      "MaxDays": 30,
+      "MaxSizeMB": 100
     },
     "OnSendFailure": {
       "SaveLocally": true,

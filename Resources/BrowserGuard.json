@@ -11,8 +11,8 @@
     "LocalFile": {
       "Enabled": false,
       "Directory": "",
-      "MaxSizeMB": 10,
-      "MaxGenerations": 10
+      "MaxDays": 30,
+      "MaxSizeMB": 0
     },
     "OnSendFailure": {
       "SaveLocally": false,

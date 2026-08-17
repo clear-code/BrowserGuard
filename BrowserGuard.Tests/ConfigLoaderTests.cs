@@ -139,8 +139,8 @@ namespace BrowserGuard.Tests
                 "LocalFile": {
                   "Enabled": true,
                   "Directory": "D:\\logs",
-                  "MaxSizeMB": 20,
-                  "MaxGenerations": 3
+                  "MaxDays": 90,
+                  "MaxSizeMB": 250
                 },
                 "OnSendFailure": {
                   "SaveLocally": true,
@@ -156,8 +156,8 @@ namespace BrowserGuard.Tests
             Assert.True(config.Enabled);
             Assert.True(config.LocalFile.Enabled);
             Assert.Equal(@"D:\logs", config.LocalFile.Directory);
-            Assert.Equal(20, config.LocalFile.MaxSizeMB);
-            Assert.Equal(3, config.LocalFile.MaxGenerations);
+            Assert.Equal(90, config.LocalFile.MaxDays);
+            Assert.Equal(250, config.LocalFile.MaxSizeMB);
             Assert.True(config.OnSendFailure.SaveLocally);
             Assert.Equal(15, config.OnSendFailure.RetryIntervalMinutes);
             Assert.Equal(50, config.OnSendFailure.MaxSizeMB);
@@ -201,7 +201,7 @@ namespace BrowserGuard.Tests
             // group is spot checked rather than only asserting no exception.
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
-            Assert.NotEqual(0, config.NetLogger.LocalFile.MaxSizeMB);
+            Assert.NotEqual(0, config.NetLogger.LocalFile.MaxDays);
             Assert.NotEqual(0, config.NetLogger.OnSendFailure.MaxSizeMB);
         }
 
