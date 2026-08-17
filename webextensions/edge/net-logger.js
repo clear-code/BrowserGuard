@@ -20,7 +20,6 @@ export const NetLogger = {
   // where it then goes, so this only asks whether it has anywhere to put it.
   _shouldLog(netLogger) {
     if (!netLogger?.Enabled) return false;
-    if (!netLogger.MachineName || !netLogger.UserName) return false;
     return Boolean(netLogger.Endpoint) || Boolean(netLogger.LocalFile?.Enabled);
   },
 
@@ -38,11 +37,11 @@ export const NetLogger = {
     NetLogPort.send(payload);
   },
 
-  _buildPayload(config, operation, name, url, timestamp) {
+  // The machine and the user are added by the host, which is the only side
+  // that knows them for certain.
+  _buildPayload(operation, name, url, timestamp) {
     return {
       operation,
-      pcname: config.MachineName,
-      userid: config.UserName,
       name,
       url,
       timestamp: this.formatLocal(timestamp),
@@ -69,7 +68,7 @@ export const NetLogger = {
       for (const part of details.requestBody.raw) {
         if (part.file) {
           this._send(config,
-            this._buildPayload(config, 'upload',
+            this._buildPayload('upload',
               part.file.split(/[/\\]/).pop() || '',
               uploadUrl,
               details.timeStamp));
@@ -79,7 +78,7 @@ export const NetLogger = {
 
     if (config.UrlAccess && (url.protocol === 'http:' || url.protocol === 'https:')) {
       this._send(config,
-        this._buildPayload(config, 'urlaccess',
+        this._buildPayload('urlaccess',
           url.hostname,
           url.href,
           details.timeStamp));
@@ -103,7 +102,7 @@ export const NetLogger = {
     if (config.Browsing) {
       const tab = await chrome.tabs.get(details.tabId);
       this._send(config,
-        this._buildPayload(config, 'browsing',
+        this._buildPayload('browsing',
           tab.title || url.hostname,
           url.href,
           details.timeStamp));
@@ -116,7 +115,7 @@ export const NetLogger = {
 
     if (config.Print) {
       this._send(config,
-        this._buildPayload(config, 'print',
+        this._buildPayload('print',
           msg.title || '',
           msg.url,
           msg.timestamp));
@@ -129,7 +128,7 @@ export const NetLogger = {
 
     if (config.Auth) {
       this._send(config,
-        this._buildPayload(config, 'auth',
+        this._buildPayload('auth',
           details.scheme || '',
           details.url,
           details.timeStamp));
@@ -147,7 +146,7 @@ export const NetLogger = {
 
     if (config.Download) {
       this._send(config,
-        this._buildPayload(config, 'download',
+        this._buildPayload('download',
           item.filename || '',
           item.url || '',
           item.startTime));

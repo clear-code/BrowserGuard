@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
@@ -7,9 +10,15 @@ namespace BrowserGuard
     // onto a single line here, once, before going to the file and the collector.
     internal static class NetLogEntry
     {
-        // The file is read back as text, so the escaping is relaxed to leave
+        internal const string MachineProperty = "pcname";
+        internal const string UserProperty = "userid";
+
+        internal static readonly string MachineName = Environment.MachineName;
+        internal static readonly string UserName = Environment.UserName;
+
+        // The log is read back as text, so the escaping is relaxed to leave
         // Japanese page titles legible rather than as \uXXXX escapes.
-        private static readonly JsonSerializerOptions WriteOptions = new()
+        private static readonly JsonWriterOptions WriterOptions = new()
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
@@ -26,9 +35,29 @@ namespace BrowserGuard
                 {
                     return "entry is not a JSON object";
                 }
-                // Reserializing puts the entry on a single line whatever the
-                // sender did with its whitespace.
-                line = JsonSerializer.Serialize(document.RootElement, WriteOptions);
+
+                // Rewriting puts the entry on a single line whatever the sender
+                // did with its whitespace.
+                using var buffer = new MemoryStream();
+                using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
+                {
+                    writer.WriteStartObject();
+                    foreach (var property in document.RootElement.EnumerateObject())
+                    {
+                        // Whatever the sender put here is replaced below: only
+                        // this side can say where the entry was recorded.
+                        if (property.NameEquals(MachineProperty) ||
+                            property.NameEquals(UserProperty))
+                        {
+                            continue;
+                        }
+                        property.WriteTo(writer);
+                    }
+                    writer.WriteString(MachineProperty, MachineName);
+                    writer.WriteString(UserProperty, UserName);
+                    writer.WriteEndObject();
+                }
+                line = Encoding.UTF8.GetString(buffer.ToArray());
                 return null;
             }
             catch (JsonException ex)
