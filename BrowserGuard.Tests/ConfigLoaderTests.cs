@@ -17,7 +17,6 @@ namespace BrowserGuard.Tests
                 "Browsing": true,
                 "Upload": true,
                 "Download": false,
-                "Auth": true,
                 "Print": true
               },
               "UploadGuard": {
@@ -35,7 +34,6 @@ namespace BrowserGuard.Tests
 
             Assert.Equal("https://example.com/api/log", config.NetLogger.Endpoint);
             Assert.True(config.NetLogger.UrlAccess);
-            Assert.True(config.NetLogger.Auth);
             Assert.False(config.NetLogger.Download);
 
             Assert.False(config.UploadGuard.Enabled);

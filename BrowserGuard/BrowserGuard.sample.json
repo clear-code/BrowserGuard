@@ -6,7 +6,6 @@
     "Browsing": false,
     "Upload": false,
     "Download": false,
-    "Auth": false,
     "Print": false,
     "LocalFile": {
       "Enabled": true,

@@ -65,8 +65,3 @@ chrome.runtime.onMessage.addListener((msg, _sender) => {
     UsageTimeLimit.onDeadlineReached();
   }
 });
-
-chrome.webRequest.onAuthRequired.addListener(
-  NetLogger.onAuthRequired.bind(NetLogger),
-  { urls: ['<all_urls>'] }
-);
