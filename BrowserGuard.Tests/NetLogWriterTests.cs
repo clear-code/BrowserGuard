@@ -110,6 +110,25 @@ namespace BrowserGuard.Tests
                 kept);
         }
 
+        // The log has to be rotated at some size, so a size that cannot be used
+        // falls back to the default rather than to the smallest possible one.
+        [Fact]
+        public void RotatesAtTheDefaultSizeWhenGivenAnUnusableOne()
+        {
+            var writer = Writer(maxSizeMB: 0);
+            var padding = new string('a', 200_000);
+
+            // Two megabytes: past the one megabyte a clamp to the smallest
+            // usable size would have rotated at, and short of the default.
+            for (var i = 0; i < 10; i++)
+            {
+                writer.Write($$"""{"operation":"browsing","name":"{{padding}}"}""");
+            }
+
+            Assert.False(File.Exists(GenerationPath(1)), "it should not have rotated yet");
+            Assert.Equal(10, File.ReadAllLines(LogPath).Length);
+        }
+
         [Fact]
         public void DiscardsTheLogWhenNoGenerationIsKept()
         {

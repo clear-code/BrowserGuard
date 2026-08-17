@@ -13,6 +13,11 @@
       "Directory": "C:\\ProgramData\\BrowserGuard\\netlog",
       "MaxSizeMB": 10,
       "MaxGenerations": 10
+    },
+    "OnSendFailure": {
+      "SaveLocally": true,
+      "RetryIntervalMinutes": 5,
+      "MaxSizeMB": 10
     }
   },
   "UploadGuard": {

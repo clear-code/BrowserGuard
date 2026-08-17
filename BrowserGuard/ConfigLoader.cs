@@ -37,15 +37,35 @@ namespace BrowserGuard
         public string UserName { get; set; } = Environment.UserName;
         public string MachineName { get; set; } = Environment.MachineName;
         public NetLogFileConfig LocalFile { get; set; } = new();
+        public NetLogFailureConfig OnSendFailure { get; set; } = new();
+    }
+
+    // What becomes of an entry the collector would not take, including one
+    // dropped because the queue waiting for the collector was full.
+    internal class NetLogFailureConfig
+    {
+        // Kept beside the local log, in netlog-pending.jsonl.
+        public bool SaveLocally { get; set; }
+        // How often the kept entries are offered to the collector again.
+        // 0 keeps them without ever retrying, for collection by hand.
+        public int RetryIntervalMinutes { get; set; } = 5;
+        // Beyond this the kept entries are dropped, so that a collector that
+        // stays down cannot fill the disk. 0 keeps them without any limit.
+        public int MaxSizeMB { get; set; } = 10;
     }
 
     // Keeping the log on this machine, as one JSON object per line.
     internal class NetLogFileConfig
     {
+        internal const int DefaultMaxSizeMB = 10;
+
         public bool Enabled { get; set; }
         // Empty means %ProgramData%\BrowserGuard\netlog.
         public string Directory { get; set; } = "";
-        public int MaxSizeMB { get; set; } = 10;
+        // The size at which the log is rotated. The file has to be rotated at
+        // some size, so anything but a positive number falls back to the
+        // default rather than meaning "no limit" as it does for the spool.
+        public int MaxSizeMB { get; set; } = DefaultMaxSizeMB;
         // How many rotated files are kept. 0 discards the log instead.
         public int MaxGenerations { get; set; } = 10;
     }

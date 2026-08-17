@@ -13,6 +13,11 @@
       "Directory": "",
       "MaxSizeMB": 10,
       "MaxGenerations": 10
+    },
+    "OnSendFailure": {
+      "SaveLocally": false,
+      "RetryIntervalMinutes": 5,
+      "MaxSizeMB": 10
     }
   },
   "UploadGuard": {
