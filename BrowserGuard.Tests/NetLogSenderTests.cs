@@ -12,9 +12,38 @@ using Xunit;
 
 namespace BrowserGuard.Tests
 {
-    public class NetLogSenderTests
+    public class NetLogSenderTests : IDisposable
     {
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
+
+        readonly string tempDir;
+
+        public NetLogSenderTests()
+        {
+            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-sender-" + Guid.NewGuid().ToString("N"));
+        }
+
+        public void Dispose()
+        {
+            try { Directory.Delete(tempDir, true); } catch { }
+        }
+
+        NetLogSpool Spool(long maxSize = 1024 * 1024) => new(tempDir, maxSize);
+
+        string PendingPath => Path.Combine(tempDir, "netlog-pending.jsonl");
+
+        static string[] Kept(string path)
+        {
+            for (var i = 0; i < 100; i++)
+            {
+                if (File.Exists(path))
+                {
+                    try { return File.ReadAllLines(path); } catch (IOException) { }
+                }
+                Thread.Sleep(50);
+            }
+            return Array.Empty<string>();
+        }
 
         // Answers every request with a status the test chooses, and records what
         // it was sent, so the whole HttpClient path is exercised for real.
@@ -133,6 +162,89 @@ namespace BrowserGuard.Tests
             sender.Dispose();
 
             Assert.False(sender.Enqueue(Entry));
+        }
+
+        // Nothing may be lost because the collector was unreachable.
+        [Fact]
+        public void KeepsAnEntryTheCollectorWouldNotTake()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool);
+
+            sender.Enqueue(Entry);
+
+            Assert.Equal(new[] { Entry }, Kept(PendingPath));
+        }
+
+        [Fact]
+        public void DropsTheEntryWhenNothingKeepsIt()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector);
+
+            sender.Enqueue(Entry);
+
+            Take(collector);
+            Assert.False(File.Exists(PendingPath));
+        }
+
+        [Fact]
+        public void OffersTheKeptEntriesAgain()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.FromMilliseconds(200));
+            sender.Enqueue("""{"operation":"kept"}""");
+            Assert.Equal(1, Kept(PendingPath).Length);
+
+            collector.Status = HttpStatusCode.OK;
+
+            // The retry round empties the spool once the collector answers.
+            for (var i = 0; i < 100 && File.Exists(PendingPath); i++)
+            {
+                Thread.Sleep(50);
+            }
+            Assert.False(File.Exists(PendingPath), "the kept entry should have been sent");
+        }
+
+        [Fact]
+        public void PutsBackWhatTheCollectorStillWillNotTake()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.FromMilliseconds(100));
+
+            sender.Enqueue("""{"operation":"kept"}""");
+
+            Thread.Sleep(500);
+            Assert.Contains("kept", string.Join("\n", Kept(PendingPath)));
+        }
+
+        // Retrying is optional: the entries are then kept for collection by hand.
+        [Fact]
+        public void KeepsWithoutRetryingWhenNoIntervalIsSet()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.Zero);
+            sender.Enqueue(Entry);
+            Assert.Equal(1, Kept(PendingPath).Length);
+            var attempts = collector.Bodies.Count;
+
+            collector.Status = HttpStatusCode.OK;
+            Thread.Sleep(500);
+
+            Assert.Equal(attempts, collector.Bodies.Count);
+            Assert.Equal(1, Kept(PendingPath).Length);
         }
 
         // A collector that answers with an error must not stop the ones after it.

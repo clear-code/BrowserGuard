@@ -123,9 +123,30 @@ namespace BrowserGuard
             }
             if (!string.IsNullOrWhiteSpace(config.Endpoint))
             {
-                netLogSender = new NetLogSender(config.Endpoint, logger);
+                netLogSender = new NetLogSender(
+                    config.Endpoint,
+                    logger,
+                    handler: null,
+                    spool: Spool(config),
+                    retryInterval: TimeSpan.FromMinutes(config.OnSendFailure.RetryIntervalMinutes));
                 logger?.Log($"Command: log entry, sending to {config.Endpoint}");
             }
+        }
+
+        private NetLogSpool? Spool(NetLoggerConfig config)
+        {
+            var failure = config.OnSendFailure;
+            if (!failure.SaveLocally)
+            {
+                return null;
+            }
+            var spool = new NetLogSpool(
+                NetLogWriter.ResolveDirectory(config.LocalFile.Directory),
+                // 0 asks for no limit, and travels as 0.
+                Math.Max(0, failure.MaxSizeMB) * 1024L * 1024L,
+                logger);
+            logger?.Log($"Command: log entry, keeping what cannot be sent in {spool.FilePath}");
+            return spool;
         }
 
         public void Dispose() => netLogSender?.Dispose();

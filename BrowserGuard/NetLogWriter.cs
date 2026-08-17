@@ -34,13 +34,23 @@ namespace BrowserGuard
 
         internal NetLogWriter(NetLogFileConfig config, Logger? logger = null)
         {
-            directory = string.IsNullOrWhiteSpace(config.Directory)
-                ? DefaultDirectory()
-                : config.Directory;
-            maxSize = Math.Max(1, config.MaxSizeMB) * 1024L * 1024L;
+            directory = ResolveDirectory(config.Directory);
+            var sizeMB = config.MaxSizeMB;
+            if (sizeMB <= 0)
+            {
+                logger?.Log($"NetLogWriter: MaxSizeMB of {sizeMB} is not usable, " +
+                    $"rotating at {NetLogFileConfig.DefaultMaxSizeMB}MB instead");
+                sizeMB = NetLogFileConfig.DefaultMaxSizeMB;
+            }
+            maxSize = sizeMB * 1024L * 1024L;
             maxGenerations = Math.Max(0, config.MaxGenerations);
             this.logger = logger;
         }
+
+        // The entries kept for a collector that would not take them live here
+        // too, so both are configured and permitted in one place.
+        internal static string ResolveDirectory(string configured) =>
+            string.IsNullOrWhiteSpace(configured) ? DefaultDirectory() : configured;
 
         internal static string DefaultDirectory() =>
             Path.Combine(

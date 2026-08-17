@@ -128,6 +128,63 @@ namespace BrowserGuard.Tests
             Assert.Equal("", second.Sha256);
         }
 
+        [Fact]
+        public void ReadsWhereTheLogIsKept()
+        {
+            var json = """
+            {
+              "NetLogger": {
+                "Enabled": true,
+                "Endpoint": "https://collector.example.com/log",
+                "LocalFile": {
+                  "Enabled": true,
+                  "Directory": "D:\\logs",
+                  "MaxSizeMB": 20,
+                  "MaxGenerations": 3
+                },
+                "OnSendFailure": {
+                  "SaveLocally": true,
+                  "RetryIntervalMinutes": 15,
+                  "MaxSizeMB": 50
+                }
+              }
+            }
+            """;
+
+            var config = ConfigLoader.ParseConf(json).NetLogger;
+
+            Assert.True(config.Enabled);
+            Assert.True(config.LocalFile.Enabled);
+            Assert.Equal(@"D:\logs", config.LocalFile.Directory);
+            Assert.Equal(20, config.LocalFile.MaxSizeMB);
+            Assert.Equal(3, config.LocalFile.MaxGenerations);
+            Assert.True(config.OnSendFailure.SaveLocally);
+            Assert.Equal(15, config.OnSendFailure.RetryIntervalMinutes);
+            Assert.Equal(50, config.OnSendFailure.MaxSizeMB);
+        }
+
+        // 0 asks for no limit rather than for a limit of nothing.
+        [Fact]
+        public void ReadsAnUnlimitedSpool()
+        {
+            var config = ConfigLoader.ParseConf(
+                """{"NetLogger":{"OnSendFailure":{"SaveLocally":true,"MaxSizeMB":0}}}""");
+
+            Assert.Equal(0, config.NetLogger.OnSendFailure.MaxSizeMB);
+        }
+
+        // Nothing may be written to this machine unless it was asked for.
+        [Fact]
+        public void KeepsNothingLocallyByDefault()
+        {
+            var config = ConfigLoader.ParseConf("{}").NetLogger;
+
+            Assert.False(config.Enabled);
+            Assert.False(config.LocalFile.Enabled);
+            Assert.False(config.OnSendFailure.SaveLocally);
+            Assert.Equal("", config.LocalFile.Directory);
+        }
+
         // The files that ship with the installer have to stay loadable.
         [Theory]
         [InlineData("Resources/BrowserGuard.json")]
@@ -144,6 +201,8 @@ namespace BrowserGuard.Tests
             // group is spot checked rather than only asserting no exception.
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
+            Assert.NotEqual(0, config.NetLogger.LocalFile.MaxSizeMB);
+            Assert.NotEqual(0, config.NetLogger.OnSendFailure.MaxSizeMB);
             Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
             Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
         }
