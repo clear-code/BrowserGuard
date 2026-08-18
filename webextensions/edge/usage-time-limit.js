@@ -128,14 +128,25 @@ export const UsageTimeLimit = {
       if (now >= state.terminateAt) {
         return { act: 'terminate', reason, state };
       }
+      if (this.shouldWarn(now, state)) {
+        return { act: 'warn', reason, state: { ...state, warnedAt: now } };
+      }
       return { act: 'none', reason, state };
     }
 
-    const interval = this.reWarnIntervalMinutes * 60000;
-    if (state.warnedAt && (interval <= 0 || now - state.warnedAt < interval)) {
+    if (!this.shouldWarn(now, state)) {
       return { act: 'none', reason, state };
     }
     return { act: 'warn', reason, state: { ...state, warnedAt: now } };
+  },
+
+  // The first violation always warns. After that it is repeated on the
+  // interval, or not at all when no interval is set.
+  shouldWarn(now, state) {
+    if (!state.warnedAt) return true;
+    const interval = this.reWarnIntervalMinutes * 60000;
+    if (interval <= 0) return false;
+    return now - state.warnedAt >= interval;
   },
 
   async check(now = Date.now()) {

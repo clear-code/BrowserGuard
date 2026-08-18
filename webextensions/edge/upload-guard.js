@@ -85,7 +85,6 @@ export const UploadGuard = {
     },
 
     onBeforeRequest(details) {
-        console.log('UploadGuard onBeforeRequest', details);
         if (!this.enabled) {
             return {};
         }

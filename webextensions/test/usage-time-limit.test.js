@@ -256,6 +256,71 @@ describe('decide', () => {
     assert.equal(decision.state.terminateAt, at(11) + 90000);
   });
 
+  // One warning tab that was closed or never noticed must not be the only
+  // notice the browser is about to close.
+  it('puts the warning back up while the grace period runs', () => {
+    configure({
+      MaxContinuousMinutes: 60,
+      OnExceeded: { Action: 'Terminate', GraceSeconds: 3600, ReWarnIntervalMinutes: 10 },
+    });
+    const warned = state({
+      sessionStart: at(10),
+      warnedAt: at(11),
+      terminateAt: at(11) + 60 * MINUTE,
+    });
+
+    assert.equal(UsageTimeLimit.decide(at(11) + 9 * MINUTE, warned).act, 'none');
+    assert.equal(UsageTimeLimit.decide(at(11) + 10 * MINUTE, warned).act, 'warn');
+  });
+
+  // The countdown on the page is driven by the deadline it is given.
+  it('carries the same deadline into the warning it repeats', () => {
+    configure({
+      MaxContinuousMinutes: 60,
+      OnExceeded: { Action: 'Terminate', GraceSeconds: 3600, ReWarnIntervalMinutes: 10 },
+    });
+    const deadline = at(11) + 60 * MINUTE;
+    const warned = state({ sessionStart: at(10), warnedAt: at(11), terminateAt: deadline });
+
+    const decision = UsageTimeLimit.decide(at(11) + 10 * MINUTE, warned);
+
+    assert.equal(decision.state.terminateAt, deadline);
+  });
+
+  it('warns once during the grace period when no interval is set', () => {
+    configure({
+      MaxContinuousMinutes: 60,
+      OnExceeded: { Action: 'Terminate', GraceSeconds: 3600, ReWarnIntervalMinutes: 0 },
+    });
+    const warned = state({
+      sessionStart: at(10),
+      warnedAt: at(11),
+      terminateAt: at(11) + 60 * MINUTE,
+    });
+
+    assert.equal(UsageTimeLimit.decide(at(11) + 30 * MINUTE, warned).act, 'none');
+  });
+
+  // Repeating the warning must not push the deadline back.
+  it('terminates on time however often it warned', () => {
+    configure({
+      MaxContinuousMinutes: 60,
+      OnExceeded: { Action: 'Terminate', GraceSeconds: 3600, ReWarnIntervalMinutes: 10 },
+    });
+    const deadline = at(11) + 60 * MINUTE;
+    let current = state({ sessionStart: at(10) });
+
+    // Every minute from the first violation to just after the deadline.
+    let terminatedAt = 0;
+    for (let minute = 0; minute <= 61 && !terminatedAt; minute++) {
+      const decision = UsageTimeLimit.decide(at(11) + minute * MINUTE, current);
+      current = decision.state;
+      if (decision.act === 'terminate') terminatedAt = at(11) + minute * MINUTE;
+    }
+
+    assert.equal(terminatedAt, deadline);
+  });
+
   it('waits for the deadline before terminating', () => {
     configure({ MaxContinuousMinutes: 60, OnExceeded: { Action: 'Terminate' } });
     const warned = state({
