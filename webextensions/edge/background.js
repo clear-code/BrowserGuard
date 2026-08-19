@@ -11,8 +11,8 @@ import { TabCountLimit } from './tab-count-limit.js';
 // The URL prefixes come from the config, so register without a filter and
 // decide inside the handler instead.
 SettingPageFilter.init();
-chrome.webNavigation.onBeforeNavigate.addListener(
-  SettingPageFilter.onBeforeNavigate.bind(SettingPageFilter)
+chrome.webNavigation.onCommitted.addListener(
+  SettingPageFilter.onCommitted.bind(SettingPageFilter)
 );
 
 UploadGuard.init();

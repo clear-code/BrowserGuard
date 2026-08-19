@@ -40,7 +40,7 @@ function configure(overrides) {
 }
 
 function navigate(url, frameId = 0) {
-  return SettingPageFilter.onBeforeNavigate({ frameId, tabId: 7, url });
+  return SettingPageFilter.onCommitted({ frameId, tabId: 7, url });
 }
 
 beforeEach(() => {
@@ -74,7 +74,7 @@ describe('applyConfig', () => {
   });
 });
 
-describe('onBeforeNavigate', () => {
+describe('onCommitted', () => {
   it('leaves an allowed address alone', () => {
     navigate('https://example.com/');
 
@@ -105,8 +105,8 @@ describe('onBeforeNavigate', () => {
     assert.ok(calls.warned[0].message.includes('edge://settings/privacy'));
   });
 
-  // The address is gone whether or not the block is announced, because
-  // onBeforeNavigate cannot cancel the navigation itself.
+  // The address is gone whether or not the block is announced, because a
+  // browser page cannot be cancelled on its way in.
   it('takes the tab off the blocked address either way', () => {
     navigate('edge://settings/privacy');
 

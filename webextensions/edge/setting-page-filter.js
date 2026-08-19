@@ -41,7 +41,11 @@ export const SettingPageFilter = {
       '拡張機能のポリシーにより、このページは表示できません。';
   },
 
-  onBeforeNavigate(details) {
+  // Taken once the navigation has committed rather than before it. A blocking
+  // webRequest listener cannot cancel a browser page, so the way out is to go
+  // back; and until the address commits it has no history entry of its own, so
+  // going back then would go back past the page the user came from.
+  onCommitted(details) {
     if (details.frameId !== 0) return;
     if (!this.enabled) return;
     if (!this.isBlockedUrl(details.url)) return;
@@ -52,8 +56,7 @@ export const SettingPageFilter = {
       showDialog(this.warningText(details.url));
     }
 
-    // onBeforeNavigate cannot cancel or redirect the way a blocking webRequest
-    // listener can, so the tab is sent back where it came from instead.
+    // A tab opened straight onto the blocked address has nothing behind it.
     chrome.tabs.goBack(details.tabId).catch(() =>
       chrome.tabs.update(details.tabId, { url: 'about:blank' })
     );
