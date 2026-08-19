@@ -71,6 +71,15 @@ function openTabs(count, windowIds = [1, 2]) {
   return opened;
 }
 
+// Dismisses the dialogs one after another, including any that were waiting
+// behind them, so a test never leaves one standing for the next.
+async function drain(dismissals) {
+  while (dismissals.length > 0) {
+    dismissals.shift()();
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+}
+
 beforeEach(() => {
   calls.removed = [];
   calls.created = [];
@@ -210,8 +219,8 @@ describe('check', () => {
   // behind the first would leave a dialog to dismiss for every tab opened.
   it('puts up one dialog at a time', async () => {
     configure({ MaxCount: 3 });
-    let dismiss = () => {};
-    nativeMessage = () => new Promise(resolve => { dismiss = () => resolve({ Success: true }); });
+    const dismissals = [];
+    nativeMessage = () => new Promise(resolve => dismissals.push(() => resolve({ Success: true })));
     openTabs(4);
 
     const first = TabCountLimit.check();
@@ -222,8 +231,26 @@ describe('check', () => {
     // The tabs are still closed while the dialog stands.
     assert.equal(tabs.length, 3);
 
-    dismiss();
+    await drain(dismissals);
     await first;
+  });
+
+  // A tab closing with nothing said about it is what the queue exists to
+  // prevent: the warning waits its turn rather than being dropped.
+  it('still says what it closed behind a dialog already up', async () => {
+    configure({ MaxCount: 3 });
+    const dismissals = [];
+    nativeMessage = () => new Promise(resolve => dismissals.push(() => resolve({ Success: true })));
+    openTabs(4);
+
+    const first = TabCountLimit.check();
+    openTabs(1);
+    await TabCountLimit.check();
+
+    await drain(dismissals);
+    await first;
+
+    assert.equal(calls.warned.length, 2);
   });
 
   it('warns again once the dialog has been dismissed', async () => {
