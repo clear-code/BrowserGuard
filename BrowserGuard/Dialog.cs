@@ -19,6 +19,14 @@ namespace BrowserGuard
         // cannot be dismissed.
         private const int MaxTextLength = 500;
 
+        // user32 directly, rather than WinForms MessageBox.Show. That would mean
+        // net8.0-windows and UseWindowsForms, which pulls the desktop runtime
+        // into the self-contained publish the installer carries and roughly
+        // doubles its size. It would also drag BrowserGuard.Tests onto the same
+        // target framework, because a net8.0 project cannot reference a
+        // net8.0-windows one. WinForms calls this very function underneath, so a
+        // dialog with one button and no message loop gains nothing from going
+        // through it.
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int MessageBoxW(IntPtr hWnd, string text, string caption, uint type);
 
