@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { NetLogger } from './net-logger.js';
+import { showDialog } from './dialog.js';
 
 export const UploadGuard = {
     // onBeforeRequest is blocking, so cache the config for synchronous access.
@@ -55,13 +56,15 @@ export const UploadGuard = {
         return extensions.some(ext => lower.endsWith(ext.toLowerCase()));
     },
 
-    buildCancelResponse(path, reason, isMainFrame) {
-        const message = JSON.stringify(`アップロードがブロックされました:\n${path}\n\n理由: ${reason}`);
-        const afterAction = isMainFrame ? 'history.back();' : '';
-        const html = `<script>
-            alert(${message});
-            ${afterAction}
-        </script>`;
+    // Cancelling a main frame navigation leaves an error page where the form
+    // was, so that one frame is sent back where it came from instead. Anything
+    // else is refused outright, so that a script uploading in the background is
+    // not handed a page of markup as though its upload had succeeded.
+    buildCancelResponse(isMainFrame) {
+        if (!isMainFrame) {
+            return { cancel: true };
+        }
+        const html = '<script>history.back();</script>';
         return { redirectUrl: `data:text/html;charset=utf-8,${encodeURIComponent(html)}` };
     },
 
@@ -106,7 +109,9 @@ export const UploadGuard = {
                     reason,
                     timestamp: details.timeStamp,
                 });
-                return this.buildCancelResponse(part.file, reason, isMainFrame);
+                // Not awaited either: the dialog stands until it is dismissed.
+                showDialog(`アップロードがブロックされました:\n${part.file}\n\n理由: ${reason}`);
+                return this.buildCancelResponse(isMainFrame);
             }
         }
         return {};

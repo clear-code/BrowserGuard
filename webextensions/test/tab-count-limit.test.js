@@ -77,7 +77,6 @@ beforeEach(() => {
   calls.warned = [];
   tabs = [];
   nativeMessage = () => Promise.resolve({ Success: true });
-  TabCountLimit.warning = false;
   configure();
 });
 

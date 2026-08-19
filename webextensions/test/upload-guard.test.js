@@ -6,16 +6,23 @@ import assert from 'node:assert/strict';
 import { UploadGuard } from '../edge/upload-guard.js';
 
 // A blocked upload is reported through net-logger, which reaches the host over
-// a port. Both ends are stubbed so the report can be observed.
+// a port, and warned about through a dialog the same host puts up. Both are
+// stubbed so the report and the warning can be observed.
 const reported = [];
+const warnings = [];
 
 globalThis.chrome = {
   runtime: {
-    sendNativeMessage: () => Promise.resolve({
-      Config: {
-        NetLogger: { Enabled: true, Endpoint: 'https://collector.example.com/log' },
-      },
-    }),
+    sendNativeMessage: (_server, payload) => {
+      if (payload?.message?.startsWith('W ')) {
+        warnings.push(payload.message.slice(2));
+      }
+      return Promise.resolve({
+        Config: {
+          NetLogger: { Enabled: true, Endpoint: 'https://collector.example.com/log' },
+        },
+      });
+    },
     connectNative: () => ({
       onDisconnect: { addListener: () => {} },
       onMessage: { addListener: () => {} },
@@ -173,25 +180,34 @@ describe('onBeforeRequest', () => {
     assert.deepEqual(upload('C:\\a\\notes.txt'), {});
   });
 
-  it('redirects to a page explaining why the upload was blocked', () => {
+  it('says why the upload was blocked', () => {
     configure({ BlockedExtensions: ['.exe'] });
 
-    const response = upload('C:\\a\\setup.exe');
-    assert.ok(response.redirectUrl.startsWith('data:text/html;'));
+    upload('C:\\a\\setup.exe');
 
-    const html = decodeURIComponent(response.redirectUrl.split(',').slice(1).join(','));
-    assert.ok(html.includes('禁止された拡張子です'));
-    assert.ok(html.includes('setup.exe'));
-    // Only a main frame can be sent back to where it came from.
-    assert.ok(!html.includes('history.back()'));
+    const warning = warnings.at(-1);
+    assert.ok(warning.includes('禁止された拡張子です'));
+    assert.ok(warning.includes('setup.exe'));
   });
 
+  // A script uploading in the background must not be handed a page of markup
+  // as though its upload had gone through.
+  it('refuses the request outright below the main frame', () => {
+    configure({ BlockedExtensions: ['.exe'] });
+
+    assert.deepEqual(upload('C:\\a\\setup.exe'), { cancel: true });
+  });
+
+  // Cancelling that one would leave an error page where the form was.
   it('sends the main frame back after blocking', () => {
     configure({ BlockedExtensions: ['.exe'] });
 
     const response = upload('C:\\a\\setup.exe', 'main_frame');
+
     const html = decodeURIComponent(response.redirectUrl.split(',').slice(1).join(','));
     assert.ok(html.includes('history.back()'));
+    // The warning is a dialog now, so nothing is scripted into the page.
+    assert.ok(!html.includes('alert('));
   });
 
   it('skips parts that are not files', () => {
@@ -213,7 +229,7 @@ describe('onBeforeRequest', () => {
       requestBody: { raw: [{ file: 'C:\\a\\notes.txt' }, { file: 'C:\\a\\setup.exe' }] },
     });
 
-    assert.ok(response.redirectUrl);
+    assert.deepEqual(response, { cancel: true });
   });
 });
 
@@ -238,6 +254,6 @@ describe('the audit trail', () => {
 
     const response = upload('C:\\tmp\\setup.exe');
 
-    assert.ok(response.redirectUrl);
+    assert.deepEqual(response, { cancel: true });
   });
 });
