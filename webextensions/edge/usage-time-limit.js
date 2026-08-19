@@ -1,10 +1,14 @@
 'use strict';
 
 import { loadConfig } from './config-loader.js';
+import { showDialog } from './dialog.js';
 
 // The service worker is not kept alive, so the deadline is recomputed from
 // stored state on every alarm rather than held in a timer.
 const ALARM_NAME = 'usage-time-limit';
+// A dialog cannot count down the way the warning page used to, so the deadline
+// gets an alarm of its own rather than waiting for the next minute's check.
+const DEADLINE_ALARM_NAME = 'usage-time-limit-deadline';
 const STATE_KEY = 'usageTimeLimitState';
 const CHECK_INTERVAL_MINUTES = 1;
 
@@ -12,8 +16,21 @@ const EMPTY_STATE = {
   sessionStart: 0,
   warnedAt: 0,
   terminateAt: 0,
-  warnTabId: 0,
 };
+
+const REASONS = {
+  continuous: '連続して使用できる時間の上限に達しました。',
+  schedule: '使用が許可された時間帯を過ぎています。',
+};
+
+// Local time, to the second: a dialog that names the wait rather than the time
+// would be wrong the moment it is left standing.
+function formatClock(at) {
+  const time = new Date(at);
+  return [time.getHours(), time.getMinutes(), time.getSeconds()]
+    .map(part => String(part).padStart(2, '0'))
+    .join(':');
+}
 
 // "HH:mm" in local time, as minutes since midnight. null when unreadable.
 export function parseTimeOfDay(text) {
@@ -27,6 +44,7 @@ export function parseTimeOfDay(text) {
 
 export const UsageTimeLimit = {
   ALARM_NAME,
+  DEADLINE_ALARM_NAME,
 
   enabled: false,
   maxContinuousMinutes: 0,
@@ -154,6 +172,7 @@ export const UsageTimeLimit = {
     const state = await this.loadState();
     const decision = this.decide(now, state);
     await this.saveState(decision.state);
+    await this.scheduleDeadline(decision.state.terminateAt);
     if (decision.act === 'warn') {
       await this.warn(decision.reason, decision.state.terminateAt);
       return;
@@ -163,8 +182,6 @@ export const UsageTimeLimit = {
     }
   },
 
-  // The countdown on the warning page runs to the second, so it reports the
-  // deadline itself rather than waiting for the next alarm.
   async onDeadlineReached() {
     if (!this.enabled) return;
     const state = await this.loadState();
@@ -179,42 +196,29 @@ export const UsageTimeLimit = {
     ));
   },
 
-  warningPageUrl(reason, terminateAt) {
-    const url = new URL(chrome.runtime.getURL('time-limit.html'));
-    url.searchParams.set('reason', reason);
-    if (terminateAt) url.searchParams.set('deadline', String(terminateAt));
-    return url.toString();
+  warningText(reason, terminateAt) {
+    const lines = [REASONS[reason] ?? '使用時間の制限を超過しました。'];
+    if (!terminateAt) {
+      lines.push('作業中の内容を保存して、ブラウザーを終了してください。');
+      return lines.join('\n');
+    }
+    lines.push(`${formatClock(terminateAt)} にブラウザーを終了します。`);
+    lines.push('作業中の内容をすぐに保存してください。');
+    return lines.join('\n');
   },
 
-  // The warning goes in a tab of its own rather than over whatever the user is
-  // reading. Repeated warnings reuse that tab so they do not pile up.
   async warn(reason, terminateAt) {
-    const url = this.warningPageUrl(reason, terminateAt);
-    const state = await this.loadState();
-    const tab = await this.openWarningTab(state.warnTabId, url);
-    if (tab?.id !== state.warnTabId) {
-      await this.saveState({ ...(await this.loadState()), warnTabId: tab?.id ?? 0 });
-    }
-    // Making the tab active only brings it to the front of its own window, so
-    // the window itself is raised too. Otherwise a warning can be left behind
-    // a minimised or background window.
-    if (!tab?.windowId) return;
-    try {
-      await chrome.windows.update(tab.windowId, { focused: true });
-    } catch {
-      // The window went away between opening the tab and raising it.
-    }
+    await showDialog(this.warningText(reason, terminateAt));
   },
 
-  async openWarningTab(warnTabId, url) {
-    if (warnTabId) {
-      try {
-        return await chrome.tabs.update(warnTabId, { url, active: true });
-      } catch {
-        // The tab was closed in the meantime, so a new one is opened below.
-      }
+  // The browser has to close on time whether or not the dialog was dismissed,
+  // so the deadline is kept as an alarm rather than left to the warning.
+  async scheduleDeadline(terminateAt) {
+    if (!terminateAt) {
+      await chrome.alarms.clear(DEADLINE_ALARM_NAME);
+      return;
     }
-    return chrome.tabs.create({ url, active: true });
+    await chrome.alarms.create(DEADLINE_ALARM_NAME, { when: terminateAt });
   },
 
   // Session storage is cleared when the browser restarts, so a missing start

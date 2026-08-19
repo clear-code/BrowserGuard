@@ -5,30 +5,26 @@ import assert from 'node:assert/strict';
 
 // usage-time-limit reaches for chrome.* when it warns or closes the browser,
 // so a stub stands in for the browser and records what it was asked to do.
-const calls = { created: [], updated: [], removed: [], focused: [] };
+// The warning is a dialog the native host puts up, so nothing here opens a tab.
+const calls = { warned: [], removed: [], alarms: [], cleared: [] };
 let session = {};
 let openWindows = [];
-let nextTabId = 100;
-
-// The window the stub puts every tab in, so focus can be checked.
-const WINDOW_ID = 5;
 
 globalThis.chrome = {
   runtime: {
-    getURL: path => `chrome-extension://testid/${path}`,
-  },
-  tabs: {
-    create: props => {
-      calls.created.push(props);
-      const id = nextTabId++;
-      openTabs.push(id);
-      return Promise.resolve({ id, windowId: WINDOW_ID });
+    sendNativeMessage: (server, payload) => {
+      calls.warned.push({ server, ...payload });
+      return Promise.resolve({ Success: true });
     },
-    update: (tabId, props) => {
-      // A tab that is no longer open rejects, the way chrome.tabs does.
-      if (!openTabs.includes(tabId)) return Promise.reject(new Error('No tab with id'));
-      calls.updated.push({ tabId, ...props });
-      return Promise.resolve({ id: tabId, windowId: WINDOW_ID });
+  },
+  alarms: {
+    create: (name, info) => {
+      calls.alarms.push({ name, ...info });
+      return Promise.resolve();
+    },
+    clear: name => {
+      calls.cleared.push(name);
+      return Promise.resolve(true);
     },
   },
   windows: {
@@ -36,10 +32,6 @@ globalThis.chrome = {
     remove: id => {
       calls.removed.push(id);
       return Promise.resolve();
-    },
-    update: (id, props) => {
-      calls.focused.push({ id, ...props });
-      return Promise.resolve({ id });
     },
   },
   storage: {
@@ -52,8 +44,6 @@ globalThis.chrome = {
     },
   },
 };
-
-let openTabs = [];
 
 const { UsageTimeLimit, parseTimeOfDay } =
   await import('../edge/usage-time-limit.js');
@@ -85,17 +75,16 @@ function at(hour, minute = 0, day = 15) {
 const MINUTE = 60000;
 
 function state(overrides = {}) {
-  return { sessionStart: 0, warnedAt: 0, terminateAt: 0, warnTabId: 0, ...overrides };
+  return { sessionStart: 0, warnedAt: 0, terminateAt: 0, ...overrides };
 }
 
 beforeEach(() => {
-  calls.created = [];
-  calls.updated = [];
+  calls.warned = [];
   calls.removed = [];
-  calls.focused = [];
+  calls.alarms = [];
+  calls.cleared = [];
   session = {};
   openWindows = [];
-  openTabs = [];
   configure();
 });
 
@@ -350,7 +339,7 @@ describe('decide', () => {
 });
 
 describe('check', () => {
-  it('opens the warning page carrying the reason and the deadline', async () => {
+  it('warns with the reason and the time the browser will close', async () => {
     configure({
       MaxContinuousMinutes: 60,
       OnExceeded: { Action: 'Terminate', GraceSeconds: 60 },
@@ -359,11 +348,10 @@ describe('check', () => {
 
     await UsageTimeLimit.check(at(11));
 
-    assert.equal(calls.created.length, 1);
-    const url = new URL(calls.created[0].url);
-    assert.ok(url.href.startsWith('chrome-extension://testid/time-limit.html?'));
-    assert.equal(url.searchParams.get('reason'), 'continuous');
-    assert.equal(url.searchParams.get('deadline'), String(at(11) + 60000));
+    assert.equal(calls.warned.length, 1);
+    assert.match(calls.warned[0].message, /^W /);
+    assert.match(calls.warned[0].message, /連続して使用できる時間/);
+    assert.match(calls.warned[0].message, /11:01:00 に/);
     assert.deepEqual(calls.removed, []);
   });
 
@@ -373,7 +361,7 @@ describe('check', () => {
 
     await UsageTimeLimit.check(at(10, 30));
 
-    assert.deepEqual(calls.created, []);
+    assert.deepEqual(calls.warned, []);
     assert.deepEqual(calls.removed, []);
   });
 
@@ -391,52 +379,85 @@ describe('check', () => {
     assert.deepEqual(calls.removed, [1, 2]);
   });
 
-  // The warning must not take over whatever the user happens to be reading.
-  it('opens the warning in a tab of its own and brings it to the front', async () => {
+  // A tab of its own would take over whatever the user is reading, and the
+  // dialog the host puts up cannot be styled away by the page.
+  it('never opens a tab or a page of its own', async () => {
     configure({ MaxContinuousMinutes: 60 });
     await UsageTimeLimit.saveState(state({ sessionStart: at(10) }));
 
     await UsageTimeLimit.check(at(11));
 
-    assert.equal(calls.created.length, 1);
-    assert.equal(calls.created[0].active, true);
-    // Nothing already open was navigated anywhere.
-    assert.deepEqual(calls.updated, []);
-    // Being active in its window is not enough if that window is behind.
-    assert.deepEqual(calls.focused, [{ id: 5, focused: true }]);
+    assert.equal(chrome.tabs, undefined, 'nothing should reach for chrome.tabs');
+    assert.equal(calls.warned.length, 1);
   });
 
-  it('remembers the warning tab it opened', async () => {
-    configure({ MaxContinuousMinutes: 60 });
+  // Nothing counts down any more, so the deadline needs an alarm of its own.
+  it('sets an alarm for the deadline it just gave out', async () => {
+    configure({
+      MaxContinuousMinutes: 60,
+      OnExceeded: { Action: 'Terminate', GraceSeconds: 90 },
+    });
     await UsageTimeLimit.saveState(state({ sessionStart: at(10) }));
 
     await UsageTimeLimit.check(at(11));
 
-    const opened = (await UsageTimeLimit.loadState()).warnTabId;
-    assert.ok(opened, 'the tab it opened should be remembered');
-    assert.ok(openTabs.includes(opened));
+    const deadline = calls.alarms.find(alarm => alarm.name === 'usage-time-limit-deadline');
+    assert.ok(deadline, 'the deadline should have an alarm');
+    assert.equal(deadline.when, at(11) + 90000);
   });
 
-  it('reuses the warning tab instead of opening another', async () => {
-    configure({ MaxContinuousMinutes: 60, OnExceeded: { ReWarnIntervalMinutes: 10 } });
-    openTabs = [42];
-    await UsageTimeLimit.saveState(state({ sessionStart: at(10), warnTabId: 42 }));
+  it('takes the deadline alarm away once back inside the limits', async () => {
+    configure({
+      AllowedTimeRanges: [{ Start: '09:00', End: '18:00' }],
+      OnExceeded: { Action: 'Terminate' },
+    });
+    await UsageTimeLimit.saveState(state({
+      sessionStart: at(8),
+      warnedAt: at(8),
+      terminateAt: at(8) + MINUTE,
+    }));
+
+    await UsageTimeLimit.check(at(10));
+
+    assert.ok(calls.cleared.includes('usage-time-limit-deadline'));
+  });
+
+  // Warning only never closes anything, so there is no deadline to keep.
+  it('sets no deadline alarm while warning only', async () => {
+    configure({ MaxContinuousMinutes: 60, OnExceeded: { Action: 'WarnOnly' } });
+    await UsageTimeLimit.saveState(state({ sessionStart: at(10) }));
 
     await UsageTimeLimit.check(at(11));
 
-    assert.deepEqual(calls.created, []);
-    assert.equal(calls.updated.length, 1);
-    assert.equal(calls.updated[0].tabId, 42);
+    assert.ok(!calls.alarms.some(alarm => alarm.name === 'usage-time-limit-deadline'));
+    assert.equal(calls.warned.length, 1);
+  });
+});
+
+describe('warningText', () => {
+  it('tells the user to save now when the browser will close', () => {
+    configure({ OnExceeded: { Action: 'Terminate' } });
+
+    const text = UsageTimeLimit.warningText('continuous', at(11, 30));
+
+    assert.match(text, /連続して使用できる時間の上限に達しました。/);
+    assert.match(text, /11:30:00 にブラウザーを終了します。/);
+    assert.match(text, /いますぐ保存/);
   });
 
-  it('opens a new warning tab when the old one was closed', async () => {
-    configure({ MaxContinuousMinutes: 60 });
-    openTabs = [];
-    await UsageTimeLimit.saveState(state({ sessionStart: at(10), warnTabId: 42 }));
+  // Nothing is going to close, so it must not claim otherwise.
+  it('promises no closing time when there is none', () => {
+    const text = UsageTimeLimit.warningText('schedule', 0);
 
-    await UsageTimeLimit.check(at(11));
+    assert.match(text, /使用が許可された時間帯を過ぎています。/);
+    assert.ok(!text.includes('終了します'));
+    assert.match(text, /早めに保存/);
+  });
 
-    assert.equal(calls.created.length, 1);
+  it('still says something for a reason it does not know', () => {
+    const text = UsageTimeLimit.warningText('', 0);
+
+    assert.match(text, /使用時間の制限/);
   });
 });
 
@@ -451,8 +472,9 @@ describe('onDeadlineReached', () => {
     assert.deepEqual(calls.removed, [1]);
   });
 
-  // The page reports the time, so it must not be able to close the browser early.
-  it('ignores a report that arrives before the deadline', async () => {
+  // An alarm can fire early, so it must not be able to close the browser before
+  // the deadline it was set for.
+  it('ignores an alarm that arrives before the deadline', async () => {
     configure({ OnExceeded: { Action: 'Terminate' } });
     openWindows = [{ id: 1 }];
     await UsageTimeLimit.saveState(state({ terminateAt: Date.now() + 60000 }));

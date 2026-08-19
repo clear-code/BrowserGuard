@@ -38,8 +38,8 @@ chrome.runtime.onStartup.addListener(() => {
 UsageTimeLimit.init();
 
 chrome.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name !== UsageTimeLimit.ALARM_NAME) return;
-  UsageTimeLimit.check();
+  if (alarm.name === UsageTimeLimit.ALARM_NAME) UsageTimeLimit.check();
+  if (alarm.name === UsageTimeLimit.DEADLINE_ALARM_NAME) UsageTimeLimit.onDeadlineReached();
 });
 
 TabCountLimit.init();
@@ -67,8 +67,5 @@ chrome.downloads.onChanged.addListener(
 chrome.runtime.onMessage.addListener((msg, _sender) => {
   if (msg.type === 'print') {
     NetLogger.onPrint(msg);
-  }
-  if (msg.type === 'usage-time-limit:expired') {
-    UsageTimeLimit.onDeadlineReached();
   }
 });
