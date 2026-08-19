@@ -9,7 +9,6 @@
 		"webNavigation",
 		"tabs",
 		"downloads",
-		"notifications",
 		"nativeMessaging",
 		"userScripts",
 		"storage",
