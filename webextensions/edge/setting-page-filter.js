@@ -1,6 +1,7 @@
 'use strict';
 
 import { loadConfig } from './config-loader.js';
+import { showDialog } from './dialog.js';
 
 export const SettingPageFilter = {
   enabled: false,
@@ -35,13 +36,9 @@ export const SettingPageFilter = {
     return this.blockedPrefixes.some(prefix => url.startsWith(prefix));
   },
 
-  // onBeforeNavigate cannot cancel or redirect the way a blocking webRequest
-  // listener can, so the tab is sent somewhere else instead. The explanation is
-  // a page bundled with the extension rather than a data: URL, because Chromium
-  // restricts top frame navigation to data: URLs.
-  blockedPageUrl(blockedUrl) {
-    return chrome.runtime.getURL('blocked.html') +
-      '?url=' + encodeURIComponent(blockedUrl);
+  warningText(blockedUrl) {
+    return `アクセスがブロックされました:\n${blockedUrl}\n\n` +
+      '拡張機能のポリシーにより、このページは表示できません。';
   },
 
   onBeforeNavigate(details) {
@@ -50,10 +47,13 @@ export const SettingPageFilter = {
     if (!this.isBlockedUrl(details.url)) return;
 
     if (this.notifyOnBlocked) {
-      chrome.tabs.update(details.tabId, { url: this.blockedPageUrl(details.url) });
-      return;
+      // Not awaited: the tab is taken off the blocked address at once, while
+      // the dialog stands until it is dismissed.
+      showDialog(this.warningText(details.url));
     }
 
+    // onBeforeNavigate cannot cancel or redirect the way a blocking webRequest
+    // listener can, so the tab is sent back where it came from instead.
     chrome.tabs.goBack(details.tabId).catch(() =>
       chrome.tabs.update(details.tabId, { url: 'about:blank' })
     );

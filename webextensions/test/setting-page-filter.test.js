@@ -4,12 +4,16 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 // setting-page-filter reaches for chrome.* when it blocks something, so a stub
-// stands in for the browser and records what it was asked to do.
-const calls = { updates: [], goBacks: [] };
+// stands in for the browser and records what it was asked to do. The warning is
+// a dialog the native host puts up.
+const calls = { updates: [], goBacks: [], warned: [] };
 
 globalThis.chrome = {
   runtime: {
-    getURL: path => `chrome-extension://testid/${path}`,
+    sendNativeMessage: (server, payload) => {
+      calls.warned.push({ server, ...payload });
+      return Promise.resolve({ Success: true });
+    },
   },
   tabs: {
     update: (tabId, props) => {
@@ -42,6 +46,7 @@ function navigate(url, frameId = 0) {
 beforeEach(() => {
   calls.updates = [];
   calls.goBacks = [];
+  calls.warned = [];
   configure({});
 });
 
@@ -92,18 +97,21 @@ describe('onBeforeNavigate', () => {
     assert.deepEqual(calls.goBacks, []);
   });
 
-  it('sends the tab to the bundled page carrying the blocked address', () => {
+  it('says which address was blocked', () => {
     navigate('edge://settings/privacy');
 
-    assert.equal(calls.updates.length, 1);
-    const { tabId, url } = calls.updates[0];
-    assert.equal(tabId, 7);
-    assert.ok(url.startsWith('chrome-extension://testid/blocked.html?'));
-    assert.equal(
-      new URL(url).searchParams.get('url'),
-      'edge://settings/privacy');
-    // The explanation replaces going back, so history is left alone.
-    assert.deepEqual(calls.goBacks, []);
+    assert.equal(calls.warned.length, 1);
+    assert.match(calls.warned[0].message, /^W /);
+    assert.ok(calls.warned[0].message.includes('edge://settings/privacy'));
+  });
+
+  // The address is gone whether or not the block is announced, because
+  // onBeforeNavigate cannot cancel the navigation itself.
+  it('takes the tab off the blocked address either way', () => {
+    navigate('edge://settings/privacy');
+
+    assert.deepEqual(calls.goBacks, [7]);
+    assert.deepEqual(calls.updates, []);
   });
 
   it('goes back silently when notifications are turned off', () => {
@@ -112,17 +120,16 @@ describe('onBeforeNavigate', () => {
     navigate('edge://settings/privacy');
 
     assert.deepEqual(calls.goBacks, [7]);
+    assert.deepEqual(calls.warned, []);
     assert.deepEqual(calls.updates, []);
   });
 });
 
-describe('blockedPageUrl', () => {
-  // A crafted address must not be able to add parameters of its own.
-  it('escapes the address it carries', () => {
-    const url = SettingPageFilter.blockedPageUrl('edge://settings/?a=1&b=2#x');
+describe('warningText', () => {
+  // A crafted address must not be able to pass for the text around it.
+  it('carries the address it was given as it stands', () => {
+    const text = SettingPageFilter.warningText('edge://settings/?a=1&b=2#x');
 
-    assert.equal(
-      new URL(url).searchParams.get('url'),
-      'edge://settings/?a=1&b=2#x');
+    assert.ok(text.includes('edge://settings/?a=1&b=2#x'));
   });
 });
