@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using BrowserGuard;
@@ -32,6 +33,47 @@ namespace BrowserGuard.Tests
             });
 
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
+
+        // A dialog put on the screen for real would wait for someone to dismiss
+        // it, so the test is handed somewhere else to put the text.
+        MessageHandler DialogHandler(List<string> shown) =>
+            new(null, null, shown.Add);
+
+        [Fact]
+        public void ShowsTheTextItIsGivenAsADialog()
+        {
+            var shown = new List<string>();
+
+            var response = DialogHandler(shown).Handle("W タブを閉じました。");
+
+            Assert.True(response!.Success);
+            Assert.Equal("タブを閉じました。", Assert.Single(shown));
+        }
+
+        // The text is the whole of the message, so a limit that mentions several
+        // numbers has to survive intact.
+        [Fact]
+        public void KeepsTheWholeWarningTogether()
+        {
+            var shown = new List<string>();
+
+            DialogHandler(shown).Handle("W 上限は 5 個です。1 個を閉じました。");
+
+            Assert.Equal("上限は 5 個です。1 個を閉じました。", Assert.Single(shown));
+        }
+
+        // Reading it would mean a registry and a file read for a message that
+        // carries everything it needs.
+        [Fact]
+        public void ShowsTheDialogWithoutReadingTheConfiguration()
+        {
+            var shown = new List<string>();
+
+            var response = DialogHandler(shown).Handle("W 警告");
+
+            Assert.True(response!.Success);
+            Assert.Null(response.Error);
+        }
 
         // An entry arrives for every request, so acknowledging each one would
         // double the traffic over the port.

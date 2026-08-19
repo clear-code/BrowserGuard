@@ -44,10 +44,9 @@ chrome.alarms.onAlarm.addListener(alarm => {
 
 TabCountLimit.init();
 
-// The limit is counted across every window, so a tab opening or closing
-// anywhere can change whether it is exceeded.
+// Closing a tab can never put the count over the limit, so only the tabs that
+// are opened are worth waking the worker for.
 chrome.tabs.onCreated.addListener(() => TabCountLimit.check());
-chrome.tabs.onRemoved.addListener(() => TabCountLimit.check());
 
 NetLogger.init();
 

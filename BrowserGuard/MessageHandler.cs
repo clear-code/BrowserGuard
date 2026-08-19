@@ -20,16 +20,23 @@ namespace BrowserGuard
     internal class MessageHandler : IDisposable
     {
         private readonly Logger? logger;
+        private readonly Action<string> showDialog;
 
         private NetLogWriter? netLogFile;
         private NetLogSender? netLogSender;
         private bool netLogResolved;
 
         // The logging configuration can be handed in so that it does not have to
-        // be found through the registry.
-        internal MessageHandler(Logger? logger = null, NetLoggerConfig? netLoggerConfig = null)
+        // be found through the registry, and so can the way a warning is shown,
+        // so that a test does not put a dialog on the screen and then wait for
+        // someone to dismiss it.
+        internal MessageHandler(
+            Logger? logger = null,
+            NetLoggerConfig? netLoggerConfig = null,
+            Action<string>? showDialog = null)
         {
             this.logger = logger;
+            this.showDialog = showDialog ?? (text => Dialog.Show(text, logger));
             if (netLoggerConfig is null)
             {
                 return;
@@ -48,6 +55,15 @@ namespace BrowserGuard
             if (message.StartsWith("L "))
             {
                 return HandleLogEntry(message[2..].Trim());
+            }
+
+            // Handled before the configuration is read, because the text to show
+            // arrives with the message and nothing in the config bears on it.
+            if (message.StartsWith("W "))
+            {
+                logger?.Log("Command: warn");
+                showDialog(message[2..].Trim());
+                return new Response { Success = true };
             }
 
             var config = ConfigLoader.LoadConfig();

@@ -4,16 +4,13 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 // tab-count-limit reaches for chrome.* when it counts the tabs, closes them or
-// puts the warning up, so a stub stands in for the browser and records what it
-// was asked to do.
-const calls = { created: [], updated: [], removed: [], focused: [] };
-let session = {};
+// warns, so a stub stands in for the browser and records what it was asked to
+// do.
+const calls = { removed: [], created: [], warned: [] };
 let tabs = [];
 let nextTabId = 100;
-
-// The window the stub puts the tabs it opens in, so focus can be checked.
-const WINDOW_ID = 5;
-const WARNING_PAGE = 'chrome-extension://testid/tab-limit.html';
+// How the host answers, so a dialog left up can be held open in a test.
+let nativeMessage = () => Promise.resolve({ Success: true });
 
 function findTab(tabId) {
   return tabs.find(tab => tab.id === tabId);
@@ -22,43 +19,26 @@ function findTab(tabId) {
 globalThis.chrome = {
   runtime: {
     getURL: path => `chrome-extension://testid/${path}`,
+    // The host answers only once the user has dismissed the dialog.
+    sendNativeMessage: (server, payload) => {
+      calls.warned.push({ server, ...payload });
+      return nativeMessage();
+    },
   },
   tabs: {
     query: () => Promise.resolve(tabs.map(tab => ({ ...tab }))),
+    // Nothing may open a tab: a tab to carry the warning would itself put the
+    // count over the limit.
     create: props => {
       calls.created.push(props);
-      const tab = { id: nextTabId++, windowId: WINDOW_ID, url: props.url };
-      tabs.push(tab);
-      return Promise.resolve({ ...tab });
-    },
-    update: (tabId, props) => {
-      const tab = findTab(tabId);
-      // A tab that is no longer open rejects, the way chrome.tabs does.
-      if (!tab) return Promise.reject(new Error('No tab with id'));
-      calls.updated.push({ tabId, ...props });
-      tab.url = props.url;
-      return Promise.resolve({ ...tab });
+      return Promise.resolve({ id: nextTabId++ });
     },
     remove: tabId => {
+      // A tab that is no longer open rejects, the way chrome.tabs does.
       if (!findTab(tabId)) return Promise.reject(new Error('No tab with id'));
       calls.removed.push(tabId);
       tabs = tabs.filter(tab => tab.id !== tabId);
       return Promise.resolve();
-    },
-  },
-  windows: {
-    update: (id, props) => {
-      calls.focused.push({ id, ...props });
-      return Promise.resolve({ id });
-    },
-  },
-  storage: {
-    session: {
-      get: key => Promise.resolve(key in session ? { [key]: session[key] } : {}),
-      set: entries => {
-        Object.assign(session, entries);
-        return Promise.resolve();
-      },
     },
   },
 };
@@ -72,10 +52,6 @@ const DEFAULTS = {
 
 function configure(overrides = {}) {
   TabCountLimit.applyConfig({ ...DEFAULTS, ...overrides });
-}
-
-function state(overrides = {}) {
-  return { warnTabId: 0, ...overrides };
 }
 
 // Tabs of the user's own, spread over more than one window so that the count is
@@ -96,13 +72,12 @@ function openTabs(count, windowIds = [1, 2]) {
 }
 
 beforeEach(() => {
-  calls.created = [];
-  calls.updated = [];
   calls.removed = [];
-  calls.focused = [];
-  session = {};
+  calls.created = [];
+  calls.warned = [];
   tabs = [];
-  TabCountLimit.opening = false;
+  nativeMessage = () => Promise.resolve({ Success: true });
+  TabCountLimit.warning = false;
   configure();
 });
 
@@ -159,25 +134,6 @@ describe('excessTabs', () => {
   });
 });
 
-describe('countableTabs', () => {
-  it('counts the tabs of every window together', async () => {
-    openTabs(5, [1, 2, 3]);
-
-    assert.equal((await TabCountLimit.countableTabs(0)).length, 5);
-  });
-
-  // Otherwise the warning would push the count up by one and be closed as the
-  // newest tab the moment it appeared.
-  it('leaves out the warning it opened itself', async () => {
-    const opened = openTabs(5);
-
-    const countable = await TabCountLimit.countableTabs(opened[0].id);
-
-    assert.equal(countable.length, 4);
-    assert.ok(!countable.some(tab => tab.id === opened[0].id));
-  });
-});
-
 describe('check', () => {
   it('closes the tab that puts the count over the limit', async () => {
     configure({ MaxCount: 3 });
@@ -206,8 +162,7 @@ describe('check', () => {
     await TabCountLimit.check();
 
     assert.equal(calls.removed.length, 5);
-    // The warning is the only tab left beyond the limit.
-    assert.equal(tabs.filter(tab => !tab.url.startsWith(WARNING_PAGE)).length, 3);
+    assert.equal(tabs.length, 3);
   });
 
   it('leaves the browser alone while inside the limit', async () => {
@@ -217,94 +172,69 @@ describe('check', () => {
     await TabCountLimit.check();
 
     assert.deepEqual(calls.removed, []);
-    assert.deepEqual(calls.created, []);
+    assert.deepEqual(calls.warned, []);
   });
 
-  it('says why the tabs were closed', async () => {
+  // A tab to carry the warning would itself put the count over the limit.
+  it('never opens a tab of its own', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(6);
+
+    await TabCountLimit.check();
+
+    assert.deepEqual(calls.created, []);
+    assert.equal(tabs.length, 3);
+  });
+
+  it('asks the native host to show the warning', async () => {
     configure({ MaxCount: 3 });
     openTabs(5);
 
     await TabCountLimit.check();
 
-    assert.equal(calls.created.length, 1);
-    const url = new URL(calls.created[0].url);
-    assert.ok(url.href.startsWith(`${WARNING_PAGE}?`));
-    assert.equal(url.searchParams.get('max'), '3');
-    assert.equal(url.searchParams.get('closed'), '2');
+    assert.equal(calls.warned.length, 1);
+    assert.equal(calls.warned[0].server, 'com.clear_code.browser_guard');
+    assert.match(calls.warned[0].message, /^W /);
   });
 
-  // The warning must not take over whatever the user happens to be reading.
-  it('opens the warning in a tab of its own and brings it to the front', async () => {
+  it('says how many tabs were closed and what the limit is', async () => {
     configure({ MaxCount: 3 });
-    openTabs(4);
+    openTabs(5);
 
     await TabCountLimit.check();
 
-    assert.equal(calls.created[0].active, true);
-    assert.deepEqual(calls.updated, []);
-    // Being active in its window is not enough if that window is behind.
-    assert.deepEqual(calls.focused, [{ id: WINDOW_ID, focused: true }]);
+    assert.match(calls.warned[0].message, /3 個/);
+    assert.match(calls.warned[0].message, /2 個/);
   });
 
-  it('remembers the warning tab it opened', async () => {
+  // The host answers only once the dialog is dismissed, so a second warning
+  // behind the first would leave a dialog to dismiss for every tab opened.
+  it('puts up one dialog at a time', async () => {
     configure({ MaxCount: 3 });
+    let dismiss = () => {};
+    nativeMessage = () => new Promise(resolve => { dismiss = () => resolve({ Success: true }); });
     openTabs(4);
 
+    const first = TabCountLimit.check();
+    openTabs(1);
     await TabCountLimit.check();
 
-    const opened = (await TabCountLimit.loadState()).warnTabId;
-    assert.ok(opened, 'the tab it opened should be remembered');
-    assert.ok(findTab(opened));
+    assert.equal(calls.warned.length, 1);
+    // The tabs are still closed while the dialog stands.
+    assert.equal(tabs.length, 3);
+
+    dismiss();
+    await first;
   });
 
-  it('reuses the warning tab instead of opening another', async () => {
+  it('warns again once the dialog has been dismissed', async () => {
     configure({ MaxCount: 3 });
     openTabs(4);
-    tabs.push({ id: 42, windowId: WINDOW_ID, url: `${WARNING_PAGE}?max=3&closed=1` });
-    await TabCountLimit.saveState(state({ warnTabId: 42 }));
-
+    await TabCountLimit.check();
+    openTabs(1);
     await TabCountLimit.check();
 
-    assert.deepEqual(calls.created, []);
-    assert.equal(calls.updated.length, 1);
-    assert.equal(calls.updated[0].tabId, 42);
-  });
-
-  // The warning tab is left out of the count, so it must survive the closing.
-  it('never closes the warning tab itself', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(4);
-    // A higher id than every other tab, so it would go first if it counted.
-    tabs.push({ id: 9999, windowId: WINDOW_ID, url: `${WARNING_PAGE}?max=3&closed=1` });
-    await TabCountLimit.saveState(state({ warnTabId: 9999 }));
-
-    await TabCountLimit.check();
-
-    assert.ok(!calls.removed.includes(9999));
-    assert.ok(findTab(9999));
-  });
-
-  it('opens a new warning tab when the old one was closed', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(4);
-    await TabCountLimit.saveState(state({ warnTabId: 42 }));
-
-    await TabCountLimit.check();
-
-    assert.equal(calls.created.length, 1);
-  });
-
-  // Opening the warning creates a tab, which reports that a tab was created;
-  // acting on that report would close the warning as the newest tab.
-  it('does not act while it is opening the warning', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(4);
-    TabCountLimit.opening = true;
-
-    await TabCountLimit.check();
-
-    assert.deepEqual(calls.removed, []);
-    assert.deepEqual(calls.created, []);
+    assert.equal(calls.warned.length, 2);
   });
 
   it('does nothing while disabled', async () => {
@@ -314,7 +244,7 @@ describe('check', () => {
     await TabCountLimit.check();
 
     assert.deepEqual(calls.removed, []);
-    assert.deepEqual(calls.created, []);
+    assert.deepEqual(calls.warned, []);
   });
 
   // The limit is at least one tab, so something is always left open.
@@ -324,6 +254,31 @@ describe('check', () => {
 
     await TabCountLimit.check();
 
-    assert.equal(tabs.filter(tab => !tab.url.startsWith(WARNING_PAGE)).length, 1);
+    assert.equal(tabs.length, 1);
+  });
+
+  // A host that cannot be reached must not stop the limit being enforced.
+  it('still closes the tabs when the warning cannot be shown', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(4);
+    nativeMessage = () => Promise.reject(new Error('host not found'));
+
+    await TabCountLimit.check();
+
+    assert.equal(tabs.length, 3);
+  });
+
+  // Otherwise one unreachable host would leave the warning switched off.
+  it('warns again after a failure', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(4);
+    nativeMessage = () => Promise.reject(new Error('host not found'));
+    await TabCountLimit.check();
+
+    nativeMessage = () => Promise.resolve({ Success: true });
+    openTabs(1);
+    await TabCountLimit.check();
+
+    assert.equal(calls.warned.length, 2);
   });
 });
