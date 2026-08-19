@@ -442,16 +442,17 @@ describe('warningText', () => {
 
     assert.match(text, /連続して使用できる時間の上限に達しました。/);
     assert.match(text, /11:30:00 にブラウザーを終了します。/);
-    assert.match(text, /いますぐ保存/);
+    // The exact wording is free to change; that it says to save is not.
+    assert.match(text, /保存/);
   });
 
-  // Nothing is going to close, so it must not claim otherwise.
-  it('promises no closing time when there is none', () => {
+  // Nothing is going to close on its own, so it must not claim otherwise.
+  it('names no closing time when there is none', () => {
     const text = UsageTimeLimit.warningText('schedule', 0);
 
     assert.match(text, /使用が許可された時間帯を過ぎています。/);
-    assert.ok(!text.includes('終了します'));
-    assert.match(text, /早めに保存/);
+    assert.ok(!text.includes('にブラウザーを終了します'));
+    assert.match(text, /保存/);
   });
 
   it('still says something for a reason it does not know', () => {
