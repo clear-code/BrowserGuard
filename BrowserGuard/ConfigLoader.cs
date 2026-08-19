@@ -23,6 +23,7 @@ namespace BrowserGuard
         public SettingPageFilterConfig SettingPageFilter { get; set; } = new();
         public StartupLauncherConfig StartupLauncher { get; set; } = new();
         public UsageTimeLimitConfig UsageTimeLimit { get; set; } = new();
+        public TabCountLimitConfig TabCountLimit { get; set; } = new();
     }
 
     internal class NetLoggerConfig
@@ -130,6 +131,16 @@ namespace BrowserGuard
         public string Action { get; set; } = "WarnOnly";
         public int GraceSeconds { get; set; } = 60;
         public int ReWarnIntervalMinutes { get; set; } = 10;
+    }
+
+    // How many tabs may be open at once. The tabs are counted across every
+    // window, so the limit cannot be worked around by opening another one.
+    internal class TabCountLimitConfig
+    {
+        public bool Enabled { get; set; }
+        // 0 means no limit, so a config that leaves the number out cannot start
+        // warning about every tab.
+        public int MaxCount { get; set; }
     }
 
     internal static class ConfigLoader

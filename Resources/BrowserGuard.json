@@ -49,5 +49,9 @@
       "GraceSeconds": 60,
       "ReWarnIntervalMinutes": 10
     }
+  },
+  "TabCountLimit": {
+    "Enabled": false,
+    "MaxCount": 0
   }
 }

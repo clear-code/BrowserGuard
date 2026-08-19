@@ -6,6 +6,7 @@ import { UploadFileBridge } from './upload-file-bridge.js';
 import { NetLogger } from './net-logger.js';
 import { SettingPageFilter } from './setting-page-filter.js';
 import { UsageTimeLimit } from './usage-time-limit.js';
+import { TabCountLimit } from './tab-count-limit.js';
 
 // The URL prefixes come from the config, so register without a filter and
 // decide inside the handler instead.
@@ -40,6 +41,13 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name !== UsageTimeLimit.ALARM_NAME) return;
   UsageTimeLimit.check();
 });
+
+TabCountLimit.init();
+
+// The limit is counted across every window, so a tab opening or closing
+// anywhere can change whether it is exceeded.
+chrome.tabs.onCreated.addListener(() => TabCountLimit.check());
+chrome.tabs.onRemoved.addListener(() => TabCountLimit.check());
 
 NetLogger.init();
 

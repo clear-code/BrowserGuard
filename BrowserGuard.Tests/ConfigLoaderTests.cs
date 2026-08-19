@@ -251,6 +251,35 @@ namespace BrowserGuard.Tests
         }
 
         [Fact]
+        public void ReadsTheTabCountLimit()
+        {
+            var json = """
+            {
+              "TabCountLimit": {
+                "Enabled": true,
+                "MaxCount": 20
+              }
+            }
+            """;
+
+            var config = ConfigLoader.ParseConf(json);
+
+            Assert.True(config.TabCountLimit.Enabled);
+            Assert.Equal(20, config.TabCountLimit.MaxCount);
+        }
+
+        // Zero is "no limit", so a config without a number cannot start warning
+        // about every tab.
+        [Fact]
+        public void TabCountLimitDefaultsToDisabledWithoutALimit()
+        {
+            var config = ConfigLoader.ParseConf("{}");
+
+            Assert.False(config.TabCountLimit.Enabled);
+            Assert.Equal(0, config.TabCountLimit.MaxCount);
+        }
+
+        [Fact]
         public void StartupLauncherDefaultsToDisabledWithNoPrograms()
         {
             var config = ConfigLoader.ParseConf("{}");
