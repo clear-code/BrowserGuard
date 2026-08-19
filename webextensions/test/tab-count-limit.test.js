@@ -3,15 +3,15 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// tab-count-limit reaches for chrome.* when it counts the tabs or puts the
-// warning up, so a stub stands in for the browser and records what it was
-// asked to do.
+// tab-count-limit reaches for chrome.* when it counts the tabs, closes them or
+// puts the warning up, so a stub stands in for the browser and records what it
+// was asked to do.
 const calls = { created: [], updated: [], removed: [], focused: [] };
 let session = {};
 let tabs = [];
 let nextTabId = 100;
 
-// The window the stub puts every tab it opens in, so focus can be checked.
+// The window the stub puts the tabs it opens in, so focus can be checked.
 const WINDOW_ID = 5;
 const WARNING_PAGE = 'chrome-extension://testid/tab-limit.html';
 
@@ -25,12 +25,6 @@ globalThis.chrome = {
   },
   tabs: {
     query: () => Promise.resolve(tabs.map(tab => ({ ...tab }))),
-    get: tabId => {
-      const tab = findTab(tabId);
-      // A tab that is no longer open rejects, the way chrome.tabs does.
-      if (!tab) return Promise.reject(new Error('No tab with id'));
-      return Promise.resolve({ ...tab });
-    },
     create: props => {
       calls.created.push(props);
       const tab = { id: nextTabId++, windowId: WINDOW_ID, url: props.url };
@@ -39,12 +33,14 @@ globalThis.chrome = {
     },
     update: (tabId, props) => {
       const tab = findTab(tabId);
+      // A tab that is no longer open rejects, the way chrome.tabs does.
       if (!tab) return Promise.reject(new Error('No tab with id'));
       calls.updated.push({ tabId, ...props });
       tab.url = props.url;
       return Promise.resolve({ ...tab });
     },
     remove: tabId => {
+      if (!findTab(tabId)) return Promise.reject(new Error('No tab with id'));
       calls.removed.push(tabId);
       tabs = tabs.filter(tab => tab.id !== tabId);
       return Promise.resolve();
@@ -79,19 +75,24 @@ function configure(overrides = {}) {
 }
 
 function state(overrides = {}) {
-  return { warnTabId: 0, warnedCount: 0, ...overrides };
+  return { warnTabId: 0, ...overrides };
 }
 
-// Tabs of the user's own, spread over more than one window so that the count
-// is never taken from a single window.
+// Tabs of the user's own, spread over more than one window so that the count is
+// never taken from a single window. They are returned oldest first, the way
+// chrome.tabs.query reports them.
 function openTabs(count, windowIds = [1, 2]) {
+  const opened = [];
   for (let index = 0; index < count; index++) {
-    tabs.push({
+    const tab = {
       id: nextTabId++,
       windowId: windowIds[index % windowIds.length],
       url: `https://example.com/${index}`,
-    });
+    };
+    tabs.push(tab);
+    opened.push(tab);
   }
+  return opened;
 }
 
 beforeEach(() => {
@@ -105,106 +106,108 @@ beforeEach(() => {
   configure();
 });
 
-describe('decide', () => {
-  it('does nothing while disabled', () => {
+describe('excessTabs', () => {
+  it('takes nothing away while disabled', () => {
     configure({ Enabled: false, MaxCount: 3 });
 
-    assert.equal(TabCountLimit.decide(10, state()).act, 'none');
+    assert.deepEqual(TabCountLimit.excessTabs(openTabs(10)), []);
   });
 
-  // Otherwise a config that leaves the number out would warn about every tab.
+  // Otherwise a config that leaves the number out would close every tab.
   it('treats no limit as no limit', () => {
     configure({ MaxCount: 0 });
 
-    assert.equal(TabCountLimit.decide(50, state()).act, 'none');
+    assert.deepEqual(TabCountLimit.excessTabs(openTabs(50)), []);
   });
 
-  it('allows the limit itself and warns past it', () => {
+  it('leaves the limit itself alone', () => {
     configure({ MaxCount: 3 });
 
-    assert.equal(TabCountLimit.decide(3, state()).act, 'none');
-    assert.equal(TabCountLimit.decide(4, state()).act, 'warn');
+    assert.deepEqual(TabCountLimit.excessTabs(openTabs(3)), []);
   });
 
-  it('remembers the count it warned about', () => {
+  it('takes away only what is over the limit', () => {
     configure({ MaxCount: 3 });
 
-    assert.equal(TabCountLimit.decide(4, state()).state.warnedCount, 4);
+    assert.equal(TabCountLimit.excessTabs(openTabs(4)).length, 1);
+    tabs = [];
+    assert.equal(TabCountLimit.excessTabs(openTabs(9)).length, 6);
   });
 
-  // Warning on every check would interrupt the very act of closing tabs.
-  it('stays quiet while the count does not grow', () => {
+  // What the user already had open is theirs; only what they just opened goes.
+  it('takes the most recently opened tabs', () => {
     configure({ MaxCount: 3 });
-    const warned = state({ warnedCount: 5, warnTabId: 42 });
+    const opened = openTabs(5);
 
-    assert.equal(TabCountLimit.decide(5, warned).act, 'none');
-    assert.equal(TabCountLimit.decide(4, warned).act, 'none');
+    const excess = TabCountLimit.excessTabs(opened);
+
+    assert.deepEqual(excess.map(tab => tab.id), [opened[4].id, opened[3].id]);
   });
 
-  it('warns again once another tab is opened', () => {
-    configure({ MaxCount: 3 });
-    const warned = state({ warnedCount: 5, warnTabId: 42 });
+  // The order chrome.tabs.query reports is by window and position, not by age.
+  it('goes by when a tab was opened rather than where it sits', () => {
+    configure({ MaxCount: 2 });
+    const newest = { id: 900, windowId: 1, url: 'https://example.com/newest' };
+    const older = [
+      { id: 100, windowId: 1, url: 'https://example.com/a' },
+      { id: 200, windowId: 2, url: 'https://example.com/b' },
+    ];
 
-    const decision = TabCountLimit.decide(6, warned);
+    const excess = TabCountLimit.excessTabs([newest, ...older]);
 
-    assert.equal(decision.act, 'warn');
-    assert.equal(decision.state.warnedCount, 6);
-  });
-
-  it('takes the warning away once the count is back inside the limit', () => {
-    configure({ MaxCount: 3 });
-    const warned = state({ warnedCount: 5, warnTabId: 42 });
-
-    const decision = TabCountLimit.decide(3, warned);
-
-    assert.equal(decision.act, 'dismiss');
-    assert.equal(decision.state.warnedCount, 0);
-    assert.equal(decision.state.warnTabId, 0);
-  });
-
-  // The warning would be the only tab left, so taking it away closes the
-  // browser.
-  it('keeps the warning rather than close the last tab', () => {
-    configure({ MaxCount: 3 });
-    const warned = state({ warnedCount: 5, warnTabId: 42 });
-
-    assert.equal(TabCountLimit.decide(0, warned).act, 'none');
-  });
-
-  it('has nothing to take away when it never warned', () => {
-    configure({ MaxCount: 3 });
-
-    assert.equal(TabCountLimit.decide(2, state()).act, 'none');
+    assert.deepEqual(excess.map(tab => tab.id), [900]);
   });
 });
 
-describe('countTabs', () => {
+describe('countableTabs', () => {
   it('counts the tabs of every window together', async () => {
     openTabs(5, [1, 2, 3]);
 
-    assert.equal(await TabCountLimit.countTabs(0), 5);
+    assert.equal((await TabCountLimit.countableTabs(0)).length, 5);
   });
 
-  // Otherwise the warning would push the count it reports up by one.
-  it('does not count the warning it opened itself', async () => {
-    openTabs(5);
+  // Otherwise the warning would push the count up by one and be closed as the
+  // newest tab the moment it appeared.
+  it('leaves out the warning it opened itself', async () => {
+    const opened = openTabs(5);
 
-    assert.equal(await TabCountLimit.countTabs(tabs[0].id), 4);
+    const countable = await TabCountLimit.countableTabs(opened[0].id);
+
+    assert.equal(countable.length, 4);
+    assert.ok(!countable.some(tab => tab.id === opened[0].id));
   });
 });
 
 describe('check', () => {
-  it('warns once the tabs of every window together pass the limit', async () => {
+  it('closes the tab that puts the count over the limit', async () => {
     configure({ MaxCount: 3 });
-    openTabs(4, [1, 2]);
+    const opened = openTabs(4);
 
     await TabCountLimit.check();
 
-    assert.equal(calls.created.length, 1);
-    const url = new URL(calls.created[0].url);
-    assert.ok(url.href.startsWith(`${WARNING_PAGE}?`));
-    assert.equal(url.searchParams.get('count'), '4');
-    assert.equal(url.searchParams.get('max'), '3');
+    assert.deepEqual(calls.removed, [opened[3].id]);
+    assert.ok(!findTab(opened[3].id));
+  });
+
+  it('counts every window together before closing anything', async () => {
+    configure({ MaxCount: 3 });
+    // Two tabs in each of two windows: neither window is over on its own.
+    const opened = openTabs(4, [1, 2]);
+
+    await TabCountLimit.check();
+
+    assert.deepEqual(calls.removed, [opened[3].id]);
+  });
+
+  it('brings a session restored over the limit back down to it', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(8);
+
+    await TabCountLimit.check();
+
+    assert.equal(calls.removed.length, 5);
+    // The warning is the only tab left beyond the limit.
+    assert.equal(tabs.filter(tab => !tab.url.startsWith(WARNING_PAGE)).length, 3);
   });
 
   it('leaves the browser alone while inside the limit', async () => {
@@ -213,8 +216,21 @@ describe('check', () => {
 
     await TabCountLimit.check();
 
+    assert.deepEqual(calls.removed, []);
     assert.deepEqual(calls.created, []);
-    assert.deepEqual(calls.updated, []);
+  });
+
+  it('says why the tabs were closed', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(5);
+
+    await TabCountLimit.check();
+
+    assert.equal(calls.created.length, 1);
+    const url = new URL(calls.created[0].url);
+    assert.ok(url.href.startsWith(`${WARNING_PAGE}?`));
+    assert.equal(url.searchParams.get('max'), '3');
+    assert.equal(url.searchParams.get('closed'), '2');
   });
 
   // The warning must not take over whatever the user happens to be reading.
@@ -244,17 +260,28 @@ describe('check', () => {
   it('reuses the warning tab instead of opening another', async () => {
     configure({ MaxCount: 3 });
     openTabs(4);
-    tabs.push({ id: 42, windowId: WINDOW_ID, url: `${WARNING_PAGE}?count=4&max=3` });
-    await TabCountLimit.saveState(state({ warnTabId: 42, warnedCount: 4 }));
+    tabs.push({ id: 42, windowId: WINDOW_ID, url: `${WARNING_PAGE}?max=3&closed=1` });
+    await TabCountLimit.saveState(state({ warnTabId: 42 }));
 
-    // One tab more than the warning already reported.
-    openTabs(1);
     await TabCountLimit.check();
 
     assert.deepEqual(calls.created, []);
     assert.equal(calls.updated.length, 1);
     assert.equal(calls.updated[0].tabId, 42);
-    assert.equal(new URL(calls.updated[0].url).searchParams.get('count'), '5');
+  });
+
+  // The warning tab is left out of the count, so it must survive the closing.
+  it('never closes the warning tab itself', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(4);
+    // A higher id than every other tab, so it would go first if it counted.
+    tabs.push({ id: 9999, windowId: WINDOW_ID, url: `${WARNING_PAGE}?max=3&closed=1` });
+    await TabCountLimit.saveState(state({ warnTabId: 9999 }));
+
+    await TabCountLimit.check();
+
+    assert.ok(!calls.removed.includes(9999));
+    assert.ok(findTab(9999));
   });
 
   it('opens a new warning tab when the old one was closed', async () => {
@@ -267,39 +294,16 @@ describe('check', () => {
     assert.equal(calls.created.length, 1);
   });
 
-  it('takes the warning away once enough tabs are closed', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(2);
-    tabs.push({ id: 42, windowId: WINDOW_ID, url: `${WARNING_PAGE}?count=4&max=3` });
-    await TabCountLimit.saveState(state({ warnTabId: 42, warnedCount: 4 }));
-
-    await TabCountLimit.check();
-
-    assert.deepEqual(calls.removed, [42]);
-    assert.deepEqual(await TabCountLimit.loadState(), state());
-  });
-
-  // The tab is the user's own once they have navigated it somewhere else.
-  it('leaves a warning tab the user navigated away alone', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(2);
-    tabs.push({ id: 42, windowId: WINDOW_ID, url: 'https://example.com/reading' });
-    await TabCountLimit.saveState(state({ warnTabId: 42, warnedCount: 4 }));
-
-    await TabCountLimit.check();
-
-    assert.deepEqual(calls.removed, []);
-  });
-
   // Opening the warning creates a tab, which reports that a tab was created;
-  // that report must not open another warning.
-  it('does not warn about the warning it is opening', async () => {
+  // acting on that report would close the warning as the newest tab.
+  it('does not act while it is opening the warning', async () => {
     configure({ MaxCount: 3 });
     openTabs(4);
     TabCountLimit.opening = true;
 
     await TabCountLimit.check();
 
+    assert.deepEqual(calls.removed, []);
     assert.deepEqual(calls.created, []);
   });
 
@@ -309,6 +313,17 @@ describe('check', () => {
 
     await TabCountLimit.check();
 
+    assert.deepEqual(calls.removed, []);
     assert.deepEqual(calls.created, []);
+  });
+
+  // The limit is at least one tab, so something is always left open.
+  it('never closes the last tab', async () => {
+    configure({ MaxCount: 1 });
+    openTabs(3);
+
+    await TabCountLimit.check();
+
+    assert.equal(tabs.filter(tab => !tab.url.startsWith(WARNING_PAGE)).length, 1);
   });
 });
