@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -22,6 +23,26 @@ namespace BrowserGuard
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
+
+        // An entry the host makes for itself, in the shape the browser sends
+        // its own. It goes back through Compact like any other, so that the
+        // machine and the user are stamped on it in one place.
+        internal static string UploadFileBridgeFailed(string file, string reason, DateTime at)
+        {
+            using var buffer = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
+            {
+                writer.WriteStartObject();
+                // The upload itself went through; keeping a copy of it did not.
+                writer.WriteString("operation", "upload-file-bridge");
+                writer.WriteString("name", file);
+                writer.WriteString("timestamp",
+                    at.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+                writer.WriteString("reason", reason);
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(buffer.ToArray());
+        }
 
         // null when the entry is usable, and `line` holds it. Otherwise the
         // reason it cannot be used.

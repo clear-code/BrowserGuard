@@ -97,5 +97,36 @@ namespace BrowserGuard.Tests
             Assert.Contains("not a JSON object", NetLogEntry.Compact("\"browsing\"", out _));
             Assert.Contains("not a JSON object", NetLogEntry.Compact("[1,2,3]", out _));
         }
+
+        // The upload went through; keeping a copy of it did not. The name has
+        // to say so, or the trail reads as though the upload itself failed.
+        [Fact]
+        public void MakesAnEntryForACopyThatCouldNotBeKept()
+        {
+            var entry = NetLogEntry.UploadFileBridgeFailed(
+                @"C:	mpeport.xlsx", "access denied", new DateTime(2026, 8, 20, 13, 45, 30));
+
+            using var document = JsonDocument.Parse(entry);
+            var root = document.RootElement;
+            Assert.Equal("upload-file-bridge", root.GetProperty("operation").GetString());
+            Assert.Equal(@"C:	mpeport.xlsx", root.GetProperty("name").GetString());
+            Assert.Equal("2026-08-20 13:45:30", root.GetProperty("timestamp").GetString());
+            Assert.Equal("access denied", root.GetProperty("reason").GetString());
+        }
+
+        // It goes back through Compact, so it is stamped like any other entry.
+        [Fact]
+        public void StampsAnEntryTheHostMadeItself()
+        {
+            var entry = NetLogEntry.UploadFileBridgeFailed("C:\a\f.txt", "no destination", DateTime.Now);
+
+            Assert.Null(NetLogEntry.Compact(entry, out var line));
+
+            using var document = JsonDocument.Parse(line);
+            Assert.Equal(Environment.MachineName,
+                document.RootElement.GetProperty(NetLogEntry.MachineProperty).GetString());
+            Assert.Equal(Environment.UserName,
+                document.RootElement.GetProperty(NetLogEntry.UserProperty).GetString());
+        }
     }
 }

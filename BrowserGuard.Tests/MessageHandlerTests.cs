@@ -34,6 +34,38 @@ namespace BrowserGuard.Tests
 
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
 
+        // The host makes this entry itself when it cannot keep a copy of an
+        // uploaded file. Handle() would read the config from the registry, so
+        // the writing is exercised through the seam the entry travels.
+        [Fact]
+        public void WritesAnEntryTheHostMadeItself()
+        {
+            var handler = Handler();
+
+            var failure = handler.WriteLogEntry(
+                NetLogEntry.UploadFileBridgeFailed(@"C:	mp
+eport.xlsx", "access denied", DateTime.Now));
+
+            Assert.Null(failure);
+            var line = Assert.Single(File.ReadAllLines(LogPath));
+            var root = JsonDocument.Parse(line).RootElement;
+            Assert.Equal("upload-file-bridge", root.GetProperty("operation").GetString());
+            Assert.Equal("access denied", root.GetProperty("reason").GetString());
+        }
+
+        // Turning the log off must not turn the copying off with it.
+        [Fact]
+        public void TakesAnEntryNowhereWhenTheLogIsOff()
+        {
+            var handler = Handler(enabled: false);
+
+            var failure = handler.WriteLogEntry(
+                NetLogEntry.UploadFileBridgeFailed("C:\a\f.txt", "no destination", DateTime.Now));
+
+            Assert.Null(failure);
+            Assert.False(File.Exists(LogPath));
+        }
+
         // A dialog put on the screen for real would wait for someone to dismiss
         // it, so the test is handed somewhere else to put the text.
         MessageHandler DialogHandler(List<string> shown) =>

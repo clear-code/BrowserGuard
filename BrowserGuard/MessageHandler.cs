@@ -83,8 +83,13 @@ namespace BrowserGuard
             else if (message.StartsWith("U "))
             {
                 logger?.Log("Command: bridge upload");
-                var failure = FileBridge.Copy(
-                    config.UploadFileBridge, message[2..].Trim(), DateTime.Now, logger);
+                var now = DateTime.Now;
+                var path = message[2..].Trim();
+                var failure = FileBridge.Copy(config.UploadFileBridge, path, now, logger);
+                if (failure is not null)
+                {
+                    RecordCopyFailure(path, failure, now);
+                }
                 return new Response { Success = failure is null, Error = failure };
             }
 
@@ -92,6 +97,30 @@ namespace BrowserGuard
         }
 
         private Response? HandleLogEntry(string entry)
+        {
+            var failure = WriteLogEntry(entry);
+            if (failure is null)
+            {
+                return null;
+            }
+            return new Response { Success = false, Error = failure };
+        }
+
+        // A copy that was meant to be kept and was not belongs in the audit
+        // trail: the upload itself went through, so nothing else records it.
+        private void RecordCopyFailure(string file, string reason, DateTime at)
+        {
+            var failure = WriteLogEntry(NetLogEntry.UploadFileBridgeFailed(file, reason, at));
+            if (failure is not null)
+            {
+                logger?.Log($"Cannot record the failed copy: {failure}");
+            }
+        }
+
+        // null when the entry was taken, or when there is nowhere to put it.
+        // Otherwise why it was not. Shared with the entries the host makes for
+        // itself, so that every entry is stamped and written the one way.
+        internal string? WriteLogEntry(string entry)
         {
             ResolveNetLog();
             if (netLogFile is null && netLogSender is null)
@@ -104,19 +133,14 @@ namespace BrowserGuard
             var rejection = NetLogEntry.Compact(entry, out var line);
             if (rejection is not null)
             {
-                return new Response { Success = false, Error = rejection };
+                return rejection;
             }
 
             // The collector is best effort; only the file reports a failure,
             // because that is the copy the entry was meant to survive in.
             netLogSender?.Enqueue(line);
 
-            var failure = netLogFile?.Write(line);
-            if (failure is null)
-            {
-                return null;
-            }
-            return new Response { Success = false, Error = failure };
+            return netLogFile?.Write(line);
         }
 
         // Read once and remembered, including the decision not to log at all.
