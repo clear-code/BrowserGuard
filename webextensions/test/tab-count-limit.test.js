@@ -6,7 +6,10 @@ import assert from 'node:assert/strict';
 // tab-count-limit reaches for chrome.* when it counts the tabs, closes them or
 // warns, so a stub stands in for the browser and records what it was asked to
 // do.
-const calls = { removed: [], created: [], warned: [] };
+const calls = { removed: [], created: [], warned: [], updated: [] };
+
+// What Edge actually opens for a new tab, and will not let an extension close.
+const NEW_TAB_URL = 'https://ntp.msn.com/edge/ntp';
 let tabs = [];
 let nextTabId = 100;
 // How the host answers, so a dialog left up can be held open in a test.
@@ -33,11 +36,26 @@ globalThis.chrome = {
       calls.created.push(props);
       return Promise.resolve({ id: nextTabId++ });
     },
+    get: tabId => {
+      // A tab that is no longer open rejects, the way chrome.tabs does.
+      const tab = findTab(tabId);
+      return tab ? Promise.resolve({ ...tab }) : Promise.reject(new Error('No tab with id'));
+    },
+    update: (tabId, props) => {
+      const tab = findTab(tabId);
+      if (!tab) return Promise.reject(new Error('No tab with id'));
+      calls.updated.push({ tabId, ...props });
+      tab.url = props.url;
+      return Promise.resolve({ ...tab });
+    },
     remove: tabId => {
       // A tab that is no longer open rejects, the way chrome.tabs does.
-      if (!findTab(tabId)) return Promise.reject(new Error('No tab with id'));
+      const tab = findTab(tabId);
+      if (!tab) return Promise.reject(new Error('No tab with id'));
+      // Edge will not let an extension close the new tab page itself.
+      if (tab.url === NEW_TAB_URL) return Promise.reject(new Error('Cannot remove NTP tab.'));
       calls.removed.push(tabId);
-      tabs = tabs.filter(tab => tab.id !== tabId);
+      tabs = tabs.filter(one => one.id !== tabId);
       return Promise.resolve();
     },
   },
@@ -75,6 +93,7 @@ beforeEach(() => {
   calls.removed = [];
   calls.created = [];
   calls.warned = [];
+  calls.updated = [];
   tabs = [];
   nativeMessage = () => Promise.resolve({ Success: true });
   configure();
@@ -234,6 +253,21 @@ describe('check', () => {
 
     assert.deepEqual(calls.removed, []);
     assert.deepEqual(calls.warned, []);
+  });
+
+  // Edge answers "Cannot remove NTP tab." for a tab still showing the new tab
+  // page, which is exactly the tab this limit has to close.
+  it('closes a new tab page tab the browser refuses to close', async () => {
+    configure({ MaxCount: 3 });
+    openTabs(3);
+    tabs.push({ id: 500, windowId: 1, url: NEW_TAB_URL });
+
+    await TabCountLimit.check();
+
+    // Taken off the new tab page first, then closed.
+    assert.deepEqual(calls.updated, [{ tabId: 500, url: 'about:blank' }]);
+    assert.deepEqual(calls.removed, [500]);
+    assert.equal(tabs.length, 3);
   });
 
   // The limit is at least one tab, so something is always left open.

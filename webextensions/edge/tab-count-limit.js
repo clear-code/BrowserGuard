@@ -3,6 +3,14 @@
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
 
+// Somewhere ordinary to send a tab that the browser will not close while it is
+// showing the new tab page.
+const BLANK_URL = 'about:blank';
+const RETRY_INTERVAL_MS = 50;
+const RETRY_LIMIT = 10;
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 export const TabCountLimit = {
   enabled: false,
   maxCount: 0,
@@ -48,9 +56,37 @@ export const TabCountLimit = {
   },
 
   async closeTabs(tabs) {
-    await Promise.all(tabs.map(
-      tab => chrome.tabs.remove(tab.id).catch(() => {})
-    ));
+    await Promise.all(tabs.map(tab => this.closeTab(tab)));
+  },
+
+  // Edge refuses to close a tab that is showing the new tab page, answering
+  // "Cannot remove NTP tab.". Taking it off that page first leaves an ordinary
+  // tab, which closes like any other.
+  async closeTab(tab) {
+    if (await this.removeTab(tab.id)) return true;
+    try {
+      await chrome.tabs.update(tab.id, { url: BLANK_URL });
+    } catch {
+      return false;
+    }
+    // The refusal is about the page the tab is on, so closing is tried again
+    // while the blank page takes over from the new tab page.
+    for (let attempt = 0; attempt < RETRY_LIMIT; attempt++) {
+      await delay(RETRY_INTERVAL_MS);
+      if (await this.removeTab(tab.id)) return true;
+    }
+    console.log('Cannot close the tab', tab.id);
+    return false;
+  },
+
+  // Whether the tab is gone, however that came about.
+  async removeTab(tabId) {
+    try {
+      await chrome.tabs.remove(tabId);
+      return true;
+    } catch {
+      return chrome.tabs.get(tabId).then(() => false, () => true);
+    }
   },
 
   async warn() {
