@@ -103,12 +103,8 @@ export const UploadGuard = {
             if (reason) {
                 // Not awaited: this listener is blocking and has to answer at
                 // once. net-logger records nothing unless it is turned on.
-                NetLogger.onUploadBlocked({
-                    file: part.file,
-                    url: details.url,
-                    reason,
-                    timestamp: details.timeStamp,
-                });
+                NetLogger.record(
+                    'upload-guard', part.file, details.url, details.timeStamp, { reason });
                 // Not awaited either: the dialog stands until it is dismissed.
                 showDialog(`アップロードがブロックされました:\n${part.file}\n\n理由: ${reason}`);
                 return this.buildCancelResponse(isMainFrame);

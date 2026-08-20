@@ -49,16 +49,19 @@ export const NetLogger = {
     };
   },
 
-  // Called by upload-guard from a blocking listener that cannot wait for the
-  // config, so this is not awaited. A block is recorded whenever the logger is
-  // on at all: it is a refused action rather than one of the ordinary events
-  // the individual switches turn on and off.
-  async onUploadBlocked({ file, url, reason, timestamp }) {
+  // Records an event the caller names, in the same shape as _buildPayload but
+  // handing it straight on. The individual switches (Upload, Browsing and the
+  // rest) belong to the traffic this module watches for itself, so what is
+  // handed in here is recorded whenever the logger is on at all: it comes from
+  // an action that was refused or that failed, not from ordinary browsing.
+  //
+  // Callers are blocking listeners that cannot wait for the config, so they do
+  // not await this.
+  async record(operation, name, url, timestamp, extra) {
     const config = await this._getConfig();
     if (!config) return;
 
-    this._send(config,
-      this._buildPayload('upload-guard', file, url, timestamp, { reason }));
+    this._send(config, this._buildPayload(operation, name, url, timestamp, extra));
   },
 
   async onBeforeRequest(details) {

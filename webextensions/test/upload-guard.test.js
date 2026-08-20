@@ -241,7 +241,7 @@ describe('the audit trail', () => {
 
     const entry = await waitForReport(e => e.name === 'C:\\tmp\\setup.exe');
     assert.ok(entry, 'the block should have been reported');
-    assert.equal(entry.operation, 'uploadblocked');
+    assert.equal(entry.operation, 'upload-guard');
     assert.equal(entry.name, 'C:\\tmp\\setup.exe');
     assert.equal(entry.url, 'https://example.com/upload');
     assert.equal(entry.reason, '禁止された拡張子です');
