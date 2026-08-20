@@ -25,8 +25,23 @@ namespace BrowserGuard.Tests
 
         string Destination => Path.Combine(tempDir, "audit");
 
-        UploadFileBridgeConfig Config(string? destination = null) =>
-            new() { Enabled = true, Destination = destination ?? Destination };
+        UploadFileBridgeConfig Config(string? destination = null, int maxSizeMB = 0) =>
+            new()
+            {
+                Enabled = true,
+                Destination = destination ?? Destination,
+                MaxSizeMB = maxSizeMB,
+            };
+
+        const int MB = 1024 * 1024;
+
+        // A file of a given size, standing in for a large upload.
+        string SourceOfSize(long bytes, string name = "big.bin")
+        {
+            var path = Path.Combine(tempDir, name);
+            File.WriteAllBytes(path, new byte[bytes]);
+            return path;
+        }
 
         // A file of the user's own, standing in for one being uploaded.
         string Source(string name = "report.xlsx", string content = "hello")
@@ -129,6 +144,47 @@ namespace BrowserGuard.Tests
 
             Assert.Null(failure);
             Assert.False(Directory.Exists(Destination));
+        }
+
+        // One very large upload must not be able to fill the file server.
+        [Fact]
+        public void LeavesAFileOverTheLimitUncopied()
+        {
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB + 1), Now);
+
+            Assert.NotNull(failure);
+            Assert.Contains("1 MB limit", failure);
+            Assert.Empty(Copies);
+        }
+
+        // The limit is what may be copied, so the size itself is still allowed.
+        [Fact]
+        public void CopiesAFileExactlyOnTheLimit()
+        {
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB), Now);
+
+            Assert.Null(failure);
+            Assert.Equal(["big.bin"], Copies);
+        }
+
+        [Fact]
+        public void CopiesAFileUnderTheLimit()
+        {
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB - 1), Now);
+
+            Assert.Null(failure);
+            Assert.Equal(["big.bin"], Copies);
+        }
+
+        // 0 is no limit, so a config that leaves the number out copies whatever
+        // it is given rather than nothing at all.
+        [Fact]
+        public void CopiesAnySizeWhenNoLimitIsSet()
+        {
+            var failure = FileBridge.Copy(Config(maxSizeMB: 0), SourceOfSize(MB * 2), Now);
+
+            Assert.Null(failure);
+            Assert.Equal(["big.bin"], Copies);
         }
 
         [Fact]

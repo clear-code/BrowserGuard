@@ -56,6 +56,7 @@
   },
   "UploadFileBridge": {
     "Enabled": false,
-    "Destination": ""
+    "Destination": "",
+    "MaxSizeMB": 0
   }
 }

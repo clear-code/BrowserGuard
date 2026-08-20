@@ -286,7 +286,8 @@ namespace BrowserGuard.Tests
             {
               "UploadFileBridge": {
                 "Enabled": true,
-                "Destination": "\\\\fileserver\\audit\\%PCNAME%"
+                "Destination": "\\\\fileserver\\audit\\%PCNAME%",
+                "MaxSizeMB": 100
               }
             }
             """;
@@ -297,6 +298,7 @@ namespace BrowserGuard.Tests
             // The macros are left as they stand here; PathMacro expands them
             // when the copy is actually made.
             Assert.Equal(@"\\fileserver\audit\%PCNAME%", config.UploadFileBridge.Destination);
+            Assert.Equal(100, config.UploadFileBridge.MaxSizeMB);
         }
 
         // Nothing is copied off the machine unless it was asked for, and an
@@ -308,6 +310,8 @@ namespace BrowserGuard.Tests
 
             Assert.False(config.UploadFileBridge.Enabled);
             Assert.Equal("", config.UploadFileBridge.Destination);
+            // 0 is no limit, so leaving it out copies whatever it is given.
+            Assert.Equal(0, config.UploadFileBridge.MaxSizeMB);
         }
 
         [Fact]

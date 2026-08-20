@@ -154,6 +154,9 @@ namespace BrowserGuard
         // setting can give every machine, user or day a folder of its own.
         // Empty means there is nowhere to put them, so nothing is copied.
         public string Destination { get; set; } = "";
+        // A file larger than this is left uncopied, so that one very large
+        // upload cannot fill the file server. 0 copies whatever it is given.
+        public int MaxSizeMB { get; set; }
     }
 
     internal static class ConfigLoader

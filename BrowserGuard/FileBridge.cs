@@ -30,6 +30,12 @@ namespace BrowserGuard
                 return "no file to copy";
             }
 
+            var refusal = WithinSizeLimit(config, source);
+            if (refusal is not null)
+            {
+                return refusal;
+            }
+
             // Expanded now rather than when the config was read, because a
             // destination naming the day changes at midnight.
             var destination = PathMacro.Expand(config.Destination, now);
@@ -52,6 +58,33 @@ namespace BrowserGuard
             {
                 return $"cannot copy {source} to {destination}: {ex.Message}";
             }
+        }
+
+        // null when the file may be copied. Otherwise why it may not, in the
+        // same shape as any other reason the copy was not made: an audit trail
+        // with a gap in it has to say what is missing and why.
+        private static string? WithinSizeLimit(UploadFileBridgeConfig config, string source)
+        {
+            var limit = Math.Max(0, config.MaxSizeMB) * 1024L * 1024L;
+            if (limit == 0)
+            {
+                return null;
+            }
+
+            long length;
+            try
+            {
+                length = new FileInfo(source).Length;
+            }
+            catch (Exception ex)
+            {
+                return $"cannot measure {source}: {ex.Message}";
+            }
+            if (length <= limit)
+            {
+                return null;
+            }
+            return $"{source} is {length} bytes, over the {config.MaxSizeMB} MB limit";
         }
 
         // A file that is already there is numbered: "report.xlsx", then

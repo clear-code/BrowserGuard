@@ -62,6 +62,7 @@
   },
   "UploadFileBridge": {
     "Enabled": false,
-    "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%"
+    "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%",
+    "MaxSizeMB": 100
   }
 }
