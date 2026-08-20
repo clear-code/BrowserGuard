@@ -58,7 +58,7 @@ export const NetLogger = {
     if (!config) return;
 
     this._send(config,
-      this._buildPayload('uploadblocked', file, url, timestamp, { reason }));
+      this._buildPayload('upload-guard', file, url, timestamp, { reason }));
   },
 
   async onBeforeRequest(details) {
