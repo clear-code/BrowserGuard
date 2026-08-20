@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using BrowserGuard.Common;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.NetLogger
 {

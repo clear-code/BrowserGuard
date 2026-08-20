@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using Xunit;
 using BrowserGuard.UploadFileBridge;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Tests.UploadFileBridge
 {

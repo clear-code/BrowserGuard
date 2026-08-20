@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using BrowserGuard.NetLogger;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Tests.NetLogger
 {

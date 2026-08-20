@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Xunit;
 using BrowserGuard.NetLogger;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Tests.NetLogger
 {

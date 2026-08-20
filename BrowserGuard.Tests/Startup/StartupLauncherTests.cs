@@ -4,7 +4,6 @@ using System.IO;
 using System.Security.Cryptography;
 using Xunit;
 using BrowserGuard.Startup;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Tests.Startup
 {

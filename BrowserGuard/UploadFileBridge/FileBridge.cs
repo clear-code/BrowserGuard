@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using BrowserGuard.Common;
-using BrowserGuard.Configuration;
 
 namespace BrowserGuard.UploadFileBridge
 {
