@@ -280,6 +280,37 @@ namespace BrowserGuard.Tests
         }
 
         [Fact]
+        public void ReadsTheUploadFileBridge()
+        {
+            var json = """
+            {
+              "UploadFileBridge": {
+                "Enabled": true,
+                "Destination": "\\\\fileserver\\audit\\%PCNAME%"
+              }
+            }
+            """;
+
+            var config = ConfigLoader.ParseConf(json);
+
+            Assert.True(config.UploadFileBridge.Enabled);
+            // The macros are left as they stand here; PathMacro expands them
+            // when the copy is actually made.
+            Assert.Equal(@"\\fileserver\audit\%PCNAME%", config.UploadFileBridge.Destination);
+        }
+
+        // Nothing is copied off the machine unless it was asked for, and an
+        // empty destination leaves nowhere to copy it to.
+        [Fact]
+        public void UploadFileBridgeDefaultsToDisabledWithNoDestination()
+        {
+            var config = ConfigLoader.ParseConf("{}");
+
+            Assert.False(config.UploadFileBridge.Enabled);
+            Assert.Equal("", config.UploadFileBridge.Destination);
+        }
+
+        [Fact]
         public void StartupLauncherDefaultsToDisabledWithNoPrograms()
         {
             var config = ConfigLoader.ParseConf("{}");

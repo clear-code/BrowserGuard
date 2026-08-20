@@ -59,5 +59,9 @@
   "TabCountLimit": {
     "Enabled": false,
     "MaxCount": 20
+  },
+  "UploadFileBridge": {
+    "Enabled": false,
+    "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%"
   }
 }

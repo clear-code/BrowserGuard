@@ -24,6 +24,7 @@ namespace BrowserGuard
         public StartupLauncherConfig StartupLauncher { get; set; } = new();
         public UsageTimeLimitConfig UsageTimeLimit { get; set; } = new();
         public TabCountLimitConfig TabCountLimit { get; set; } = new();
+        public UploadFileBridgeConfig UploadFileBridge { get; set; } = new();
     }
 
     internal class NetLoggerConfig
@@ -141,6 +142,18 @@ namespace BrowserGuard
         // 0 means no limit, so a config that leaves the number out cannot start
         // warning about every tab.
         public int MaxCount { get; set; }
+    }
+
+    // Keeps a copy of a file that was uploaded, as evidence of what left the
+    // machine. The copy goes to a folder that is expected to be on a file
+    // server rather than on the machine itself.
+    internal class UploadFileBridgeConfig
+    {
+        public bool Enabled { get; set; }
+        // Where the copies go. The macros PathMacro knows are expanded, so one
+        // setting can give every machine, user or day a folder of its own.
+        // Empty means there is nowhere to put them, so nothing is copied.
+        public string Destination { get; set; } = "";
     }
 
     internal static class ConfigLoader

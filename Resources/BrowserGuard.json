@@ -53,5 +53,9 @@
   "TabCountLimit": {
     "Enabled": false,
     "MaxCount": 0
+  },
+  "UploadFileBridge": {
+    "Enabled": false,
+    "Destination": ""
   }
 }
