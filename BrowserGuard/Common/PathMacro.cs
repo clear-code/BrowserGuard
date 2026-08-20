@@ -4,9 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace BrowserGuard.Common
 {
-    // A destination folder is written with macros, so that one setting can
-    // spread what it writes over a folder per machine, per user or per day
-    // without anything having to be configured per machine.
     internal static class PathMacro
     {
         // %NAME%, the shape Windows paths already use.
@@ -18,16 +15,16 @@ namespace BrowserGuard.Common
             {
                 return "";
             }
-            // A name that is not one of the macros is left as it stands. A
-            // folder with a literal %FOO% in it is odd enough to be noticed,
-            // where dropping it would quietly put everyone in the same folder.
-            return Pattern.Replace(text, match =>
-                Resolve(match.Groups[1].Value, now) ?? match.Value);
+            // A name that is not one of the macros is left as it stands.
+            var expanded = Pattern.Replace(text, match =>
+                ResolveOriginalMacro(match.Groups[1].Value, now) ?? match.Value);
+
+            return Environment.ExpandEnvironmentVariables(expanded);
         }
 
         // The machine and the user are the ones the audit log records, so a
         // folder named after them lines up with the entries in it.
-        private static string? Resolve(string name, DateTime now) =>
+        private static string? ResolveOriginalMacro(string name, DateTime now) =>
             name.ToUpperInvariant() switch
             {
                 "PCNAME" => Environment.MachineName,

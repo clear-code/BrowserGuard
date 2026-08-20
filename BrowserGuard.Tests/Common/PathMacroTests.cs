@@ -79,6 +79,52 @@ namespace BrowserGuard.Tests.Common
             Assert.Equal("", PathMacro.Expand(text!, Now));
         }
 
+        // Written the same way as the macros, and useful for the same reason: a
+        // share that moves need not be edited into every machine's config.
+        [Fact]
+        public void ExpandsAWindowsEnvironmentVariable()
+        {
+            WithVariable("BROWSERGUARD_SHARE", @"\\fileserver\audit", () =>
+                Assert.Equal(
+                    @"\\fileserver\audit\2026-08-20",
+                    PathMacro.Expand(@"%BROWSERGUARD_SHARE%\%DATE%", Now)));
+        }
+
+        // The same as the macros do with a name they do not know.
+        [Fact]
+        public void LeavesAVariableItDoesNotKnowAsItStands()
+        {
+            WithVariable("BROWSERGUARD_NOT_SET", null, () =>
+                Assert.Equal(
+                    @"\\server\%BROWSERGUARD_NOT_SET%",
+                    PathMacro.Expand(@"\\server\%BROWSERGUARD_NOT_SET%", Now)));
+        }
+
+        // Expanding the variables first would let a value that reads like a
+        // macro be taken for one.
+        [Fact]
+        public void ExpandsTheMacrosBeforeTheVariables()
+        {
+            WithVariable("BROWSERGUARD_LOOKS_LIKE_A_MACRO", "%DATE%", () =>
+                Assert.Equal("%DATE%", PathMacro.Expand("%BROWSERGUARD_LOOKS_LIKE_A_MACRO%", Now)));
+        }
+
+        // Set for the one test and put back afterwards, so the result does not
+        // depend on what the machine running the tests happens to have.
+        static void WithVariable(string name, string? value, Action check)
+        {
+            var before = Environment.GetEnvironmentVariable(name);
+            Environment.SetEnvironmentVariable(name, value);
+            try
+            {
+                check();
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(name, before);
+            }
+        }
+
         // A stray percent sign is not the start of a macro.
         [Fact]
         public void LeavesALonePercentSignAlone()

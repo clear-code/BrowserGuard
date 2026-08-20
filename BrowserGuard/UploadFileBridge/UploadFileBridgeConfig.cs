@@ -6,8 +6,9 @@ namespace BrowserGuard.UploadFileBridge
     internal class UploadFileBridgeConfig
     {
         public bool Enabled { get; set; }
-        // Where the copies go. The macros PathMacro knows are expanded, so one
-        // setting can give every machine, user or day a folder of its own.
+        // Where the copies go. The macros PathMacro knows are expanded, as are
+        // Windows environment variables, so one setting can give every machine,
+        // user or day a folder of its own.
         // Empty means there is nowhere to put them, so nothing is copied.
         public string Destination { get; set; } = "";
         // A file larger than this is left uncopied, so that one very large
