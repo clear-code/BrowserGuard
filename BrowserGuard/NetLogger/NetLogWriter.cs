@@ -51,8 +51,14 @@ namespace BrowserGuard.NetLogger
 
         // The entries kept for a collector that would not take them live here
         // too, so both are configured and permitted in one place.
-        internal static string ResolveDirectory(string configured) =>
-            string.IsNullOrWhiteSpace(configured) ? DefaultDirectory() : configured;
+        //
+        // Resolved once, when the log is opened. A directory naming the day
+        // therefore stays on the day the host started; the day's own rotation
+        // is in the file name, which does follow the clock.
+        internal static string ResolveDirectory(string configured, DateTime? now = null) =>
+            string.IsNullOrWhiteSpace(configured)
+                ? DefaultDirectory()
+                : PathMacro.Expand(configured, now ?? DateTime.Now);
 
         internal static string DefaultDirectory() =>
             Path.Combine(
