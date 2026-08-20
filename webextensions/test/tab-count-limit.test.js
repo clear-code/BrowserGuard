@@ -196,16 +196,6 @@ describe('check', () => {
     assert.match(calls.warned[0].message, /^W /);
   });
 
-  it('says how many tabs were closed and what the limit is', async () => {
-    configure({ MaxCount: 3 });
-    openTabs(5);
-
-    await TabCountLimit.check();
-
-    assert.match(calls.warned[0].message, /3 個/);
-    assert.match(calls.warned[0].message, /2 個/);
-  });
-
   // The host answers only once the dialog is dismissed, so a second warning
   // behind the first would leave a dialog to dismiss for every tab opened.
   it('puts up one dialog at a time', async () => {

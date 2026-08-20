@@ -44,7 +44,7 @@ export const TabCountLimit = {
     const excess = this.excessTabs(tabs);
     if (excess.length === 0) return;
     await this.closeTabs(excess);
-    await this.warn(excess.length);
+    await this.warn();
   },
 
   async closeTabs(tabs) {
@@ -53,9 +53,9 @@ export const TabCountLimit = {
     ));
   },
 
-  async warn(closedCount) {
+  async warn() {
     await showDialog(
-      `同時に開くことのできるタブの数は ${this.maxCount} 個までです。\n` +
-      `超過して開かれたタブ ${closedCount} 個を閉じました。`);
-  },
+      `同時に開くことのできるタブの数は ${this.maxCount} 個までです。`
+    );
+  }
 }
