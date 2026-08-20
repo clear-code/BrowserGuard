@@ -1,9 +1,8 @@
 using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using BrowserGuard.NetLogger;
 
-namespace BrowserGuard.UploadFileBridge
+namespace BrowserGuard.Common
 {
     // A destination folder is written with macros, so that one setting can
     // spread what it writes over a folder per machine, per user or per day
@@ -31,8 +30,8 @@ namespace BrowserGuard.UploadFileBridge
         private static string? Resolve(string name, DateTime now) =>
             name.ToUpperInvariant() switch
             {
-                "PCNAME" => NetLogEntry.MachineName,
-                "USERID" => NetLogEntry.UserName,
+                "PCNAME" => Environment.MachineName,
+                "USERID" => Environment.UserName,
                 "DATE" => now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 "YYYY" => now.ToString("yyyy", CultureInfo.InvariantCulture),
                 "MM" => now.ToString("MM", CultureInfo.InvariantCulture),

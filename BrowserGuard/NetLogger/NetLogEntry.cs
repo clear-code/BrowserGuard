@@ -14,9 +14,6 @@ namespace BrowserGuard.NetLogger
         internal const string MachineProperty = "pcname";
         internal const string UserProperty = "userid";
 
-        internal static readonly string MachineName = Environment.MachineName;
-        internal static readonly string UserName = Environment.UserName;
-
         // The log is read back as text, so the escaping is relaxed to leave
         // Japanese page titles legible rather than as \uXXXX escapes.
         private static readonly JsonWriterOptions WriterOptions = new()
@@ -74,8 +71,8 @@ namespace BrowserGuard.NetLogger
                         }
                         property.WriteTo(writer);
                     }
-                    writer.WriteString(MachineProperty, MachineName);
-                    writer.WriteString(UserProperty, UserName);
+                    writer.WriteString(MachineProperty, Environment.MachineName);
+                    writer.WriteString(UserProperty, Environment.UserName);
                     writer.WriteEndObject();
                 }
                 line = Encoding.UTF8.GetString(buffer.ToArray());

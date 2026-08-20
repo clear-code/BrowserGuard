@@ -1,8 +1,8 @@
 using System;
 using Xunit;
-using BrowserGuard.UploadFileBridge;
+using BrowserGuard.Common;
 
-namespace BrowserGuard.Tests.UploadFileBridge
+namespace BrowserGuard.Tests.Common
 {
     public class PathMacroTests
     {
@@ -33,7 +33,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             var expanded = PathMacro.Expand(@"\\server\%PCNAME%\%USERID%", Now);
 
-            Assert.Equal($@"\\server\{Environment.MachineName}\{Environment.UserName}", expanded);
+            Assert.Equal($@"\\server\{System.Environment.MachineName}\{System.Environment.UserName}", expanded);
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
             var expanded = PathMacro.Expand(@"\\server\%PCNAME%\%DATE%\%USERID%", Now);
 
             Assert.Equal(
-                $@"\\server\{Environment.MachineName}\2026-08-20\{Environment.UserName}",
+                $@"\\server\{System.Environment.MachineName}\2026-08-20\{System.Environment.UserName}",
                 expanded);
         }
 
@@ -52,7 +52,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [InlineData("%PCNAME%")]
         public void DoesNotMindHowTheMacroIsSpelled(string macro)
         {
-            Assert.Equal(Environment.MachineName, PathMacro.Expand(macro, Now));
+            Assert.Equal(System.Environment.MachineName, PathMacro.Expand(macro, Now));
         }
 
         // Dropping it would quietly put every machine in the same folder, where
