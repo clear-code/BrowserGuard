@@ -79,6 +79,14 @@ namespace BrowserGuard
                 var failures = StartupLauncher.Run(config.StartupLauncher, logger);
                 return new Response { Success = failures is null, Error = failures };
             }
+            // "U " keep a copy of the file the browser is uploading.
+            else if (message.StartsWith("U "))
+            {
+                logger?.Log("Command: bridge upload");
+                var failure = FileBridge.Copy(
+                    config.UploadFileBridge, message[2..].Trim(), DateTime.Now, logger);
+                return new Response { Success = failure is null, Error = failure };
+            }
 
             return new Response { Success = true };
         }
