@@ -4,6 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace BrowserGuard.Common
 {
+    // Expands a path written with macros: the ones listed below, and Windows
+    // environment variables, which are written the same way. One setting can
+    // then give every machine, user or day a folder of its own.
     internal static class PathMacro
     {
         // %NAME%, the shape Windows paths already use.
@@ -19,6 +22,9 @@ namespace BrowserGuard.Common
             var expanded = Pattern.Replace(text, match =>
                 ResolveOriginalMacro(match.Groups[1].Value, now) ?? match.Value);
 
+            // The macros go first, so that a variable holding something that
+            // reads like one is not taken for it. Windows leaves a variable it
+            // does not know as it stands, which is what the macros do too.
             return Environment.ExpandEnvironmentVariables(expanded);
         }
 

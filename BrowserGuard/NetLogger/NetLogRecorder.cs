@@ -4,8 +4,8 @@ namespace BrowserGuard.NetLogger
 {
     // Where an entry goes: the log kept on this machine, the collector, or
     // both. Which of them are in use is settled once, on the first entry,
-    // because an entry arrives for every request and settling it again each
-    // time would mean a registry and a file read per request.
+    // because an entry arrives for every request and settling it again would
+    // mean reading the config for every one of them.
     internal sealed class NetLogRecorder : IDisposable
     {
         // Handed in rather than read here, so that this side knows nothing of

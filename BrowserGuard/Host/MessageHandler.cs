@@ -49,6 +49,9 @@ namespace BrowserGuard.Host
                 logger);
         }
 
+        // The commands: "L " a log entry, "W " show a warning, "C " the config,
+        // "S " run the startup programs, "U " keep a copy of an upload.
+        //
         // null means nothing is sent back to the browser. Log entries arrive for
         // every request, so answering each one would double the traffic over the
         // port for no purpose; only their failures are worth reporting.
@@ -72,7 +75,6 @@ namespace BrowserGuard.Host
             }
 
             var config = ConfigLoader.LoadConfig();
-            // "C " load config, "S " run the startup programs.
             if (message.StartsWith("C "))
             {
                 logger?.Log("Command: load config");
@@ -84,7 +86,6 @@ namespace BrowserGuard.Host
                 var failures = StartupLauncher.Run(config.StartupLauncher, logger);
                 return new Response { Success = failures is null, Error = failures };
             }
-            // "U " keep a copy of the file the browser is uploading.
             else if (message.StartsWith("U "))
             {
                 logger?.Log("Command: bridge upload");
