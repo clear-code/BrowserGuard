@@ -9,11 +9,11 @@ using BrowserGuard.NetLogger;
 
 namespace BrowserGuard.Tests.Host
 {
-    public class MessageHandlerTests : IDisposable
+    public class MessageDispatcherTests : IDisposable
     {
         readonly string tempDir;
 
-        public MessageHandlerTests()
+        public MessageDispatcherTests()
         {
             tempDir = Path.Combine(Path.GetTempPath(), "browserguard-handler-" + Guid.NewGuid().ToString("N"));
         }
@@ -27,7 +27,7 @@ namespace BrowserGuard.Tests.Host
 
         // The configuration is handed in so the test does not go through the
         // registry to find out where it lives.
-        MessageHandler Handler(bool enabled = true, bool localFile = true) =>
+        MessageDispatcher Dispatcher(bool enabled = true, bool localFile = true) =>
             new(null, new NetLoggerConfig
             {
                 Enabled = enabled,
@@ -38,7 +38,7 @@ namespace BrowserGuard.Tests.Host
 
         // A dialog put on the screen for real would wait for someone to dismiss
         // it, so the test is handed somewhere else to put the text.
-        MessageHandler DialogHandler(List<string> shown) =>
+        MessageDispatcher DialogDispatcher(List<string> shown) =>
             new(null, null, shown.Add);
 
         [Fact]
@@ -46,7 +46,7 @@ namespace BrowserGuard.Tests.Host
         {
             var shown = new List<string>();
 
-            var response = DialogHandler(shown).Handle("W タブを閉じました。");
+            var response = DialogDispatcher(shown).Handle("W タブを閉じました。");
 
             Assert.True(response!.Success);
             Assert.Equal("タブを閉じました。", Assert.Single(shown));
@@ -59,7 +59,7 @@ namespace BrowserGuard.Tests.Host
         {
             var shown = new List<string>();
 
-            DialogHandler(shown).Handle("W 上限は 5 個です。1 個を閉じました。");
+            DialogDispatcher(shown).Handle("W 上限は 5 個です。1 個を閉じました。");
 
             Assert.Equal("上限は 5 個です。1 個を閉じました。", Assert.Single(shown));
         }
@@ -71,7 +71,7 @@ namespace BrowserGuard.Tests.Host
         {
             var shown = new List<string>();
 
-            var response = DialogHandler(shown).Handle("W 警告");
+            var response = DialogDispatcher(shown).Handle("W 警告");
 
             Assert.True(response!.Success);
             Assert.Null(response.Error);
@@ -82,9 +82,9 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void AnswersNothingWhenAnEntryIsWritten()
         {
-            var handler = Handler();
+            var dispatcher = Dispatcher();
 
-            Assert.Null(handler.Handle("L " + Entry));
+            Assert.Null(dispatcher.Handle("L " + Entry));
 
             var line = Assert.Single(File.ReadAllLines(LogPath));
             Assert.Equal("browsing", JsonDocument.Parse(line).RootElement
@@ -94,11 +94,11 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void WritesEveryEntryItIsGiven()
         {
-            var handler = Handler();
+            var dispatcher = Dispatcher();
 
-            handler.Handle("L " + Entry);
-            handler.Handle("L " + Entry);
-            handler.Handle("L " + Entry);
+            dispatcher.Handle("L " + Entry);
+            dispatcher.Handle("L " + Entry);
+            dispatcher.Handle("L " + Entry);
 
             Assert.Equal(3, File.ReadAllLines(LogPath).Length);
         }
@@ -106,9 +106,9 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void ReportsAnEntryItCannotWrite()
         {
-            var handler = Handler();
+            var dispatcher = Dispatcher();
 
-            var response = handler.Handle("L this is not json");
+            var response = dispatcher.Handle("L this is not json");
 
             Assert.NotNull(response);
             Assert.False(response.Success);
@@ -120,9 +120,9 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void StaysSilentWhenLocalLoggingIsTurnedOff()
         {
-            var handler = Handler(localFile: false);
+            var dispatcher = Dispatcher(localFile: false);
 
-            Assert.Null(handler.Handle("L " + Entry));
+            Assert.Null(dispatcher.Handle("L " + Entry));
 
             Assert.False(File.Exists(LogPath));
         }
@@ -131,9 +131,9 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void StaysSilentWhenTheWholeLoggerIsTurnedOff()
         {
-            var handler = Handler(enabled: false, localFile: true);
+            var dispatcher = Dispatcher(enabled: false, localFile: true);
 
-            Assert.Null(handler.Handle("L " + Entry));
+            Assert.Null(dispatcher.Handle("L " + Entry));
 
             Assert.False(File.Exists(LogPath));
         }
@@ -141,10 +141,10 @@ namespace BrowserGuard.Tests.Host
         [Fact]
         public void LeavesTheOtherCommandsAlone()
         {
-            var handler = Handler();
+            var dispatcher = Dispatcher();
 
             // Anything unrecognised still gets a plain acknowledgement.
-            var response = handler.Handle("X something");
+            var response = dispatcher.Handle("X something");
 
             Assert.NotNull(response);
             Assert.True(response.Success);

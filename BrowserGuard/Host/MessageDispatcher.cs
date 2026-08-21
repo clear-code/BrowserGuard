@@ -22,7 +22,7 @@ namespace BrowserGuard.Host
         public Config? Config { get; set; }
     }
 
-    internal class MessageHandler : IDisposable
+    internal class MessageDispatcher : IDisposable
     {
         private readonly Logger? logger;
         private readonly Action<string> showDialog;
@@ -33,7 +33,7 @@ namespace BrowserGuard.Host
         // be found through the registry, and so can the way a warning is shown,
         // so that a test does not put a dialog on the screen and then wait for
         // someone to dismiss it.
-        internal MessageHandler(
+        internal MessageDispatcher(
             Logger? logger = null,
             NetLoggerConfig? netLoggerConfig = null,
             Action<string>? showDialog = null)

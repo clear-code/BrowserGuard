@@ -28,14 +28,14 @@ namespace BrowserGuard.Host
             var communicator = new MessageCommunicator(stdin, stdout, Logger);
             // Disposed on the way out so that queued entries still reach the
             // collector after the browser has closed the port.
-            using var handler = new MessageHandler(Logger);
+            using var dispatcher = new MessageDispatcher(Logger);
 
             while (true)
             {
                 try
                 {
                     var message = communicator.ReadMessage();
-                    var response = handler.Handle(message);
+                    var response = dispatcher.Handle(message);
                     // A handler that answers with nothing wants the browser left
                     // alone; a log entry does not need acknowledging.
                     if (response is null)
