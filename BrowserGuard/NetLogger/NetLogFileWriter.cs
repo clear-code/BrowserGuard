@@ -24,7 +24,7 @@ namespace BrowserGuard.NetLogger
     // Only the process holding the browser's native messaging port writes here,
     // which is why a lock is enough where the diagnostic Logger needs a named
     // mutex across processes.
-    internal sealed class NetLogWriter
+    internal sealed class NetLogFileWriter
     {
         internal const string FileNameBase = "netlog";
         internal const string FileExtension = ".jsonl";
@@ -41,7 +41,7 @@ namespace BrowserGuard.NetLogger
         private readonly long maxSize;
         private readonly Logger? logger;
 
-        internal NetLogWriter(NetLogFileConfig config, Logger? logger = null)
+        internal NetLogFileWriter(NetLogFileConfig config, Logger? logger = null)
         {
             directory = ResolveDirectory(config.Directory);
             maxDays = Math.Max(0, config.MaxDays);
@@ -91,7 +91,7 @@ namespace BrowserGuard.NetLogger
                 }
                 catch (Exception ex)
                 {
-                    logger?.Log($"NetLogWriter: {ex.Message}");
+                    logger?.Log($"NetLogFileWriter: {ex.Message}");
                     return ex.Message;
                 }
 
@@ -116,7 +116,7 @@ namespace BrowserGuard.NetLogger
                     }
                     catch (Exception ex)
                     {
-                        logger?.Log($"NetLogWriter: {ex.Message}");
+                        logger?.Log($"NetLogFileWriter: {ex.Message}");
                         return ex.Message;
                     }
                 }
@@ -179,7 +179,7 @@ namespace BrowserGuard.NetLogger
                 }
                 catch (Exception ex)
                 {
-                    logger?.Log($"NetLogWriter: {ex.Message}");
+                    logger?.Log($"NetLogFileWriter: {ex.Message}");
                 }
             }
         }

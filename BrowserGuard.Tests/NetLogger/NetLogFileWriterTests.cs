@@ -9,11 +9,11 @@ using BrowserGuard.NetLogger;
 
 namespace BrowserGuard.Tests.NetLogger
 {
-    public class NetLogWriterTests : IDisposable
+    public class NetLogFileWriterTests : IDisposable
     {
         readonly string tempDir;
 
-        public NetLogWriterTests()
+        public NetLogFileWriterTests()
         {
             tempDir = Path.Combine(Path.GetTempPath(), "browserguard-netlog-" + Guid.NewGuid().ToString("N"));
             // Several tests put a day's file in place before the writer runs.
@@ -25,7 +25,7 @@ namespace BrowserGuard.Tests.NetLogger
             try { Directory.Delete(tempDir, true); } catch { }
         }
 
-        NetLogWriter Writer(int maxDays = 30, int maxSizeMB = 0) =>
+        NetLogFileWriter Writer(int maxDays = 30, int maxSizeMB = 0) =>
             new(new NetLogFileConfig
             {
                 Enabled = true,
@@ -76,7 +76,7 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void CreatesTheDirectory()
         {
-            var writer = new NetLogWriter(new NetLogFileConfig
+            var writer = new NetLogFileWriter(new NetLogFileConfig
             {
                 Enabled = true,
                 Directory = Path.Combine(tempDir, "nested"),
@@ -372,7 +372,7 @@ namespace BrowserGuard.Tests.NetLogger
             Directory.CreateDirectory(tempDir);
             var blocked = Path.Combine(tempDir, "blocked");
             File.WriteAllText(blocked, "x");
-            var writer = new NetLogWriter(new NetLogFileConfig
+            var writer = new NetLogFileWriter(new NetLogFileConfig
             {
                 Enabled = true,
                 Directory = blocked,
@@ -388,7 +388,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var configured = Path.Combine(tempDir, "%PCNAME%", "%DATE%");
 
-            var resolved = NetLogWriter.ResolveDirectory(configured, new DateTime(2026, 8, 20));
+            var resolved = NetLogFileWriter.ResolveDirectory(configured, new DateTime(2026, 8, 20));
 
             Assert.Equal(
                 Path.Combine(tempDir, Environment.MachineName, "2026-08-20"),
@@ -404,7 +404,7 @@ namespace BrowserGuard.Tests.NetLogger
             {
                 Assert.Equal(
                     Path.Combine(tempDir, "netlog"),
-                    NetLogWriter.ResolveDirectory(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
+                    NetLogFileWriter.ResolveDirectory(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
             }
             finally
             {
@@ -422,7 +422,7 @@ namespace BrowserGuard.Tests.NetLogger
                 Directory = Path.Combine(tempDir, "%PCNAME%"),
             };
 
-            var writer = new NetLogWriter(config);
+            var writer = new NetLogFileWriter(config);
             writer.Write("""{"operation":"browsing"}""");
 
             var expected = Path.Combine(tempDir, Environment.MachineName, "netlog.jsonl");
@@ -432,7 +432,7 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void FallsBackToProgramDataWhenNoDirectoryIsGiven()
         {
-            var writer = new NetLogWriter(new NetLogFileConfig { Enabled = true });
+            var writer = new NetLogFileWriter(new NetLogFileConfig { Enabled = true });
 
             var expected = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),

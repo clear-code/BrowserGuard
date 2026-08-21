@@ -13,7 +13,7 @@ namespace BrowserGuard.NetLogger
         private readonly Func<NetLoggerConfig> readConfig;
         private readonly Logger? logger;
 
-        private NetLogWriter? file;
+        private NetLogFileWriter? file;
         private NetLogSender? sender;
         private bool resolved;
 
@@ -68,7 +68,7 @@ namespace BrowserGuard.NetLogger
 
             if (config.LocalFile.Enabled)
             {
-                file = new NetLogWriter(config.LocalFile, logger);
+                file = new NetLogFileWriter(config.LocalFile, logger);
                 logger?.Log($"Command: log entry, writing to {file.FilePath}");
             }
             if (!string.IsNullOrWhiteSpace(config.Endpoint))
@@ -91,7 +91,7 @@ namespace BrowserGuard.NetLogger
                 return null;
             }
             var spool = new NetLogSpool(
-                NetLogWriter.ResolveDirectory(config.LocalFile.Directory),
+                NetLogFileWriter.ResolveDirectory(config.LocalFile.Directory),
                 // 0 asks for no limit, and travels as 0.
                 Math.Max(0, failure.MaxSizeMB) * 1024L * 1024L,
                 logger);
