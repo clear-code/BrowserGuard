@@ -1,8 +1,8 @@
 using System.Text.Json.Nodes;
 using Xunit;
-using BrowserGuard.Policy;
+using BrowserGuard.SubCommands.Policy;
 
-namespace BrowserGuard.Tests.Policy
+namespace BrowserGuard.Tests.SubCommands.Policy
 {
     // The registry side needs elevation, so these cover the JSON merging that
     // PolicyCommand performs on the ExtensionSettings value.

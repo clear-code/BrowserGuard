@@ -1,5 +1,5 @@
 using BrowserGuard.Common;
-using BrowserGuard.Policy;
+using BrowserGuard.SubCommands.Policy;
 
 namespace BrowserGuard.Host
 {

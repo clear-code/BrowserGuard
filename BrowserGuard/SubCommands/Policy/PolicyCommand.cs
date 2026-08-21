@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json.Nodes;
 using Microsoft.Win32;
 
-namespace BrowserGuard.Policy
+namespace BrowserGuard.SubCommands.Policy
 {
     // Maintains this extension's entry in the Edge ExtensionSettings policy,
     // invoked by the installer as a subcommand.
