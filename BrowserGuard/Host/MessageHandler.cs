@@ -27,9 +27,7 @@ namespace BrowserGuard.Host
         private readonly Logger? logger;
         private readonly Action<string> showDialog;
 
-        private NetLogWriter? netLogFile;
-        private NetLogSender? netLogSender;
-        private bool netLogResolved;
+        private readonly NetLogRecorder netLog;
 
         // The logging configuration can be handed in so that it does not have to
         // be found through the registry, and so can the way a warning is shown,
@@ -42,11 +40,13 @@ namespace BrowserGuard.Host
         {
             this.logger = logger;
             this.showDialog = showDialog ?? (text => Dialog.Show(text, logger));
-            if (netLoggerConfig is null)
-            {
-                return;
-            }
-            ResolveNetLog(netLoggerConfig);
+            // Reading the config is put off until the first entry: one arrives
+            // for every request, and this side is asked for other things too.
+            netLog = new NetLogRecorder(
+                netLoggerConfig is null
+                    ? () => ConfigLoader.LoadConfig().NetLogger
+                    : () => netLoggerConfig,
+                logger);
         }
 
         // null means nothing is sent back to the browser. Log entries arrive for
@@ -103,7 +103,7 @@ namespace BrowserGuard.Host
 
         private Response? HandleLogEntry(string entry)
         {
-            var failure = WriteLogEntry(entry);
+            var failure = netLog.Record(entry);
             if (failure is null)
             {
                 return null;
@@ -115,93 +115,13 @@ namespace BrowserGuard.Host
         // trail: the upload itself went through, so nothing else records it.
         private void RecordCopyFailure(string file, string reason, DateTime at)
         {
-            var failure = WriteLogEntry(NetLogEntry.UploadFileBridgeFailed(file, reason, at));
+            var failure = netLog.Record(NetLogEntry.UploadFileBridgeFailed(file, reason, at));
             if (failure is not null)
             {
                 logger?.Log($"Cannot record the failed copy: {failure}");
             }
         }
 
-        // null when the entry was taken, or when there is nowhere to put it.
-        // Otherwise why it was not. Shared with the entries the host makes for
-        // itself, so that every entry is stamped and written the one way.
-        internal string? WriteLogEntry(string entry)
-        {
-            ResolveNetLog();
-            if (netLogFile is null && netLogSender is null)
-            {
-                return null;
-            }
-
-            // Checked once here, so that both destinations are handed the same
-            // single line and a bad entry is refused before either sees it.
-            var rejection = NetLogEntry.Compact(entry, out var line);
-            if (rejection is not null)
-            {
-                return rejection;
-            }
-
-            // The collector is best effort; only the file reports a failure,
-            // because that is the copy the entry was meant to survive in.
-            netLogSender?.Enqueue(line);
-
-            return netLogFile?.Write(line);
-        }
-
-        // Read once and remembered, including the decision not to log at all.
-        private void ResolveNetLog()
-        {
-            if (netLogResolved)
-            {
-                return;
-            }
-            ResolveNetLog(ConfigLoader.LoadConfig().NetLogger);
-        }
-
-        // NetLogger turns the whole feature off; the two destinations are
-        // independent of each other below that.
-        private void ResolveNetLog(NetLoggerConfig config)
-        {
-            netLogResolved = true;
-            if (!config.Enabled)
-            {
-                logger?.Log("Command: log entry, but logging is disabled");
-                return;
-            }
-
-            if (config.LocalFile.Enabled)
-            {
-                netLogFile = new NetLogWriter(config.LocalFile, logger);
-                logger?.Log($"Command: log entry, writing to {netLogFile.FilePath}");
-            }
-            if (!string.IsNullOrWhiteSpace(config.Endpoint))
-            {
-                netLogSender = new NetLogSender(
-                    config.Endpoint,
-                    logger,
-                    handler: null,
-                    spool: Spool(config),
-                    retryInterval: TimeSpan.FromMinutes(config.OnSendFailure.RetryIntervalMinutes));
-                logger?.Log($"Command: log entry, sending to {config.Endpoint}");
-            }
-        }
-
-        private NetLogSpool? Spool(NetLoggerConfig config)
-        {
-            var failure = config.OnSendFailure;
-            if (!failure.SaveLocally)
-            {
-                return null;
-            }
-            var spool = new NetLogSpool(
-                NetLogWriter.ResolveDirectory(config.LocalFile.Directory),
-                // 0 asks for no limit, and travels as 0.
-                Math.Max(0, failure.MaxSizeMB) * 1024L * 1024L,
-                logger);
-            logger?.Log($"Command: log entry, keeping what cannot be sent in {spool.FilePath}");
-            return spool;
-        }
-
-        public void Dispose() => netLogSender?.Dispose();
+        public void Dispose() => netLog.Dispose();
     }
 }
