@@ -91,7 +91,7 @@ namespace BrowserGuard.NetLogger
                 return null;
             }
             var spool = new NetLogSpool(
-                NetLogFileWriter.ResolveDirectory(config.LocalFile.Directory),
+                NetLogDirectory.Resolve(config.LocalFile.Directory),
                 // 0 asks for no limit, and travels as 0.
                 Math.Max(0, failure.MaxSizeMB) * 1024L * 1024L,
                 logger);

@@ -43,28 +43,11 @@ namespace BrowserGuard.NetLogger
 
         internal NetLogFileWriter(NetLogFileConfig config, Logger? logger = null)
         {
-            directory = ResolveDirectory(config.Directory);
+            directory = NetLogDirectory.Resolve(config.Directory);
             maxDays = Math.Max(0, config.MaxDays);
             maxSize = Math.Max(0, config.MaxSizeMB) * 1024L * 1024L;
             this.logger = logger;
         }
-
-        // The entries kept for a collector that would not take them live here
-        // too, so both are configured and permitted in one place.
-        //
-        // Resolved once, when the log is opened. A directory naming the day
-        // therefore stays on the day the host started; the day's own rotation
-        // is in the file name, which does follow the clock.
-        internal static string ResolveDirectory(string configured, DateTime? now = null) =>
-            string.IsNullOrWhiteSpace(configured)
-                ? DefaultDirectory()
-                : PathMacro.Expand(configured, now ?? DateTime.Now);
-
-        internal static string DefaultDirectory() =>
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "BrowserGuard",
-                "netlog");
 
         internal string FilePath => Path.Combine(directory, FileNameBase + FileExtension);
 

@@ -381,37 +381,6 @@ namespace BrowserGuard.Tests.NetLogger
             Assert.NotNull(writer.Write(Entry("browsing")));
         }
 
-        // The same macros the copies of uploaded files are filed under, so one
-        // machine's log can be told from another's on a shared drive.
-        [Fact]
-        public void ExpandsTheMacrosInTheDirectory()
-        {
-            var configured = Path.Combine(tempDir, "%PCNAME%", "%DATE%");
-
-            var resolved = NetLogFileWriter.ResolveDirectory(configured, new DateTime(2026, 8, 20));
-
-            Assert.Equal(
-                Path.Combine(tempDir, Environment.MachineName, "2026-08-20"),
-                resolved);
-        }
-
-        [Fact]
-        public void ExpandsAnEnvironmentVariableInTheDirectory()
-        {
-            var before = Environment.GetEnvironmentVariable("BROWSERGUARD_LOGS");
-            Environment.SetEnvironmentVariable("BROWSERGUARD_LOGS", tempDir);
-            try
-            {
-                Assert.Equal(
-                    Path.Combine(tempDir, "netlog"),
-                    NetLogFileWriter.ResolveDirectory(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("BROWSERGUARD_LOGS", before);
-            }
-        }
-
         // The log really lands where the macros said, not just the path.
         [Fact]
         public void WritesIntoTheDirectoryTheMacrosNamed()
