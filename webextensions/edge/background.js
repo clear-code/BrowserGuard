@@ -2,7 +2,7 @@
 
 import { UploadGuard } from './upload-guard.js';
 import { StartupLauncher } from './startup-launcher.js';
-import { UploadFileBridge } from './upload-file-bridge.js';
+import { UploadPipeline } from './upload-pipeline.js';
 import { NetLogger } from './net-logger.js';
 import { SettingPageFilter } from './setting-page-filter.js';
 import { UsageTimeLimit } from './usage-time-limit.js';
@@ -16,16 +16,11 @@ chrome.webNavigation.onCommitted.addListener(
 );
 
 UploadGuard.init();
-chrome.webRequest.onBeforeRequest.addListener(
-  UploadGuard.onBeforeRequest.bind(UploadGuard),
-  { urls: ["<all_urls>"] },
-  ["blocking", "requestBody"]
-);
 
 chrome.webRequest.onBeforeRequest.addListener(
-  UploadFileBridge.onBeforeRequest.bind(UploadFileBridge),
+  UploadPipeline.onBeforeRequest.bind(UploadPipeline),
   { urls: ["<all_urls>"] },
-  ["requestBody"]
+  ["blocking", "requestBody"]
 );
 
 chrome.runtime.onStartup.addListener(() => {
@@ -54,6 +49,9 @@ chrome.webNavigation.onCompleted.addListener(
   NetLogger.onNavigationCompleted.bind(NetLogger)
 );
 
+// Registered on its own, unlike the file bridge above: this one is meant to
+// see an upload that upload-guard refused, and record the attempt. The bridge
+// is not, because it would leave a copy of a file that never left the machine.
 chrome.webRequest.onBeforeRequest.addListener(
   NetLogger.onBeforeRequest.bind(NetLogger),
   { urls: ['<all_urls>'] },
