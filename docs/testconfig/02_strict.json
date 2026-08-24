@@ -1,0 +1,75 @@
+{
+  "NetLogger": {
+    "Enabled": true,
+    "UrlAccess": true,
+    "Browsing": true,
+    "Upload": true,
+    "Download": true,
+    "Print": true,
+    "LocalFile": {
+      "Enabled": true,
+      "Directory": "C:\\BrowserGuardTest\\netlog\\%PCNAME%",
+      "MaxDays": 30,
+      "MaxSizeMB": 0
+    },
+    "Sender": {
+      "Enabled": true,
+      "Endpoint": "http://localhost:8001",
+      "OnSendFailure": {
+        "SaveLocally": true,
+        "RetryIntervalMinutes": 1,
+        "MaxSizeMB": 10
+      }
+    }
+  },
+  "UploadGuard": {
+    "Enabled": true,
+    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
+    "AllowedExtensions": [".pdf", ".docx", ".xlsx"],
+    "AllowedPaths": ["^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\"],
+    "BlockedPaths": ["\\\\Confidential\\\\"]
+  },
+  "SettingPageFilter": {
+    "Enabled": true,
+    "NotifyOnBlocked": true,
+    "BlockedPrefixes": ["edge://settings", "edge://flags", "edge://policy", "edge://extensions"]
+  },
+  "StartupLauncher": {
+    "Enabled": true,
+    "Programs": [
+      {
+        "Path": "C:\\BrowserGuardTest\\EnvDump.exe",
+        "Arguments": [],
+        "WorkingDirectory": "C:\\BrowserGuardTest",
+        "EnvironmentVariables": { "BROWSERGUARD_STARTUP_TEST": "from-config" },
+        "Sha256": ""
+      }
+    ]
+  },
+  "UsageTimeLimit": {
+    "Enabled": true,
+    "MaxContinuousMinutes": 5,
+    "AllowedTimeRanges": [
+      { "Start": "09:00", "End": "12:00" },
+      { "Start": "13:00", "End": "18:00" }
+    ],
+    "OnExceeded": {
+      "Action": "Terminate",
+      "GraceSeconds": 60,
+      "ReWarnIntervalMinutes": 1
+    }
+  },
+  "TabCountLimit": {
+    "Enabled": true,
+    "MaxCount": 5
+  },
+  "UploadFileBridge": {
+    "Enabled": true,
+    "Destination": "C:\\BrowserGuardTest\\audit\\%PCNAME%\\%USERID%\\%DATE%",
+    "MaxSizeMB": 10,
+    "BlockedExtensions": [".tmp", ".log"],
+    "AllowedExtensions": [],
+    "BlockedUrls": ["^https://localhost"],
+    "AllowedUrls": []
+  }
+}

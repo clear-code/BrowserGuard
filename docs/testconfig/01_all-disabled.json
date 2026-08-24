@@ -1,0 +1,64 @@
+{
+  "NetLogger": {
+    "Enabled": false,
+    "UrlAccess": false,
+    "Browsing": false,
+    "Upload": false,
+    "Download": false,
+    "Print": false,
+    "LocalFile": {
+      "Enabled": false,
+      "Directory": "",
+      "MaxDays": 30,
+      "MaxSizeMB": 0
+    },
+    "Sender": {
+      "Enabled": false,
+      "Endpoint": "",
+      "OnSendFailure": {
+        "SaveLocally": false,
+        "RetryIntervalMinutes": 5,
+        "MaxSizeMB": 10
+      }
+    }
+  },
+  "UploadGuard": {
+    "Enabled": false,
+    "BlockedExtensions": [],
+    "AllowedExtensions": [],
+    "AllowedPaths": [],
+    "BlockedPaths": []
+  },
+  "SettingPageFilter": {
+    "Enabled": false,
+    "NotifyOnBlocked": true,
+    "BlockedPrefixes": []
+  },
+  "StartupLauncher": {
+    "Enabled": false,
+    "Programs": []
+  },
+  "UsageTimeLimit": {
+    "Enabled": false,
+    "MaxContinuousMinutes": 0,
+    "AllowedTimeRanges": [],
+    "OnExceeded": {
+      "Action": "WarnOnly",
+      "GraceSeconds": 60,
+      "ReWarnIntervalMinutes": 10
+    }
+  },
+  "TabCountLimit": {
+    "Enabled": false,
+    "MaxCount": 0
+  },
+  "UploadFileBridge": {
+    "Enabled": false,
+    "Destination": "",
+    "MaxSizeMB": 0,
+    "BlockedExtensions": [],
+    "AllowedExtensions": [],
+    "BlockedUrls": [],
+    "AllowedUrls": []
+  }
+}
