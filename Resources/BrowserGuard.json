@@ -57,6 +57,8 @@
   "UploadFileBridge": {
     "Enabled": false,
     "Destination": "",
-    "MaxSizeMB": 0
+    "MaxSizeMB": 0,
+    "BlockedExtensions": [],
+    "AllowedExtensions": []
   }
 }

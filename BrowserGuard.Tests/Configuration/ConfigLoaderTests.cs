@@ -287,7 +287,9 @@ namespace BrowserGuard.Tests.Configuration
               "UploadFileBridge": {
                 "Enabled": true,
                 "Destination": "\\\\fileserver\\audit\\%PCNAME%",
-                "MaxSizeMB": 100
+                "MaxSizeMB": 100,
+                "BlockedExtensions": [".tmp"],
+                "AllowedExtensions": [".xlsx", ".docx"]
               }
             }
             """;
@@ -299,6 +301,8 @@ namespace BrowserGuard.Tests.Configuration
             // when the copy is actually made.
             Assert.Equal(@"\\fileserver\audit\%PCNAME%", config.UploadFileBridge.Destination);
             Assert.Equal(100, config.UploadFileBridge.MaxSizeMB);
+            Assert.Equal([".tmp"], config.UploadFileBridge.BlockedExtensions);
+            Assert.Equal([".xlsx", ".docx"], config.UploadFileBridge.AllowedExtensions);
         }
 
         // Nothing is copied off the machine unless it was asked for, and an
@@ -312,6 +316,10 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Equal("", config.UploadFileBridge.Destination);
             // 0 is no limit, so leaving it out copies whatever it is given.
             Assert.Equal(0, config.UploadFileBridge.MaxSizeMB);
+            // Both empty, so nothing an upload carries goes unrecorded until
+            // someone says it need not be.
+            Assert.Empty(config.UploadFileBridge.BlockedExtensions);
+            Assert.Empty(config.UploadFileBridge.AllowedExtensions);
         }
 
         [Fact]

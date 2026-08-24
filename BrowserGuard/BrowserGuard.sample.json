@@ -63,6 +63,8 @@
   "UploadFileBridge": {
     "Enabled": false,
     "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%",
-    "MaxSizeMB": 100
+    "MaxSizeMB": 100,
+    "BlockedExtensions": [".tmp", ".log"],
+    "AllowedExtensions": []
   }
 }

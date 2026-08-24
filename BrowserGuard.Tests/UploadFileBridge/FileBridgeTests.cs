@@ -25,12 +25,18 @@ namespace BrowserGuard.Tests.UploadFileBridge
 
         string Destination => Path.Combine(tempDir, "audit");
 
-        UploadFileBridgeConfig Config(string? destination = null, int maxSizeMB = 0) =>
+        UploadFileBridgeConfig Config(
+            string? destination = null,
+            int maxSizeMB = 0,
+            string[]? blocked = null,
+            string[]? allowed = null) =>
             new()
             {
                 Enabled = true,
                 Destination = destination ?? Destination,
                 MaxSizeMB = maxSizeMB,
+                BlockedExtensions = blocked ?? [],
+                AllowedExtensions = allowed ?? [],
             };
 
         const int MB = 1024 * 1024;
@@ -185,6 +191,64 @@ namespace BrowserGuard.Tests.UploadFileBridge
 
             Assert.Null(failure);
             Assert.Equal(["big.bin"], Copies);
+        }
+
+        // Read the way UploadGuard reads its own lists.
+        [Fact]
+        public void LeavesABlockedExtensionUncopied()
+        {
+            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source("scratch.tmp"), Now);
+
+            Assert.NotNull(failure);
+            Assert.Empty(Copies);
+        }
+
+        [Fact]
+        public void CopiesWhatIsNotOnTheBlockedList()
+        {
+            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source(), Now);
+
+            Assert.Null(failure);
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
+        // An empty allowed list is no restriction from that rule.
+        [Fact]
+        public void CopiesAnythingWhileNoAllowedListIsSet()
+        {
+            Assert.Null(FileBridge.Copy(Config(), Source("scratch.tmp"), Now));
+            Assert.Equal(["scratch.tmp"], Copies);
+        }
+
+        [Fact]
+        public void CopiesOnlyTheAllowedExtensionsOnceOneIsSet()
+        {
+            var config = Config(allowed: [".xlsx", ".docx"]);
+
+            Assert.Null(FileBridge.Copy(config, Source("report.xlsx"), Now));
+            Assert.NotNull(FileBridge.Copy(config, Source("scratch.tmp"), Now));
+
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
+        // The blocked list is checked first, so it wins over the allowed one.
+        [Fact]
+        public void LetsTheBlockedListWinOverTheAllowedOne()
+        {
+            var config = Config(blocked: [".xlsx"], allowed: [".xlsx"]);
+
+            Assert.NotNull(FileBridge.Copy(config, Source("report.xlsx"), Now));
+            Assert.Empty(Copies);
+        }
+
+        // Local names are case insensitive on Windows.
+        [Fact]
+        public void MatchesAnExtensionRegardlessOfCase()
+        {
+            var failure = FileBridge.Copy(Config(blocked: [".TMP"]), Source("scratch.tmp"), Now);
+
+            Assert.NotNull(failure);
+            Assert.Empty(Copies);
         }
 
         [Fact]

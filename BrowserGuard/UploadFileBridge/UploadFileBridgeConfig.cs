@@ -14,5 +14,12 @@ namespace BrowserGuard.UploadFileBridge
         // A file larger than this is left uncopied, so that one very large
         // upload cannot fill the file server. 0 copies whatever it is given.
         public int MaxSizeMB { get; set; }
+        // Which files are worth keeping, read the way UploadGuard reads its
+        // own: the blocked list is checked first, so it wins over the allowed
+        // one, and an empty allowed list means "no restriction from this rule".
+        // Both are empty by default, so nothing an upload carries goes
+        // unrecorded until someone says it need not be.
+        public string[] BlockedExtensions { get; set; } = [];
+        public string[] AllowedExtensions { get; set; } = [];
     }
 }
