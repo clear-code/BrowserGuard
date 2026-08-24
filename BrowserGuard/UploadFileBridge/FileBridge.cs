@@ -31,7 +31,9 @@ namespace BrowserGuard.UploadFileBridge
                 return "no file to copy";
             }
 
-            var refusal = WithinSizeLimit(config, source);
+            // The extension is settled first: it is a look at the name, where
+            // the size is a look at the file.
+            var refusal = AllowedExtension(config, source) ?? WithinSizeLimit(config, source);
             if (refusal is not null)
             {
                 return refusal;
@@ -60,6 +62,28 @@ namespace BrowserGuard.UploadFileBridge
                 return $"cannot copy {source} to {destination}: {ex.Message}";
             }
         }
+
+        // The blocked list is checked first, so it wins over the allowed one.
+        // An empty allowed list means "no restriction from this rule", the way
+        // UploadGuard reads its own lists.
+        private static string? AllowedExtension(UploadFileBridgeConfig config, string source)
+        {
+            if (HasExtension(source, config.BlockedExtensions))
+            {
+                return $"{source} has an extension that is not kept";
+            }
+            if (config.AllowedExtensions.Length > 0 &&
+                !HasExtension(source, config.AllowedExtensions))
+            {
+                return $"{source} does not have an extension that is kept";
+            }
+            return null;
+        }
+
+        // Local names are case insensitive on Windows.
+        private static bool HasExtension(string file, string[] extensions) =>
+            extensions.Any(extension =>
+                file.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
 
         // null when the file may be copied. Otherwise why it may not, in the
         // same shape as any other reason the copy was not made: an audit trail
