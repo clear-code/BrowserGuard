@@ -7,13 +7,15 @@ export const UploadFileBridge = {
     if (!details.requestBody?.raw) return;
     for (const part of details.requestBody.raw) {
       if (part.file) {
-        this.bridgeFile(part.file);
+        this.bridgeFile(part.file, details.url);
       }
     }
   },
 
-  async bridgeFile(path) {
-    const query = 'U ' + path;
+  async bridgeFile(path, url) {
+    // The path and where it was going travel as JSON: a path may hold spaces,
+    // so the two cannot simply be put either side of one.
+    const query = 'U ' + JSON.stringify({ file: path, url });
     try {
       // sendNativeMessage only accepts an object, so the command is wrapped.
       const resp = await chrome.runtime.sendNativeMessage(SERVER_NAME, { message: query });

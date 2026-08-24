@@ -21,5 +21,9 @@ namespace BrowserGuard.UploadFileBridge
         // unrecorded until someone says it need not be.
         public string[] BlockedExtensions { get; set; } = [];
         public string[] AllowedExtensions { get; set; } = [];
+        // Where the upload was going, as regular expressions, read the same way
+        // as the lists above and matched the way UploadGuard matches its paths.
+        public string[] BlockedUrls { get; set; } = [];
+        public string[] AllowedUrls { get; set; } = [];
     }
 }

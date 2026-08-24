@@ -54,7 +54,7 @@ namespace BrowserGuard.Tests.NetLogger
             using var recorder = new NetLogRecorder(() => Config());
 
             var failure = recorder.Record(NetLogEntry.UploadFileBridgeFailed(
-                @"C:\tmp\report.xlsx", "access denied", DateTime.Now));
+                @"C:\tmp\report.xlsx", "https://example.com/upload", "access denied", DateTime.Now));
 
             Assert.Null(failure);
             var root = JsonDocument.Parse(Assert.Single(File.ReadAllLines(LogPath))).RootElement;

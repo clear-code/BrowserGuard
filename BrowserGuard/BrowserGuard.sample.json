@@ -65,6 +65,8 @@
     "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%",
     "MaxSizeMB": 100,
     "BlockedExtensions": [".tmp", ".log"],
-    "AllowedExtensions": []
+    "AllowedExtensions": [],
+    "BlockedUrls": ["^https://example.com\\."],
+    "AllowedUrls": []
   }
 }

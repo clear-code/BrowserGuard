@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using BrowserGuard.Common;
 
 namespace BrowserGuard.UploadFileBridge
@@ -13,10 +14,16 @@ namespace BrowserGuard.UploadFileBridge
         // the name, so it stops rather than counting for ever.
         private const int MaxNumbered = 1000;
 
+        private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
+
         // null when the copy was made, or when there was nothing to do.
         // Otherwise why it could not be made.
         internal static string? Copy(
-            UploadFileBridgeConfig config, string source, DateTime now, Logger? logger = null)
+            UploadFileBridgeConfig config,
+            string source,
+            string url,
+            DateTime now,
+            Logger? logger = null)
         {
             if (!config.Enabled)
             {
@@ -31,9 +38,11 @@ namespace BrowserGuard.UploadFileBridge
                 return "no file to copy";
             }
 
-            // The extension is settled first: it is a look at the name, where
-            // the size is a look at the file.
-            var refusal = AllowedExtension(config, source) ?? WithinSizeLimit(config, source);
+            // Where it was going and what it is called are settled first: they
+            // are a look at two strings, where the size is a look at the file.
+            var refusal = AllowedUrl(config, url, logger)
+                ?? AllowedExtension(config, source)
+                ?? WithinSizeLimit(config, source);
             if (refusal is not null)
             {
                 return refusal;
@@ -61,6 +70,45 @@ namespace BrowserGuard.UploadFileBridge
             {
                 return $"cannot copy {source} to {destination}: {ex.Message}";
             }
+        }
+
+        // Read like the extension lists, and matched as regular expressions the
+        // way UploadGuard matches its paths.
+        private static string? AllowedUrl(
+            UploadFileBridgeConfig config, string url, Logger? logger)
+        {
+            if (Matches(url, config.BlockedUrls, logger))
+            {
+                return $"uploads to {url} are not kept";
+            }
+            if (config.AllowedUrls.Length > 0 && !Matches(url, config.AllowedUrls, logger))
+            {
+                return $"uploads to {url} are not among those kept";
+            }
+            return null;
+        }
+
+        // An unusable pattern is dropped on its own, so one bad entry does not
+        // silently turn the whole list into "match everything" or "match
+        // nothing". The timeout is there so that a pattern that backtracks for
+        // ever cannot hold the host up.
+        private static bool Matches(string url, string[] patterns, Logger? logger)
+        {
+            foreach (var pattern in patterns)
+            {
+                try
+                {
+                    if (Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase, MatchTimeout))
+                    {
+                        return true;
+                    }
+                }
+                catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
+                {
+                    logger?.Log($"UploadFileBridge: ignoring the URL pattern {pattern}: {ex.Message}");
+                }
+            }
+            return false;
         }
 
         // The blocked list is checked first, so it wins over the allowed one.

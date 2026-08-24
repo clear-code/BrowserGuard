@@ -104,12 +104,13 @@ namespace BrowserGuard.Tests.NetLogger
         public void MakesAnEntryForACopyThatCouldNotBeKept()
         {
             var entry = NetLogEntry.UploadFileBridgeFailed(
-                @"C:	mpeport.xlsx", "access denied", new DateTime(2026, 8, 20, 13, 45, 30));
+                @"C:\tmp\report.xlsx", "https://example.com/upload", "access denied", new DateTime(2026, 8, 20, 13, 45, 30));
 
             using var document = JsonDocument.Parse(entry);
             var root = document.RootElement;
             Assert.Equal("upload-file-bridge", root.GetProperty("operation").GetString());
-            Assert.Equal(@"C:	mpeport.xlsx", root.GetProperty("name").GetString());
+            Assert.Equal(@"C:\tmp\report.xlsx", root.GetProperty("name").GetString());
+            Assert.Equal("https://example.com/upload", root.GetProperty("url").GetString());
             Assert.Equal("2026-08-20 13:45:30", root.GetProperty("timestamp").GetString());
             Assert.Equal("access denied", root.GetProperty("reason").GetString());
         }
@@ -118,7 +119,8 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void StampsAnEntryTheHostMadeItself()
         {
-            var entry = NetLogEntry.UploadFileBridgeFailed("C:\a\f.txt", "no destination", DateTime.Now);
+            var entry = NetLogEntry.UploadFileBridgeFailed(
+                @"C:\tmp\report.xlsx", "https://example.com/upload", "no destination", DateTime.Now);
 
             Assert.Null(NetLogEntry.Compact(entry, out var line));
 

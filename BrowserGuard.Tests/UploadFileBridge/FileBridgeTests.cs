@@ -20,6 +20,9 @@ namespace BrowserGuard.Tests.UploadFileBridge
             try { Directory.Delete(tempDir, true); } catch { }
         }
 
+        // Where the upload was going. Only the URL tests care what it is.
+        const string Url = "https://example.com/upload";
+
         // A fixed day, so a destination naming the day is the one intended here.
         static readonly DateTime Now = new(2026, 8, 20, 13, 45, 30);
 
@@ -29,7 +32,9 @@ namespace BrowserGuard.Tests.UploadFileBridge
             string? destination = null,
             int maxSizeMB = 0,
             string[]? blocked = null,
-            string[]? allowed = null) =>
+            string[]? allowed = null,
+            string[]? blockedUrls = null,
+            string[]? allowedUrls = null) =>
             new()
             {
                 Enabled = true,
@@ -37,6 +42,8 @@ namespace BrowserGuard.Tests.UploadFileBridge
                 MaxSizeMB = maxSizeMB,
                 BlockedExtensions = blocked ?? [],
                 AllowedExtensions = allowed ?? [],
+                BlockedUrls = blockedUrls ?? [],
+                AllowedUrls = allowedUrls ?? [],
             };
 
         const int MB = 1024 * 1024;
@@ -66,7 +73,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             var source = Source(content: "the contents");
 
-            var failure = FileBridge.Copy(Config(), source, Now);
+            var failure = FileBridge.Copy(Config(), source, Url, Now);
 
             Assert.Null(failure);
             Assert.Equal("the contents", File.ReadAllText(Path.Combine(Destination, "report.xlsx")));
@@ -78,7 +85,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             Assert.False(Directory.Exists(Destination));
 
-            FileBridge.Copy(Config(), Source(), Now);
+            FileBridge.Copy(Config(), Source(), Url, Now);
 
             Assert.True(Directory.Exists(Destination));
         }
@@ -88,7 +95,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             var config = Config(Path.Combine(tempDir, "%DATE%", "%PCNAME%"));
 
-            var failure = FileBridge.Copy(config, Source(), Now);
+            var failure = FileBridge.Copy(config, Source(), Url, Now);
 
             Assert.Null(failure);
             var expected = Path.Combine(tempDir, "2026-08-20", Environment.MachineName, "report.xlsx");
@@ -99,8 +106,8 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void NumbersACopyRatherThanOverwriteOne()
         {
-            FileBridge.Copy(Config(), Source(content: "first"), Now);
-            FileBridge.Copy(Config(), Source(content: "second"), Now);
+            FileBridge.Copy(Config(), Source(content: "first"), Url, Now);
+            FileBridge.Copy(Config(), Source(content: "second"), Url, Now);
 
             Assert.Equal(["report_2.xlsx", "report.xlsx"], Copies);
             Assert.Equal("first", File.ReadAllText(Path.Combine(Destination, "report.xlsx")));
@@ -112,7 +119,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             for (var time = 0; time < 4; time++)
             {
-                FileBridge.Copy(Config(), Source(content: $"copy {time}"), Now);
+                FileBridge.Copy(Config(), Source(content: $"copy {time}"), Url, Now);
             }
 
             Assert.Equal(
@@ -124,8 +131,8 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void KeepsTheExtensionOnANumberedCopy()
         {
-            FileBridge.Copy(Config(), Source("notes.tar.gz"), Now);
-            FileBridge.Copy(Config(), Source("notes.tar.gz"), Now);
+            FileBridge.Copy(Config(), Source("notes.tar.gz"), Url, Now);
+            FileBridge.Copy(Config(), Source("notes.tar.gz"), Url, Now);
 
             Assert.Equal(["notes.tar_2.gz", "notes.tar.gz"], Copies);
         }
@@ -133,8 +140,8 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesAFileWithNoExtension()
         {
-            FileBridge.Copy(Config(), Source("LICENSE"), Now);
-            FileBridge.Copy(Config(), Source("LICENSE"), Now);
+            FileBridge.Copy(Config(), Source("LICENSE"), Url, Now);
+            FileBridge.Copy(Config(), Source("LICENSE"), Url, Now);
 
             Assert.Equal(["LICENSE", "LICENSE_2"], Copies);
         }
@@ -146,7 +153,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
             var config = Config();
             config.Enabled = false;
 
-            var failure = FileBridge.Copy(config, Source(), Now);
+            var failure = FileBridge.Copy(config, Source(), Url, Now);
 
             Assert.Null(failure);
             Assert.False(Directory.Exists(Destination));
@@ -156,7 +163,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void LeavesAFileOverTheLimitUncopied()
         {
-            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB + 1), Now);
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB + 1), Url, Now);
 
             Assert.NotNull(failure);
             Assert.Contains("1 MB limit", failure);
@@ -167,7 +174,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesAFileExactlyOnTheLimit()
         {
-            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB), Now);
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB), Url, Now);
 
             Assert.Null(failure);
             Assert.Equal(["big.bin"], Copies);
@@ -176,7 +183,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesAFileUnderTheLimit()
         {
-            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB - 1), Now);
+            var failure = FileBridge.Copy(Config(maxSizeMB: 1), SourceOfSize(MB - 1), Url, Now);
 
             Assert.Null(failure);
             Assert.Equal(["big.bin"], Copies);
@@ -187,7 +194,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesAnySizeWhenNoLimitIsSet()
         {
-            var failure = FileBridge.Copy(Config(maxSizeMB: 0), SourceOfSize(MB * 2), Now);
+            var failure = FileBridge.Copy(Config(maxSizeMB: 0), SourceOfSize(MB * 2), Url, Now);
 
             Assert.Null(failure);
             Assert.Equal(["big.bin"], Copies);
@@ -197,7 +204,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void LeavesABlockedExtensionUncopied()
         {
-            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source("scratch.tmp"), Now);
+            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source("scratch.tmp"), Url, Now);
 
             Assert.NotNull(failure);
             Assert.Empty(Copies);
@@ -206,7 +213,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesWhatIsNotOnTheBlockedList()
         {
-            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source(), Now);
+            var failure = FileBridge.Copy(Config(blocked: [".tmp"]), Source(), Url, Now);
 
             Assert.Null(failure);
             Assert.Equal(["report.xlsx"], Copies);
@@ -216,7 +223,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void CopiesAnythingWhileNoAllowedListIsSet()
         {
-            Assert.Null(FileBridge.Copy(Config(), Source("scratch.tmp"), Now));
+            Assert.Null(FileBridge.Copy(Config(), Source("scratch.tmp"), Url, Now));
             Assert.Equal(["scratch.tmp"], Copies);
         }
 
@@ -225,8 +232,8 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             var config = Config(allowed: [".xlsx", ".docx"]);
 
-            Assert.Null(FileBridge.Copy(config, Source("report.xlsx"), Now));
-            Assert.NotNull(FileBridge.Copy(config, Source("scratch.tmp"), Now));
+            Assert.Null(FileBridge.Copy(config, Source("report.xlsx"), Url, Now));
+            Assert.NotNull(FileBridge.Copy(config, Source("scratch.tmp"), Url, Now));
 
             Assert.Equal(["report.xlsx"], Copies);
         }
@@ -237,7 +244,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         {
             var config = Config(blocked: [".xlsx"], allowed: [".xlsx"]);
 
-            Assert.NotNull(FileBridge.Copy(config, Source("report.xlsx"), Now));
+            Assert.NotNull(FileBridge.Copy(config, Source("report.xlsx"), Url, Now));
             Assert.Empty(Copies);
         }
 
@@ -245,16 +252,93 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void MatchesAnExtensionRegardlessOfCase()
         {
-            var failure = FileBridge.Copy(Config(blocked: [".TMP"]), Source("scratch.tmp"), Now);
+            var failure = FileBridge.Copy(Config(blocked: [".TMP"]), Source("scratch.tmp"), Url, Now);
 
             Assert.NotNull(failure);
             Assert.Empty(Copies);
         }
 
+        // Matched as regular expressions, the way UploadGuard matches its paths.
+        [Fact]
+        public void LeavesAnUploadToABlockedDestinationUncopied()
+        {
+            var config = Config(blockedUrls: [@"^https://example\.com/"]);
+
+            Assert.NotNull(FileBridge.Copy(config, Source(), Url, Now));
+            Assert.Empty(Copies);
+        }
+
+        [Fact]
+        public void CopiesAnUploadToADestinationThatIsNotBlocked()
+        {
+            var config = Config(blockedUrls: [@"^https://intranet\."]);
+
+            Assert.Null(FileBridge.Copy(config, Source(), Url, Now));
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
+        // An empty allowed list is no restriction from that rule.
+        [Fact]
+        public void CopiesAnyDestinationWhileNoAllowedListIsSet()
+        {
+            Assert.Null(FileBridge.Copy(Config(), Source(), Url, Now));
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
+        [Fact]
+        public void CopiesOnlyTheAllowedDestinationsOnceOneIsSet()
+        {
+            var config = Config(allowedUrls: [@"^https://example\.com/"]);
+
+            Assert.Null(FileBridge.Copy(config, Source("report.xlsx"), Url, Now));
+            Assert.NotNull(FileBridge.Copy(config, Source("other.xlsx"), "https://elsewhere.test/", Now));
+
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
+        // The blocked list is checked first, so it wins over the allowed one.
+        [Fact]
+        public void LetsTheBlockedDestinationWinOverTheAllowedOne()
+        {
+            var config = Config(
+                blockedUrls: ["example"],
+                allowedUrls: ["example"]);
+
+            Assert.NotNull(FileBridge.Copy(config, Source(), Url, Now));
+            Assert.Empty(Copies);
+        }
+
+        [Fact]
+        public void MatchesADestinationRegardlessOfCase()
+        {
+            var config = Config(blockedUrls: [@"EXAMPLE\.COM"]);
+
+            Assert.NotNull(FileBridge.Copy(config, Source(), Url, Now));
+        }
+
+        // One bad entry must not turn the list into "match everything" or
+        // "match nothing".
+        [Fact]
+        public void DropsAnUnusablePatternWithoutLosingTheRest()
+        {
+            var config = Config(blockedUrls: ["[", "example"]);
+
+            Assert.NotNull(FileBridge.Copy(config, Source(), Url, Now));
+        }
+
+        [Fact]
+        public void CopiesWhenOnlyTheUnusablePatternWouldHaveMatched()
+        {
+            var config = Config(blockedUrls: ["["]);
+
+            Assert.Null(FileBridge.Copy(config, Source(), Url, Now));
+            Assert.Equal(["report.xlsx"], Copies);
+        }
+
         [Fact]
         public void ReportsThatThereIsNowhereToPutIt()
         {
-            var failure = FileBridge.Copy(Config(""), Source(), Now);
+            var failure = FileBridge.Copy(Config(""), Source(), Url, Now);
 
             Assert.NotNull(failure);
         }
@@ -262,7 +346,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void ReportsAFileThatIsNotThere()
         {
-            var failure = FileBridge.Copy(Config(), Path.Combine(tempDir, "gone.xlsx"), Now);
+            var failure = FileBridge.Copy(Config(), Path.Combine(tempDir, "gone.xlsx"), Url, Now);
 
             Assert.NotNull(failure);
             Assert.Contains("gone.xlsx", failure);
@@ -271,7 +355,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void ReportsAPathItCannotUse()
         {
-            var failure = FileBridge.Copy(Config(), "", Now);
+            var failure = FileBridge.Copy(Config(), "", Url, Now);
 
             Assert.NotNull(failure);
         }

@@ -24,7 +24,8 @@ namespace BrowserGuard.NetLogger
         // An entry the host makes for itself, in the shape the browser sends
         // its own. It goes back through Compact like any other, so that the
         // machine and the user are stamped on it in one place.
-        internal static string UploadFileBridgeFailed(string file, string reason, DateTime at)
+        internal static string UploadFileBridgeFailed(
+            string file, string url, string reason, DateTime at)
         {
             using var buffer = new MemoryStream();
             using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
@@ -33,6 +34,9 @@ namespace BrowserGuard.NetLogger
                 // The upload itself went through; keeping a copy of it did not.
                 writer.WriteString("operation", "upload-file-bridge");
                 writer.WriteString("name", file);
+                // Where it was going, so the entry reads like the ones the
+                // browser sends about the same upload.
+                writer.WriteString("url", url);
                 writer.WriteString("timestamp",
                     at.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                 writer.WriteString("reason", reason);

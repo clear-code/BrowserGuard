@@ -59,6 +59,8 @@
     "Destination": "",
     "MaxSizeMB": 0,
     "BlockedExtensions": [],
-    "AllowedExtensions": []
+    "AllowedExtensions": [],
+    "BlockedUrls": [],
+    "AllowedUrls": []
   }
 }
