@@ -19,6 +19,14 @@ const EMPTY_STATE = {
   terminateAt: 0,
 };
 
+// What OnExceeded.Action may say, however it is spelled. A word that is not
+// one of these leaves the setting as it was, so that a misspelling cannot
+// quietly start closing the browser.
+const ACTIONS = {
+  warnonly: 'WarnOnly',
+  terminate: 'Terminate',
+};
+
 const REASONS = {
   continuous: '連続して使用できる時間の上限に達しました。',
   schedule: '使用が許可された時間帯を過ぎています。',
@@ -81,8 +89,10 @@ export const UsageTimeLimit = {
     }
     const onExceeded = usageTimeLimit.OnExceeded;
     if (!onExceeded) return;
-    if (onExceeded.Action === 'Terminate' || onExceeded.Action === 'WarnOnly') {
-      this.action = onExceeded.Action;
+    // Kept in the one spelling, so the rest of the module compares it plainly.
+    const action = ACTIONS[String(onExceeded.Action ?? '').trim().toLowerCase()];
+    if (action) {
+      this.action = action;
     }
     this.graceSeconds = readNumber(onExceeded, 'GraceSeconds', this.graceSeconds);
     this.reWarnIntervalMinutes =

@@ -102,6 +102,40 @@ describe('parseTimeOfDay', () => {
   });
 });
 
+describe('applyConfig', () => {
+  // The action is the one setting whose value is a word rather than a number
+  // or a switch, so it is the one that can be spelled a different way.
+  it('reads the action however it is spelled', () => {
+    for (const spelling of ['Terminate', 'terminate', 'TERMINATE', ' Terminate ']) {
+      configure({ OnExceeded: { Action: 'WarnOnly' } });
+      configure({ OnExceeded: { Action: spelling } });
+
+      assert.equal(UsageTimeLimit.action, 'Terminate', `${spelling} should be read`);
+    }
+  });
+
+  it('reads warning only however it is spelled', () => {
+    configure({ OnExceeded: { Action: 'Terminate' } });
+    configure({ OnExceeded: { Action: 'warnonly' } });
+
+    assert.equal(UsageTimeLimit.action, 'WarnOnly');
+  });
+
+  // A misspelling must not be able to start closing the browser, nor to stop
+  // it closing when that was asked for.
+  it('keeps what it had for a word it does not know', () => {
+    configure({ OnExceeded: { Action: 'Terminate' } });
+    configure({ OnExceeded: { Action: 'Close' } });
+
+    assert.equal(UsageTimeLimit.action, 'Terminate');
+
+    configure({ OnExceeded: { Action: 'WarnOnly' } });
+    configure({ OnExceeded: { Action: 42 } });
+
+    assert.equal(UsageTimeLimit.action, 'WarnOnly');
+  });
+});
+
 describe('isWithinAllowedRanges', () => {
   it('allows any hour when no range is configured', () => {
     assert.equal(UsageTimeLimit.isWithinAllowedRanges(at(3)), true);

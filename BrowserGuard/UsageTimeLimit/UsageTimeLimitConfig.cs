@@ -18,7 +18,7 @@ namespace BrowserGuard.UsageTimeLimit
 
     internal class UsageTimeExceededConfig
     {
-        // "WarnOnly" or "Terminate". Anything else is read as "WarnOnly", so a
+        // "WarnOnly" or "Terminate" (ignore case). Anything else is read as "WarnOnly", so a
         // misspelling cannot silently start closing the browser.
         public string Action { get; set; } = "WarnOnly";
         public int GraceSeconds { get; set; } = 60;
