@@ -50,7 +50,7 @@ make.bat
 | パス | 内容 |
 | --- | --- |
 | `SetupOutput\BrowserGuardSetup.exe` | インストーラー |
-| `BrowserGuard\bin\Release\net8.0\publish\win-x86\` | ホスト (自己完結型 / win-x86) |
+| `BrowserGuard\bin\Release\net8.0\publish\win-x64\` | ホスト (自己完結型 / win-x64) |
 | `webextensions\BrowserGuardEdge.zip` | 拡張機能 (製品版) |
 | `webextensions\BrowserGuardEdgeDev.zip` | 拡張機能 (開発版・名称が異なる) |
 | `webextensions\BrowserGuardEdge.crx` | 署名済み拡張機能 (インストーラーに同梱) |
@@ -64,7 +64,7 @@ make.bat
 dotnet publish BrowserGuard\BrowserGuard.csproj -p:PublishProfile=FolderProfile
 ```
 
-出力先は `BrowserGuard\bin\Release\net8.0\publish\win-x86\` です。
+出力先は `BrowserGuard\bin\Release\net8.0\publish\win-x64\` です。
 このパスは [BrowserGuard.iss](BrowserGuard.iss) の `[Files]` が参照しているため、変更する場合は両方を合わせてください。
 
 ### 拡張機能

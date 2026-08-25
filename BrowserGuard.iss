@@ -18,7 +18,7 @@ VersionInfoDescription=BrowserGuardSetup
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 DefaultGroupName=BrowserGuard
-UninstallDisplayIcon={app}\BrowserGuard.exe
+UninstallDisplayIcon={app}\BrowserGuardHost\BrowserGuard.exe
 
 [Registry]
 Root: HKLM; Subkey: "Software\BrowserGuard"; Flags: uninsdeletekey
@@ -26,14 +26,17 @@ Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Path
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "1.0.0.0"
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuard.exe"
+Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "1.0.0.0"
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Rulefile"; ValueData: "{app}\BrowserGuard.json"
-Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuard.exe"
+;ホストを win-x86 で発行する場合にのみ必要（32bit プロセスの HKLM\SOFTWAREがWOW6432Node へリダイレクトされるため）。
+;現状は win-x64 で発行しているため不要。
+;Edge 本体のアーキテクチャとは無関係。
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; Flags: uninsdeletekey
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "1.0.0.0"
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
 
 ;Edge
@@ -54,8 +57,8 @@ Name: "extensionpolicy"; Description: "拡張機能を Edge のポリシーに�
 Source: "Resources\BrowserGuard.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
 
 ;Host
-Source: "BrowserGuard\bin\Release\net8.0\publish\win-x86\*.dll"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
-Source: "BrowserGuard\bin\Release\net8.0\publish\win-x86\*.exe"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
+Source: "BrowserGuard\bin\Release\net8.0\publish\win-x64\*.dll"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
+Source: "BrowserGuard\bin\Release\net8.0\publish\win-x64\*.exe"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
 ;Native Messaging Host Manifest
 Source: "Resources\edge.json"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full
@@ -70,7 +73,7 @@ Source: "Resources\manifest.xml"; DestDir: "{app}\BrowserGuardExtension";Flags: 
 Name: "{app}";Permissions: users-modify
 
 [Run] 
-Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuard.exe"" /inheritance:r"; Flags: runhidden shellexec
+Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuardHost\BrowserGuard.exe"" /inheritance:r"; Flags: runhidden shellexec
 Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuardHost\edge.json"" /inheritance:r"; Flags: runhidden shellexec
 
 [UninstallRun]
