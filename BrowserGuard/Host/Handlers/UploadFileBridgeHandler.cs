@@ -32,10 +32,10 @@ namespace BrowserGuard.Host.Handlers
 
         public string Command => "U";
 
+        public string Description => "bridge upload";
+
         public Response? Run(string argument, Lazy<Config> config)
         {
-            logger?.Log("Command: bridge upload");
-
             Upload? upload;
             try
             {

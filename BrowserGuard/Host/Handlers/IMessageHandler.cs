@@ -9,6 +9,11 @@ namespace BrowserGuard.Host.Handlers
         // The letter, without the space that follows it in the message.
         string Command { get; }
 
+        // What the dispatcher writes to the diagnostic log when the command
+        // arrives. Empty for a command that arrives with every request: a line
+        // apiece would make the log the busiest thing on the machine.
+        string Description { get; }
+
         // Handed what follows the space, and a config that is only read if it
         // is asked for: a log entry arrives for every request, and reading the
         // config for each one would mean a registry and a file read per

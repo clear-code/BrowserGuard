@@ -13,6 +13,10 @@ namespace BrowserGuard.Host.Handlers
 
         public string Command => "L";
 
+        // An entry arrives for every request; naming each one would fill
+        // the diagnostic log faster than anything else on the machine.
+        public string Description => "";
+
         // Answering every entry would double the traffic over the port for no
         // purpose, so only a failure is reported.
         public Response? Run(string argument, Lazy<Config> config)

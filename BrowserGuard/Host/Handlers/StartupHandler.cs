@@ -12,9 +12,10 @@ namespace BrowserGuard.Host.Handlers
 
         public string Command => "S";
 
+        public string Description => "startup";
+
         public Response? Run(string argument, Lazy<Config> config)
         {
-            logger?.Log("Command: startup");
             var failures = StartupLauncher.Run(config.Value.StartupLauncher, logger);
             return new Response { Success = failures is null, Error = failures };
         }

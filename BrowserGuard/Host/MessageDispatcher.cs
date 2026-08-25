@@ -15,6 +15,7 @@ namespace BrowserGuard.Host
         private readonly NetLogRecorder netLog;
 
         private readonly Dictionary<string, IMessageHandler> handlers;
+        private readonly Logger? logger;
 
         // The logging configuration can be handed in so that it does not have to
         // be found through the registry, and so can the way a warning is shown,
@@ -25,6 +26,7 @@ namespace BrowserGuard.Host
             NetLoggerConfig? netLoggerConfig = null,
             Action<string>? showDialog = null)
         {
+            this.logger = logger;
             netLog = new NetLogRecorder(
                 netLoggerConfig is null
                     ? () => ConfigLoader.LoadConfig().NetLogger
@@ -34,8 +36,8 @@ namespace BrowserGuard.Host
             handlers = new IMessageHandler[]
             {
                 new LogEntryHandler(netLog),
-                new WarnHandler(showDialog ?? (text => Dialog.Show(text, logger)), logger),
-                new ConfigHandler(logger),
+                new WarnHandler(showDialog ?? (text => Dialog.Show(text, logger))),
+                new ConfigHandler(),
                 new StartupHandler(logger),
                 new UploadFileBridgeHandler(netLog, logger),
             }.ToDictionary(handler => handler.Command);
@@ -52,6 +54,11 @@ namespace BrowserGuard.Host
                 !handlers.TryGetValue(message[..1], out var handler))
             {
                 return new Response { Success = true };
+            }
+
+            if (handler.Description.Length > 0)
+            {
+                logger?.Log($"Command: {handler.Description}");
             }
 
             // Read at most once for the message, and only if the handler asks.

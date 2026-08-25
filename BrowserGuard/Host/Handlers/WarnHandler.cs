@@ -1,4 +1,3 @@
-using BrowserGuard.Common;
 using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Host.Handlers
@@ -8,19 +7,15 @@ namespace BrowserGuard.Host.Handlers
     internal sealed class WarnHandler : IMessageHandler
     {
         private readonly Action<string> show;
-        private readonly Logger? logger;
 
-        internal WarnHandler(Action<string> show, Logger? logger = null)
-        {
-            this.show = show;
-            this.logger = logger;
-        }
+        internal WarnHandler(Action<string> show) => this.show = show;
 
         public string Command => "W";
 
+        public string Description => "warn";
+
         public Response? Run(string argument, Lazy<Config> config)
         {
-            logger?.Log("Command: warn");
             show(argument);
             return new Response { Success = true };
         }

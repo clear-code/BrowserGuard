@@ -1,4 +1,3 @@
-using BrowserGuard.Common;
 using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Host.Handlers
@@ -7,15 +6,12 @@ namespace BrowserGuard.Host.Handlers
     // on there rather than here.
     internal sealed class ConfigHandler : IMessageHandler
     {
-        private readonly Logger? logger;
-
-        internal ConfigHandler(Logger? logger = null) => this.logger = logger;
-
         public string Command => "C";
+
+        public string Description => "load config";
 
         public Response? Run(string argument, Lazy<Config> config)
         {
-            logger?.Log("Command: load config");
             return new ConfigResponse { Success = true, Config = config.Value };
         }
     }
