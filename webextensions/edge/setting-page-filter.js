@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { readArray, readBoolean } from './config-value.js';
 
 export const SettingPageFilter = {
   enabled: false,
@@ -21,15 +22,11 @@ export const SettingPageFilter = {
   // Separated from init so that it can be exercised without the browser.
   applyConfig(settingPageFilter) {
     if (!settingPageFilter) return;
-    if (typeof settingPageFilter.Enabled === 'boolean') {
-      this.enabled = settingPageFilter.Enabled;
-    }
-    if (typeof settingPageFilter.NotifyOnBlocked === 'boolean') {
-      this.notifyOnBlocked = settingPageFilter.NotifyOnBlocked;
-    }
-    if (Array.isArray(settingPageFilter.BlockedPrefixes)) {
-      this.blockedPrefixes = settingPageFilter.BlockedPrefixes;
-    }
+    this.enabled = readBoolean(settingPageFilter, 'Enabled', this.enabled);
+    this.notifyOnBlocked =
+      readBoolean(settingPageFilter, 'NotifyOnBlocked', this.notifyOnBlocked);
+    this.blockedPrefixes =
+      readArray(settingPageFilter, 'BlockedPrefixes', this.blockedPrefixes);
   },
 
   isBlockedUrl(url) {

@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { readBoolean, readNumber } from './config-value.js';
 
 // Somewhere ordinary to send a tab that the browser will not close while it is
 // showing the new tab page.
@@ -26,12 +27,8 @@ export const TabCountLimit = {
 
   applyConfig(tabCountLimit) {
     if (!tabCountLimit) return;
-    if (typeof tabCountLimit.Enabled === 'boolean') {
-      this.enabled = tabCountLimit.Enabled;
-    }
-    if (Number.isFinite(tabCountLimit.MaxCount)) {
-      this.maxCount = tabCountLimit.MaxCount;
-    }
+    this.enabled = readBoolean(tabCountLimit, 'Enabled', this.enabled);
+    this.maxCount = readNumber(tabCountLimit, 'MaxCount', this.maxCount);
   },
 
   excessTabs(tabs) {

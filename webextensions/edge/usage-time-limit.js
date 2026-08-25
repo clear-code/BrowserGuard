@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { readBoolean, readNumber } from './config-value.js';
 
 // The service worker is not kept alive, so the deadline is recomputed from
 // stored state on every alarm rather than held in a timer.
@@ -64,12 +65,9 @@ export const UsageTimeLimit = {
   // Separated from init so that it can be exercised without the browser.
   applyConfig(usageTimeLimit) {
     if (!usageTimeLimit) return;
-    if (typeof usageTimeLimit.Enabled === 'boolean') {
-      this.enabled = usageTimeLimit.Enabled;
-    }
-    if (Number.isFinite(usageTimeLimit.MaxContinuousMinutes)) {
-      this.maxContinuousMinutes = usageTimeLimit.MaxContinuousMinutes;
-    }
+    this.enabled = readBoolean(usageTimeLimit, 'Enabled', this.enabled);
+    this.maxContinuousMinutes =
+      readNumber(usageTimeLimit, 'MaxContinuousMinutes', this.maxContinuousMinutes);
     if (Array.isArray(usageTimeLimit.AllowedTimeRanges)) {
       // A range that cannot be read is dropped instead of never matching,
       // because a mistyped range would otherwise put the browser permanently
@@ -86,12 +84,9 @@ export const UsageTimeLimit = {
     if (onExceeded.Action === 'Terminate' || onExceeded.Action === 'WarnOnly') {
       this.action = onExceeded.Action;
     }
-    if (Number.isFinite(onExceeded.GraceSeconds)) {
-      this.graceSeconds = onExceeded.GraceSeconds;
-    }
-    if (Number.isFinite(onExceeded.ReWarnIntervalMinutes)) {
-      this.reWarnIntervalMinutes = onExceeded.ReWarnIntervalMinutes;
-    }
+    this.graceSeconds = readNumber(onExceeded, 'GraceSeconds', this.graceSeconds);
+    this.reWarnIntervalMinutes =
+      readNumber(onExceeded, 'ReWarnIntervalMinutes', this.reWarnIntervalMinutes);
   },
 
   isWithinAllowedRanges(now) {

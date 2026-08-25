@@ -3,6 +3,7 @@
 import { loadConfig } from './config-loader.js';
 import { NetLogger } from './net-logger.js';
 import { showDialog } from './dialog.js';
+import { readArray, readBoolean } from './config-value.js';
 
 export const UploadGuard = {
     // onBeforeRequest is blocking, so cache the config for synchronous access.
@@ -21,15 +22,11 @@ export const UploadGuard = {
     // Members the config leaves out keep their current value.
     applyConfig(uploadGuard) {
         if (!uploadGuard) return;
-        if (typeof uploadGuard.Enabled === 'boolean') {
-            this.enabled = uploadGuard.Enabled;
-        }
-        if (Array.isArray(uploadGuard.BlockedExtensions)) {
-            this.blockedExtensions = uploadGuard.BlockedExtensions;
-        }
-        if (Array.isArray(uploadGuard.AllowedExtensions)) {
-            this.allowedExtensions = uploadGuard.AllowedExtensions;
-        }
+        this.enabled = readBoolean(uploadGuard, 'Enabled', this.enabled);
+        this.blockedExtensions =
+            readArray(uploadGuard, 'BlockedExtensions', this.blockedExtensions);
+        this.allowedExtensions =
+            readArray(uploadGuard, 'AllowedExtensions', this.allowedExtensions);
         this.allowedPatterns = this.compilePatterns(uploadGuard.AllowedPaths);
         this.blockedPatterns = this.compilePatterns(uploadGuard.BlockedPaths);
     },
