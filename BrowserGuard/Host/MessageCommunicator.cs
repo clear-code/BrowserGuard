@@ -55,7 +55,7 @@ namespace BrowserGuard.Host
             {
                 throw new InvalidDataException($"Message is not valid JSON: {ex.Message}");
             }
-            logger?.Log($"text: {text}");
+            // logger?.Log($"text: {text}");
             if (string.IsNullOrEmpty(text))
                 throw new InvalidDataException("Message is empty");
             return text;
