@@ -34,14 +34,14 @@ namespace BrowserGuard.Host
         internal string ReadMessage()
         {
             var lenBytes = reader.ReadBytes(4);
-            logger?.Log($"Read {lenBytes.Length} bytes for message length");
+            // logger?.Log($"Read {lenBytes.Length} bytes for message length");
             if (lenBytes.Length < 4)
                 throw new EndOfStreamException();
 
             var len = BitConverter.ToUInt32(lenBytes, 0);
 
             var body = reader.ReadBytes((int)len);
-            logger?.Log($"Read {body.Length} bytes for message body");
+            // logger?.Log($"Read {body.Length} bytes for message body");
             if (body.Length < len)
                 throw new EndOfStreamException();
 
