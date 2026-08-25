@@ -42,7 +42,7 @@ namespace BrowserGuard.Host
                     {
                         continue;
                     }
-                    Logger.Log($"Response: {response}");
+                    // Logger.Log($"Response: {response}");
                     communicator.WriteMessage(response);
                 }
                 catch (EndOfStreamException) { break; }
