@@ -19,7 +19,7 @@ globalThis.chrome = {
       }
       return Promise.resolve({
         Config: {
-          NetLogger: { Enabled: true, Endpoint: 'https://collector.example.com/log' },
+          NetLogger: { Enabled: true, Sender: { Enabled: true, Endpoint: 'https://collector.example.com/log' } },
         },
       });
     },

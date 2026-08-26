@@ -27,7 +27,7 @@ const { NetLogger } = await import('../edge/net-logger.js');
 
 const CONFIG = {
   Enabled: true,
-  Endpoint: 'https://collector.example.com/log',
+  Sender: { Enabled: true, Endpoint: 'https://collector.example.com/log' },
   LocalFile: { Enabled: true },
 };
 
@@ -53,13 +53,22 @@ describe('_shouldLog', () => {
 
   // Local logging used to be impossible without an endpoint as well.
   it('logs when only the file is configured', () => {
-    assert.equal(NetLogger._shouldLog(config({ Endpoint: '' })), true);
+    assert.equal(NetLogger._shouldLog(config({ Sender: { Endpoint: '' } })), true);
   });
 
   it('logs nothing when the host has nowhere to put it', () => {
     assert.equal(
-      NetLogger._shouldLog(config({ Endpoint: '', LocalFile: { Enabled: false } })), false);
-    assert.equal(NetLogger._shouldLog(config({ Endpoint: '', LocalFile: undefined })), false);
+      NetLogger._shouldLog(config({ Sender: { Endpoint: '' }, LocalFile: { Enabled: false } })), false);
+    assert.equal(NetLogger._shouldLog(config({ Sender: { Endpoint: '' }, LocalFile: undefined })), false);
+  });
+
+  // An endpoint that is still configured does not send once the sender is off.
+  it('logs nothing when the sender is disabled', () => {
+    assert.equal(
+      NetLogger._shouldLog(config({
+        Sender: { Enabled: false, Endpoint: 'https://collector.example.com/log' },
+        LocalFile: { Enabled: false },
+      })), false);
   });
 
   // Enabled turns the whole feature off, whatever the destinations say.
@@ -118,7 +127,7 @@ describe('_send', () => {
   });
 
   it('does nothing when nothing is configured', () => {
-    NetLogger._send(config({ Endpoint: '', LocalFile: { Enabled: false } }), PAYLOAD);
+    NetLogger._send(config({ Sender: { Endpoint: '' }, LocalFile: { Enabled: false } }), PAYLOAD);
 
     assert.deepEqual(calls.hosted, []);
   });

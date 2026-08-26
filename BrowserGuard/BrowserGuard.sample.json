@@ -1,7 +1,6 @@
 {
   "NetLogger": {
     "Enabled": false,
-    "Endpoint": "",
     "UrlAccess": false,
     "Browsing": false,
     "Upload": false,
@@ -13,10 +12,14 @@
       "MaxDays": 30,
       "MaxSizeMB": 100
     },
-    "OnSendFailure": {
-      "SaveLocally": true,
-      "RetryIntervalMinutes": 5,
-      "MaxSizeMB": 10
+    "Sender": {
+      "Enabled": false,
+      "Endpoint": "",
+      "OnSendFailure": {
+        "SaveLocally": true,
+        "RetryIntervalMinutes": 5,
+        "MaxSizeMB": 10
+      }
     }
   },
   "UploadGuard": {

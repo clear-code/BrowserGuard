@@ -3,7 +3,6 @@ namespace BrowserGuard.NetLogger
     internal class NetLoggerConfig
     {
         public bool Enabled { get; set; }
-        public string Endpoint { get; set; } = "";
         public bool UrlAccess { get; set; }
         public bool Browsing { get; set; }
         public bool Upload { get; set; }
@@ -11,6 +10,16 @@ namespace BrowserGuard.NetLogger
         public bool Print { get; set; }
 
         public NetLogFileConfig LocalFile { get; set; } = new();
+        public NetLogSenderConfig Sender { get; set; } = new();
+    }
+
+    // Handing the log to the collector. The counterpart of NetLogFileConfig:
+    // one says where the log goes on this machine, the other where it goes off it.
+    internal class NetLogSenderConfig
+    {
+        public bool Enabled { get; set; }
+        // Nothing is sent without one, so an enabled sender still needs it.
+        public string Endpoint { get; set; } = "";
         public NetLogFailureConfig OnSendFailure { get; set; } = new();
     }
 

@@ -1,4 +1,4 @@
-using Xunit;
+﻿using Xunit;
 using BrowserGuard.Configuration;
 
 namespace BrowserGuard.Tests.Configuration
@@ -12,7 +12,7 @@ namespace BrowserGuard.Tests.Configuration
             {
               "NetLogger": {
                 "Enabled": false,
-                "Endpoint": "https://example.com/api/log",
+                "Sender": { "Endpoint": "https://example.com/api/log" },
                 "UrlAccess": true,
                 "Browsing": true,
                 "Upload": true,
@@ -32,7 +32,7 @@ namespace BrowserGuard.Tests.Configuration
 
             var config = ConfigLoader.ParseConf(json);
 
-            Assert.Equal("https://example.com/api/log", config.NetLogger.Endpoint);
+            Assert.Equal("https://example.com/api/log", config.NetLogger.Sender.Endpoint);
             Assert.True(config.NetLogger.UrlAccess);
             Assert.False(config.NetLogger.Download);
 
@@ -133,17 +133,20 @@ namespace BrowserGuard.Tests.Configuration
             {
               "NetLogger": {
                 "Enabled": true,
-                "Endpoint": "https://collector.example.com/log",
+                "Sender": {
+                  "Enabled": true,
+                  "Endpoint": "https://collector.example.com/log",
+                  "OnSendFailure": {
+                    "SaveLocally": true,
+                    "RetryIntervalMinutes": 15,
+                    "MaxSizeMB": 50
+                  }
+                },
                 "LocalFile": {
                   "Enabled": true,
                   "Directory": "D:\\logs",
                   "MaxDays": 90,
                   "MaxSizeMB": 250
-                },
-                "OnSendFailure": {
-                  "SaveLocally": true,
-                  "RetryIntervalMinutes": 15,
-                  "MaxSizeMB": 50
                 }
               }
             }
@@ -156,9 +159,10 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Equal(@"D:\logs", config.LocalFile.Directory);
             Assert.Equal(90, config.LocalFile.MaxDays);
             Assert.Equal(250, config.LocalFile.MaxSizeMB);
-            Assert.True(config.OnSendFailure.SaveLocally);
-            Assert.Equal(15, config.OnSendFailure.RetryIntervalMinutes);
-            Assert.Equal(50, config.OnSendFailure.MaxSizeMB);
+            Assert.True(config.Sender.Enabled);
+            Assert.True(config.Sender.OnSendFailure.SaveLocally);
+            Assert.Equal(15, config.Sender.OnSendFailure.RetryIntervalMinutes);
+            Assert.Equal(50, config.Sender.OnSendFailure.MaxSizeMB);
         }
 
         // 0 asks for no limit rather than for a limit of nothing.
@@ -166,9 +170,9 @@ namespace BrowserGuard.Tests.Configuration
         public void ReadsAnUnlimitedSpool()
         {
             var config = ConfigLoader.ParseConf(
-                """{"NetLogger":{"OnSendFailure":{"SaveLocally":true,"MaxSizeMB":0}}}""");
+                """{"NetLogger":{"Sender":{"OnSendFailure":{"SaveLocally":true,"MaxSizeMB":0}}}}""");
 
-            Assert.Equal(0, config.NetLogger.OnSendFailure.MaxSizeMB);
+            Assert.Equal(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
         }
 
         // Nothing may be written to this machine unless it was asked for.
@@ -179,7 +183,8 @@ namespace BrowserGuard.Tests.Configuration
 
             Assert.False(config.Enabled);
             Assert.False(config.LocalFile.Enabled);
-            Assert.False(config.OnSendFailure.SaveLocally);
+            Assert.False(config.Sender.Enabled);
+            Assert.False(config.Sender.OnSendFailure.SaveLocally);
             Assert.Equal("", config.LocalFile.Directory);
         }
 
@@ -200,7 +205,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
             Assert.NotEqual(0, config.NetLogger.LocalFile.MaxDays);
-            Assert.NotEqual(0, config.NetLogger.OnSendFailure.MaxSizeMB);
+            Assert.NotEqual(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
             Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
             Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
         }
@@ -334,11 +339,11 @@ namespace BrowserGuard.Tests.Configuration
         [Fact]
         public void OmittedGroupsFallBackToDefaults()
         {
-            var json = """{ "NetLogger": { "Endpoint": "https://example.com/log" } }""";
+            var json = """{ "NetLogger": { "Sender": { "Endpoint": "https://example.com/log" } } }""";
 
             var config = ConfigLoader.ParseConf(json);
 
-            Assert.Equal("https://example.com/log", config.NetLogger.Endpoint);
+            Assert.Equal("https://example.com/log", config.NetLogger.Sender.Endpoint);
             // Groups that are absent keep their default values.
             Assert.False(config.UploadGuard.Enabled);
             Assert.Equal(new[] { ".exe", ".bat", ".cmd", ".js", ".vbs" }, config.UploadGuard.BlockedExtensions);
@@ -353,11 +358,11 @@ namespace BrowserGuard.Tests.Configuration
         [Fact]
         public void PropertyNamesAreCaseInsensitive()
         {
-            var json = """{ "netlogger": { "endpoint": "https://example.com/log", "upload": true } }""";
+            var json = """{ "netlogger": { "sender": { "endpoint": "https://example.com/log" }, "upload": true } }""";
 
             var config = ConfigLoader.ParseConf(json);
 
-            Assert.Equal("https://example.com/log", config.NetLogger.Endpoint);
+            Assert.Equal("https://example.com/log", config.NetLogger.Sender.Endpoint);
             Assert.True(config.NetLogger.Upload);
         }
 
@@ -368,7 +373,7 @@ namespace BrowserGuard.Tests.Configuration
         {
             var config = ConfigLoader.ParseConf(data);
 
-            Assert.Equal("", config.NetLogger.Endpoint);
+            Assert.Equal("", config.NetLogger.Sender.Endpoint);
             Assert.False(config.UploadGuard.Enabled);
         }
     }

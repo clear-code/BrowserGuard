@@ -71,21 +71,21 @@ namespace BrowserGuard.NetLogger
                 file = new NetLogFileWriter(config.LocalFile, logger);
                 logger?.Log($"Command: log entry, writing to {file.FilePath}");
             }
-            if (!string.IsNullOrWhiteSpace(config.Endpoint))
+            if (config.Sender.Enabled && !string.IsNullOrWhiteSpace(config.Sender.Endpoint))
             {
                 sender = new NetLogSender(
-                    config.Endpoint,
+                    config.Sender.Endpoint,
                     logger,
                     handler: null,
                     spool: Spool(config),
-                    retryInterval: TimeSpan.FromMinutes(config.OnSendFailure.RetryIntervalMinutes));
-                logger?.Log($"Command: log entry, sending to {config.Endpoint}");
+                    retryInterval: TimeSpan.FromMinutes(config.Sender.OnSendFailure.RetryIntervalMinutes));
+                logger?.Log($"Command: log entry, sending to {config.Sender.Endpoint}");
             }
         }
 
         private NetLogSpool? Spool(NetLoggerConfig config)
         {
-            var failure = config.OnSendFailure;
+            var failure = config.Sender.OnSendFailure;
             if (!failure.SaveLocally)
             {
                 return null;

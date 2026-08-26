@@ -20,7 +20,8 @@ export const NetLogger = {
   // where it then goes, so this only asks whether it has anywhere to put it.
   _shouldLog(netLogger) {
     if (!netLogger?.Enabled) return false;
-    return Boolean(netLogger.Endpoint) || Boolean(netLogger.LocalFile?.Enabled);
+    return Boolean(netLogger.Sender?.Enabled && netLogger.Sender?.Endpoint) ||
+           Boolean(netLogger.LocalFile?.Enabled);
   },
 
   async _getConfig() {
