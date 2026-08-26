@@ -65,7 +65,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         }
 
         string[] Copies => Directory.Exists(Destination)
-            ? Directory.GetFiles(Destination).Select(Path.GetFileName).OrderBy(name => name).ToArray()!
+            ? [.. Directory.GetFiles(Destination).Select(path => Path.GetFileName(path) ?? "").OrderBy(name => name)]
             : [];
 
         [Fact]

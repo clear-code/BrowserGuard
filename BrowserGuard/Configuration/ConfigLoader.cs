@@ -33,20 +33,20 @@ namespace BrowserGuard.Configuration
             }
         }
 
-        internal static string GetConfigPath()
+        internal static string? GetConfigPath()
         {
             const string registryPath = @"SOFTWARE\BrowserGuard";
             const string valueName = "ConfigFile";
             try
             {
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
+                using (RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath))
                 {
                     if (key == null)
                     {
                         Console.Error.WriteLine($"cannot read {registryPath}: key not found");
                         return null;
                     }
-                    object value = key.GetValue(valueName);
+                    object? value = key.GetValue(valueName);
                     if (value is string configFile)
                     {
                         return configFile;

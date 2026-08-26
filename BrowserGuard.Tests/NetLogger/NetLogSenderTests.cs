@@ -237,14 +237,14 @@ namespace BrowserGuard.Tests.NetLogger
                 "https://collector.example.com/log", null, collector, spool,
                 retryInterval: TimeSpan.Zero);
             sender.Enqueue(Entry);
-            Assert.Equal(1, Kept(PendingPath).Length);
+            Assert.Single(Kept(PendingPath));
             var attempts = collector.Bodies.Count;
 
             collector.Status = HttpStatusCode.OK;
             Thread.Sleep(500);
 
             Assert.Equal(attempts, collector.Bodies.Count);
-            Assert.Equal(1, Kept(PendingPath).Length);
+            Assert.Single(Kept(PendingPath));
         }
 
         // A collector that answers with an error must not stop the ones after it.
