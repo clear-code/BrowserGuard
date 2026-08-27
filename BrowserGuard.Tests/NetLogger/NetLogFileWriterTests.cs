@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -399,12 +399,12 @@ namespace BrowserGuard.Tests.NetLogger
         }
 
         [Fact]
-        public void FallsBackToProgramDataWhenNoDirectoryIsGiven()
+        public void FallsBackToTheUserProfileWhenNoDirectoryIsGiven()
         {
             var writer = new NetLogFileWriter(new NetLogFileConfig { Enabled = true });
 
             var expected = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BrowserGuard", "netlog", "netlog.jsonl");
             Assert.Equal(expected, writer.FilePath);
         }

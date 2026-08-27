@@ -8,7 +8,7 @@
     "Print": false,
     "LocalFile": {
       "Enabled": true,
-      "Directory": "C:\\ProgramData\\BrowserGuard\\netlog",
+      "Directory": "%LOCALAPPDATA%\\BrowserGuard\\netlog",
       "MaxDays": 30,
       "MaxSizeMB": 100
     },

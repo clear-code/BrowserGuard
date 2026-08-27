@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Xunit;
 using BrowserGuard.NetLogger;
@@ -48,10 +48,10 @@ namespace BrowserGuard.Tests.NetLogger
         }
 
         [Fact]
-        public void FallsBackToProgramDataWhenNothingIsConfigured()
+        public void FallsBackToTheUserProfileWhenNothingIsConfigured()
         {
             var expected = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BrowserGuard", "netlog");
 
             Assert.Equal(expected, NetLogDirectory.Resolve("", Now));
