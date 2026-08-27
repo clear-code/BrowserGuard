@@ -210,6 +210,30 @@ namespace BrowserGuard.Tests.Configuration
             Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
         }
 
+        // The files the integration test procedure has the tester drop in. A
+        // procedure whose configuration no longer loads sends them looking for
+        // a fault in the product.
+        [Theory]
+        [InlineData("docs/testconfig/01_all-disabled.json")]
+        [InlineData("docs/testconfig/02_strict.json")]
+        public void ParsesTheConfigFilesTheTestProcedureUses(string relativePath)
+        {
+            var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            var path = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Assert.True(File.Exists(path), $"not found: {path}");
+
+            var config = ConfigLoader.ParseConf(File.ReadAllText(path));
+
+            // Every section has to bind, whether or not that section is on in
+            // this particular file.
+            Assert.NotNull(config.NetLogger.LocalFile);
+            Assert.NotNull(config.UploadGuard.BlockedExtensions);
+            Assert.NotNull(config.SettingPageFilter.BlockedPrefixes);
+            Assert.NotNull(config.StartupLauncher.Programs);
+            Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
+            Assert.NotNull(config.UploadFileBridge.BlockedUrls);
+        }
+
         [Fact]
         public void ReadsTheUsageTimeLimit()
         {
