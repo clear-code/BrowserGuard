@@ -60,23 +60,39 @@ namespace BrowserGuard.Tests.Startup
 
             Assert.Null(StartupLauncher.Run(config));
 
-            var report = Path.Combine(tempDir, "envdump.txt");
-            Assert.True(WaitForFile(report), "the program did not write its report");
+            var lines = ReadReport(Path.Combine(tempDir, "envdump.txt"));
+            Assert.True(lines is not null, "the program did not write its report");
 
-            var lines = File.ReadAllLines(report);
-            Assert.Contains($"WorkingDirectory={tempDir}", lines);
+            Assert.Contains($"WorkingDirectory={tempDir}", lines!);
             Assert.Contains("BROWSERGUARD_STARTUP_TEST=from-config", lines);
             // The configured variables are added to the inherited environment.
             Assert.Contains(lines, line => line.StartsWith("PATH=", StringComparison.OrdinalIgnoreCase));
         }
 
-        static bool WaitForFile(string path)
+        // The program writes under another name and moves the file into place,
+        // so whatever is there is whole. The read can still land in the moment
+        // of the move, when the file cannot be opened at all, hence the retry.
+        // Waiting on File.Exists alone would read a file that is not there yet.
+        static string[]? ReadReport(string path)
         {
-            for (var i = 0; i < 100 && !File.Exists(path); i++)
+            for (var i = 0; i < 100; i++)
             {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        return File.ReadAllLines(path);
+                    }
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
                 System.Threading.Thread.Sleep(100);
             }
-            return File.Exists(path);
+            return null;
         }
     }
 }
