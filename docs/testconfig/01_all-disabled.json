@@ -15,10 +15,13 @@
     "Sender": {
       "Enabled": false,
       "Endpoint": "",
-      "OnSendFailure": {
-        "SaveLocally": false,
-        "RetryIntervalMinutes": 5,
-        "MaxSizeMB": 10
+      "Spool": {
+        "Enabled": false,
+        "MaxSizeMB": 10,
+        "Retry": {
+          "Enabled": true,
+          "IntervalMinutes": 5
+        }
       }
     }
   },

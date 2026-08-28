@@ -136,10 +136,13 @@ namespace BrowserGuard.Tests.Configuration
                 "Sender": {
                   "Enabled": true,
                   "Endpoint": "https://collector.example.com/log",
-                  "OnSendFailure": {
-                    "SaveLocally": true,
-                    "RetryIntervalMinutes": 15,
-                    "MaxSizeMB": 50
+                  "Spool": {
+                    "Enabled": true,
+                    "MaxSizeMB": 50,
+                    "Retry": {
+                      "Enabled": true,
+                      "IntervalMinutes": 15
+                    }
                   }
                 },
                 "LocalFile": {
@@ -160,9 +163,10 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Equal(90, config.LocalFile.MaxDays);
             Assert.Equal(250, config.LocalFile.MaxSizeMB);
             Assert.True(config.Sender.Enabled);
-            Assert.True(config.Sender.OnSendFailure.SaveLocally);
-            Assert.Equal(15, config.Sender.OnSendFailure.RetryIntervalMinutes);
-            Assert.Equal(50, config.Sender.OnSendFailure.MaxSizeMB);
+            Assert.True(config.Sender.Spool.Enabled);
+            Assert.Equal(50, config.Sender.Spool.MaxSizeMB);
+            Assert.True(config.Sender.Spool.Retry.Enabled);
+            Assert.Equal(15, config.Sender.Spool.Retry.IntervalMinutes);
         }
 
         // 0 asks for no limit rather than for a limit of nothing.
@@ -170,9 +174,32 @@ namespace BrowserGuard.Tests.Configuration
         public void ReadsAnUnlimitedSpool()
         {
             var config = ConfigLoader.ParseConf(
-                """{"NetLogger":{"Sender":{"OnSendFailure":{"SaveLocally":true,"MaxSizeMB":0}}}}""");
+                """{"NetLogger":{"Sender":{"Spool":{"Enabled":true,"MaxSizeMB":0}}}}""");
 
-            Assert.Equal(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
+            Assert.Equal(0, config.NetLogger.Sender.Spool.MaxSizeMB);
+        }
+
+        // Keeping the entries and offering them again are separate choices, so
+        // that they may be kept for collection by hand instead.
+        [Fact]
+        public void ReadsASpoolThatIsNotRetried()
+        {
+            var config = ConfigLoader.ParseConf(
+                """{"NetLogger":{"Sender":{"Spool":{"Enabled":true,"Retry":{"Enabled":false}}}}}""");
+
+            Assert.True(config.NetLogger.Sender.Spool.Enabled);
+            Assert.False(config.NetLogger.Sender.Spool.Retry.Enabled);
+        }
+
+        // Entries are kept in order to be sent, so this is the one switch that
+        // starts on: turning it off is what has to be asked for.
+        [Fact]
+        public void RetriesTheKeptEntriesByDefault()
+        {
+            var config = ConfigLoader.ParseConf("{}").NetLogger;
+
+            Assert.True(config.Sender.Spool.Retry.Enabled);
+            Assert.Equal(5, config.Sender.Spool.Retry.IntervalMinutes);
         }
 
         // Nothing may be written to this machine unless it was asked for.
@@ -184,7 +211,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.False(config.Enabled);
             Assert.False(config.LocalFile.Enabled);
             Assert.False(config.Sender.Enabled);
-            Assert.False(config.Sender.OnSendFailure.SaveLocally);
+            Assert.False(config.Sender.Spool.Enabled);
             Assert.Equal("", config.LocalFile.Directory);
         }
 
@@ -205,7 +232,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
             Assert.NotEqual(0, config.NetLogger.LocalFile.MaxDays);
-            Assert.NotEqual(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
+            Assert.NotEqual(0, config.NetLogger.Sender.Spool.MaxSizeMB);
             Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
             Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
         }

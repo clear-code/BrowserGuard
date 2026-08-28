@@ -15,24 +15,44 @@
     "Sender": {
       "Enabled": false,
       "Endpoint": "",
-      "OnSendFailure": {
-        "SaveLocally": true,
-        "RetryIntervalMinutes": 5,
-        "MaxSizeMB": 10
+      "Spool": {
+        "Enabled": true,
+        "MaxSizeMB": 10,
+        "Retry": {
+          "Enabled": true,
+          "IntervalMinutes": 5
+        }
       }
     }
   },
   "UploadGuard": {
     "Enabled": false,
-    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
-    "AllowedExtensions": [".pdf", ".docx", ".xlsx"],
-    "AllowedPaths": ["^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\", "^D:\\\\Share\\\\"],
-    "BlockedPaths": ["\\\\Confidential\\\\"]
+    "BlockedExtensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".js",
+      ".vbs"
+    ],
+    "AllowedExtensions": [
+      ".pdf",
+      ".docx",
+      ".xlsx"
+    ],
+    "AllowedPaths": [
+      "^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\",
+      "^D:\\\\Share\\\\"
+    ],
+    "BlockedPaths": [
+      "\\\\Confidential\\\\"
+    ]
   },
   "SettingPageFilter": {
     "Enabled": false,
     "NotifyOnBlocked": true,
-    "BlockedPrefixes": ["edge://settings/"]
+    "BlockedPrefixes": [
+      "edge://settings/"
+    ]
   },
   "StartupLauncher": {
     "Enabled": false,
@@ -41,7 +61,9 @@
         "Path": "C:\\Tools\\EnvDump.exe",
         "Arguments": [],
         "WorkingDirectory": "C:\\Temp\\envdump",
-        "EnvironmentVariables": { "BROWSERGUARD_STARTUP_TEST": "from-config" },
+        "EnvironmentVariables": {
+          "BROWSERGUARD_STARTUP_TEST": "from-config"
+        },
         "Sha256": ""
       }
     ]
@@ -50,8 +72,14 @@
     "Enabled": false,
     "MaxContinuousMinutes": 240,
     "AllowedTimeRanges": [
-      { "Start": "09:00", "End": "12:00" },
-      { "Start": "13:00", "End": "18:00" }
+      {
+        "Start": "09:00",
+        "End": "12:00"
+      },
+      {
+        "Start": "13:00",
+        "End": "18:00"
+      }
     ],
     "OnExceeded": {
       "Action": "Terminate",
@@ -67,9 +95,14 @@
     "Enabled": false,
     "Destination": "\\\\fileserver\\audit\\%PCNAME%\\%USERID%\\%DATE%",
     "MaxSizeMB": 100,
-    "BlockedExtensions": [".tmp", ".log"],
+    "BlockedExtensions": [
+      ".tmp",
+      ".log"
+    ],
     "AllowedExtensions": [],
-    "BlockedUrls": ["^https://example.com\\."],
+    "BlockedUrls": [
+      "^https://example.com\\."
+    ],
     "AllowedUrls": []
   }
 }

@@ -20,21 +20,32 @@
         public bool Enabled { get; set; }
         // Nothing is sent without one, so an enabled sender still needs it.
         public string Endpoint { get; set; } = "";
-        public NetLogFailureConfig OnSendFailure { get; set; } = new();
+        public NetLogSpoolConfig Spool { get; set; } = new();
     }
 
-    // What becomes of an entry the collector would not take, including one
-    // dropped because the queue waiting for the collector was full.
-    internal class NetLogFailureConfig
+    // Holding the entries the collector would not take, including one dropped
+    // because the queue waiting for the collector was full. Kept beside the
+    // local log, in netlog-pending.jsonl.
+    //
+    // Disabled, an entry that cannot be sent is lost where it falls, and Retry
+    // below has nothing left to offer again.
+    internal class NetLogSpoolConfig
     {
-        // Kept beside the local log, in netlog-pending.jsonl.
-        public bool SaveLocally { get; set; }
-        // How often the kept entries are offered to the collector again.
-        // 0 keeps them without ever retrying, for collection by hand.
-        public int RetryIntervalMinutes { get; set; } = 5;
+        public bool Enabled { get; set; }
         // Beyond this the kept entries are dropped, so that a collector that
         // stays down cannot fill the disk. 0 keeps them without any limit.
         public int MaxSizeMB { get; set; } = 10;
+
+        public NetLogRetryConfig Retry { get; set; } = new();
+    }
+
+    // Offering the kept entries to the collector again. On unless it is asked
+    // for: entries are kept in order to be sent, so turning this off is the
+    // unusual choice, and means they are to be collected by hand.
+    internal class NetLogRetryConfig
+    {
+        public bool Enabled { get; set; } = true;
+        public int IntervalMinutes { get; set; } = 5;
     }
 
     // Keeping the log on this machine, as one JSON object per line.
