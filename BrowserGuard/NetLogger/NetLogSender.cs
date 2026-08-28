@@ -113,7 +113,7 @@ namespace BrowserGuard.NetLogger
                 // The collector has already refused, and the retry thread is
                 // what finds out it is back. Spending the attempts again on
                 // every entry only holds up writing them down.
-                if (collectorIsDown)
+                if (retriesLater && collectorIsDown)
                 {
                     Keep(line);
                     continue;
@@ -128,7 +128,7 @@ namespace BrowserGuard.NetLogger
                 }
                 if (result == SendResult.Unavailable)
                 {
-                    collectorIsDown = retriesLater;
+                    collectorIsDown = true;
                     Keep(line);
                 }
             }
