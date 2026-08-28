@@ -14,11 +14,7 @@ namespace BrowserGuard.Tests.NetLogger
 {
     public class NetLogSenderTests : IDisposable
     {
-        const string Endpoint = "https://collector.example.com/log";
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
-
-        // Long enough that no round of its own runs while a test does.
-        static readonly TimeSpan NoRetry = TimeSpan.FromMinutes(10);
 
         readonly string tempDir;
 
@@ -32,15 +28,9 @@ namespace BrowserGuard.Tests.NetLogger
             try { Directory.Delete(tempDir, true); } catch { }
         }
 
-        NetLogSpool Queue(long maxSize = 1024 * 1024) => new(tempDir, maxSize);
+        NetLogSpool Spool(long maxSize = 1024 * 1024) => new(tempDir, maxSize);
 
-        NetLogSender Sender(
-            Collector collector, NetLogSpool? queue = null, TimeSpan? retryInterval = null) =>
-            new(Endpoint, queue ?? Queue(), null, collector, retryInterval ?? NoRetry);
-
-        string PendingPath => Path.Combine(tempDir, NetLogSpool.FileName);
-
-        string TakenPath => Path.Combine(tempDir, NetLogSpool.TakenFileName);
+        string PendingPath => Path.Combine(tempDir, "netlog-pending.jsonl");
 
         static string[] Kept(string path)
         {
@@ -55,14 +45,6 @@ namespace BrowserGuard.Tests.NetLogger
             return Array.Empty<string>();
         }
 
-        static void Until(Func<bool> done)
-        {
-            for (var i = 0; i < 100 && !done(); i++)
-            {
-                Thread.Sleep(50);
-            }
-        }
-
         // Answers every request with a status the test chooses, and records what
         // it was sent, so the whole HttpClient path is exercised for real.
         sealed class Collector : HttpMessageHandler
@@ -72,14 +54,10 @@ namespace BrowserGuard.Tests.NetLogger
             internal HttpStatusCode Status = HttpStatusCode.OK;
             internal int FailuresLeft;
             internal Uri? LastUri;
-            // Run at the start of every request, so a test can look at the
-            // state of the disk at the moment the entry is being posted.
-            internal Action? Watching;
 
             protected override async Task<HttpResponseMessage> SendAsync(
                 HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                Watching?.Invoke();
                 LastUri = request.RequestUri;
                 ContentTypes.Add(request.Content?.Headers.ContentType?.ToString() ?? "");
                 Bodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
@@ -102,12 +80,12 @@ namespace BrowserGuard.Tests.NetLogger
         public void PostsTheEntryToTheEndpoint()
         {
             var collector = new Collector();
-            using var sender = Sender(collector);
+            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
 
-            sender.Enqueue(Entry);
+            Assert.True(sender.Enqueue(Entry));
 
             Assert.Equal(Entry, Take(collector));
-            Assert.Equal(new Uri(Endpoint), collector.LastUri);
+            Assert.Equal(new Uri("https://collector.example.com/log"), collector.LastUri);
             Assert.Contains("application/json", collector.ContentTypes[0]);
         }
 
@@ -115,47 +93,48 @@ namespace BrowserGuard.Tests.NetLogger
         public void PostsEveryEntryInTurn()
         {
             var collector = new Collector();
-            using var sender = Sender(collector);
+            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
 
-            sender.Enqueue("""{"operation":"first"}""");
-            sender.Enqueue("""{"operation":"second"}""");
+            for (var i = 0; i < 5; i++)
+            {
+                sender.Enqueue($$"""{"operation":"browsing","n":{{i}}}""");
+            }
 
-            var posted = new[] { Take(collector), Take(collector) };
-            Assert.Contains(posted, body => body.Contains("first"));
-            Assert.Contains(posted, body => body.Contains("second"));
+            for (var i = 0; i < 5; i++)
+            {
+                Assert.Contains($"\"n\":{i}", Take(collector));
+            }
         }
 
-        // The point of the whole arrangement: the entry is safe on disk before
-        // the collector is approached, so nothing is lost if the host is killed.
-        [Fact]
-        public void WritesTheEntryDownBeforeItIsPosted()
-        {
-            var onDisk = false;
-            var collector = new Collector();
-            var taken = TakenPath;
-            collector.Watching = () => onDisk = File.Exists(taken);
-            using var sender = Sender(collector);
-
-            sender.Enqueue(Entry);
-
-            Take(collector);
-            Assert.True(onDisk, "the entry should have been written before it was posted");
-        }
-
+        // The message loop must not wait on the network.
         [Fact]
         public void HandsTheEntryOverWithoutWaitingForTheCollector()
         {
             var collector = new Collector();
-            var held = new ManualResetEventSlim(false);
-            collector.Watching = () => held.Wait(TimeSpan.FromSeconds(5));
-            using var sender = Sender(collector);
+            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
 
-            var started = DateTime.UtcNow;
+            var elapsed = System.Diagnostics.Stopwatch.StartNew();
+            for (var i = 0; i < 100; i++)
+            {
+                sender.Enqueue(Entry);
+            }
+            elapsed.Stop();
+
+            Assert.True(elapsed.ElapsedMilliseconds < 1000,
+                $"queueing 100 entries took {elapsed.ElapsedMilliseconds}ms");
+        }
+
+        [Fact]
+        public void TriesAgainAfterAFailure()
+        {
+            var collector = new Collector { FailuresLeft = 2 };
+            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+
             sender.Enqueue(Entry);
-            var spent = DateTime.UtcNow - started;
 
-            held.Set();
-            Assert.True(spent < TimeSpan.FromSeconds(2), $"Enqueue waited {spent}");
+            Take(collector);
+            Take(collector);
+            Assert.Equal(Entry, Take(collector));
         }
 
         // The browser closes the port on its way out, and the host follows.
@@ -164,20 +143,22 @@ namespace BrowserGuard.Tests.NetLogger
         public void SendsWhatIsQueuedBeforeItShutsDown()
         {
             var collector = new Collector();
-            var sender = Sender(collector);
+            var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            for (var i = 0; i < 10; i++)
+            {
+                sender.Enqueue(Entry);
+            }
 
-            sender.Enqueue(Entry);
             sender.Dispose();
 
-            Assert.Equal(Entry, Take(collector));
-            Assert.False(File.Exists(PendingPath));
+            Assert.Equal(10, collector.Bodies.Count);
         }
 
         [Fact]
         public void TakesNoFurtherEntriesOnceItHasShutDown()
         {
             var collector = new Collector();
-            var sender = Sender(collector);
+            var sender = new NetLogSender("https://collector.example.com/log", null, collector);
             sender.Dispose();
 
             Assert.False(sender.Enqueue(Entry));
@@ -188,98 +169,150 @@ namespace BrowserGuard.Tests.NetLogger
         public void KeepsAnEntryTheCollectorWouldNotTake()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = Sender(collector);
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool);
 
             sender.Enqueue(Entry);
 
             Assert.Equal(new[] { Entry }, Kept(PendingPath));
         }
 
-        // A collector that has stopped answering must cost one round, not one
-        // round for every entry that arrives while it is down.
         [Fact]
-        public void WaitsOutTheIntervalRatherThanTryingForEveryEntry()
+        public void DropsTheEntryWhenNothingKeepsIt()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = Sender(collector);
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector);
 
-            sender.Enqueue("""{"operation":"first"}""");
-            Assert.Contains("first", Take(collector));
+            sender.Enqueue(Entry);
 
-            sender.Enqueue("""{"operation":"second"}""");
-            sender.Enqueue("""{"operation":"third"}""");
-
-            Until(() => Kept(PendingPath).Length >= 3);
-            Assert.Equal(3, Kept(PendingPath).Length);
-            // The two that followed were written down without being offered.
-            Assert.Equal(0, collector.Bodies.Count);
+            Take(collector);
+            Assert.False(File.Exists(PendingPath));
         }
 
         [Fact]
         public void OffersTheKeptEntriesAgain()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = Sender(collector, retryInterval: TimeSpan.FromMilliseconds(200));
-
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.FromMilliseconds(200));
             sender.Enqueue("""{"operation":"kept"}""");
-            // The first round is refused, a later one is not.
-            Assert.Contains("kept", Take(collector));
-            collector.Status = HttpStatusCode.OK;
-            Assert.Contains("kept", Take(collector));
+            Assert.Equal(1, Kept(PendingPath).Length);
 
-            // Once it is taken the queue is left empty and stays that way,
-            // which is what says the entry was not put back again.
-            Until(() => !File.Exists(PendingPath) && !File.Exists(TakenPath));
+            collector.Status = HttpStatusCode.OK;
+
+            // The retry round empties the spool once the collector answers.
+            for (var i = 0; i < 100 && File.Exists(PendingPath); i++)
+            {
+                Thread.Sleep(50);
+            }
             Assert.False(File.Exists(PendingPath), "the kept entry should have been sent");
         }
 
-        // Rounds are counted rather than the file read: a round in progress has
-        // the file moved aside, so reading it while rounds run proves nothing.
         [Fact]
         public void PutsBackWhatTheCollectorStillWillNotTake()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = Sender(collector, retryInterval: TimeSpan.FromMilliseconds(100));
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.FromMilliseconds(100));
 
             sender.Enqueue("""{"operation":"kept"}""");
 
-            // Being offered a second time is only possible if the first round
-            // put it back.
-            Assert.Contains("kept", Take(collector));
-            Assert.Contains("kept", Take(collector));
+            Thread.Sleep(500);
+            Assert.Contains("kept", string.Join("\n", Kept(PendingPath)));
         }
 
-        // A 4xx says the collector will never take this entry. Putting it back
-        // would stall every entry behind it for good.
+        // Retrying is optional: the entries are then kept for collection by hand.
+        [Fact]
+        public void KeepsWithoutRetryingWhenNoIntervalIsSet()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.Zero);
+            sender.Enqueue(Entry);
+            Assert.Single(Kept(PendingPath));
+            var attempts = collector.Bodies.Count;
+
+            collector.Status = HttpStatusCode.OK;
+            Thread.Sleep(500);
+
+            Assert.Equal(attempts, collector.Bodies.Count);
+            Assert.Single(Kept(PendingPath));
+        }
+
+        // A collector that answers with an error must not stop the ones after it.
+        [Fact]
+        public void KeepsGoingAfterTheCollectorRefusesAnEntry()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+
+            sender.Enqueue("""{"operation":"first"}""");
+
+            // Three attempts at the first entry, then it moves on.
+            Assert.Contains("first", Take(collector));
+            Assert.Contains("first", Take(collector));
+            Assert.Contains("first", Take(collector));
+
+            collector.Status = HttpStatusCode.OK;
+            sender.Enqueue("""{"operation":"second"}""");
+            Assert.Contains("second", Take(collector));
+        }
+
+        // A collector that has stopped answering must cost the attempts once,
+        // not once for every entry waiting to be written down.
+        [Fact]
+        public void WritesStraightToTheSpoolOnceTheCollectorHasRefused()
+        {
+            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                // Long enough that no retry round runs while the test does.
+                retryInterval: TimeSpan.FromMinutes(10));
+
+            sender.Enqueue("""{"operation":"first"}""");
+            Assert.Contains("first", Take(collector));
+            Assert.Contains("first", Take(collector));
+            Assert.Contains("first", Take(collector));
+
+            sender.Enqueue("""{"operation":"second"}""");
+            sender.Enqueue("""{"operation":"third"}""");
+
+            for (var i = 0; i < 100 && Kept(PendingPath).Length < 3; i++)
+            {
+                Thread.Sleep(50);
+            }
+            Assert.Equal(3, Kept(PendingPath).Length);
+            // The two that followed were kept without being offered at all.
+            Assert.Equal(0, collector.Bodies.Count);
+        }
+
+        // A 4xx says the collector will never take this entry. Keeping it would
+        // stall every entry behind it in the spool, for good.
         [Fact]
         public void DropsAnEntryTheCollectorRefusesOutright()
         {
             var collector = new Collector { Status = HttpStatusCode.BadRequest };
-            using var sender = Sender(collector);
+            var spool = Spool();
+            using var sender = new NetLogSender(
+                "https://collector.example.com/log", null, collector, spool,
+                retryInterval: TimeSpan.FromMinutes(10));
 
             sender.Enqueue("""{"operation":"refused"}""");
             Assert.Contains("refused", Take(collector));
 
-            sender.Enqueue("""{"operation":"after"}""");
-            Assert.Contains("after", Take(collector));
-            Until(() => !File.Exists(PendingPath));
-            Assert.False(File.Exists(PendingPath), "neither entry should have been kept");
-        }
-
-        // The queue reports for itself when it is full, and the entry is lost.
-        [Fact]
-        public void RefusesTheEntryOnceTheQueueIsFull()
-        {
-            var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = Sender(collector, Queue(maxSize: 1));
-
-            Assert.True(sender.Enqueue(Entry));
-            // The round takes the file aside to post from it, so the queue only
-            // looks full again once the refused entry has been put back.
-            Take(collector);
-            Until(() => File.Exists(PendingPath));
-
-            Assert.False(sender.Enqueue(Entry));
+            // One attempt rather than three, and nothing is kept.
+            Thread.Sleep(500);
+            Assert.Equal(0, collector.Bodies.Count);
+            Assert.False(File.Exists(PendingPath));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +8,7 @@ using BrowserGuard.Common;
 
 namespace BrowserGuard.NetLogger
 {
-    // Holds the entries the collector has not taken yet.
+    // Holds the entries the collector would not take.
     //
     // A round of retries moves the file aside rather than reading it in place,
     // so entries arriving while the round runs are not swept up with it. If the

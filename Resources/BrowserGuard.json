@@ -15,19 +15,16 @@
     "Sender": {
       "Enabled": false,
       "Endpoint": "",
-      "RetryIntervalMinutes": 5,
-      "MaxSpoolSizeMB": 10
+      "OnSendFailure": {
+        "SaveLocally": false,
+        "RetryIntervalMinutes": 5,
+        "MaxSizeMB": 10
+      }
     }
   },
   "UploadGuard": {
     "Enabled": false,
-    "BlockedExtensions": [
-      ".exe",
-      ".bat",
-      ".cmd",
-      ".js",
-      ".vbs"
-    ],
+    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
     "AllowedExtensions": [],
     "AllowedPaths": [],
     "BlockedPaths": []

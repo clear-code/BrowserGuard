@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -8,48 +9,56 @@ namespace BrowserGuard.NetLogger
 {
     // Posts the entries to the collector.
     //
-    // An entry is written to the spool on disk first and posted afterwards, on
-    // a thread of its own. The message loop therefore pays a file append and
-    // never waits on the network, so a collector that is slow or gone costs
-    // nothing beyond that append.
+    // An entry arrives for every request and the message loop is single
+    // threaded, so entries are queued and posted on a thread of their own. The
+    // loop never waits on the network.
     //
-    // The spool holds what the collector has not taken yet: an entry leaves it
-    // only once it is sent, which is why there is no position to remember. A
-    // round the collector refuses waits out the interval before the next one,
-    // rather than being tried again for every entry that arrives meanwhile.
+    // An entry the collector would not take is handed to the spool, if there is
+    // one, rather than dropped. A second thread offers what the spool holds to
+    // the collector again on an interval.
+    //
+    // After the first refusal the entries go straight to the spool, so that a
+    // collector which has stopped answering costs the attempts once rather than
+    // once per entry. That second thread is what notices it is back.
     internal sealed class NetLogSender : IDisposable
     {
+        private const int MaxQueued = 10000;
+        private const int PostAttempts = 3;
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromMinutes(5);
-        // How long the browser's exit waits for a round already under way.
-        private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(10);
+        // How long the browser's exit waits for the queue to drain.
+        private static readonly TimeSpan FlushTimeout = TimeSpan.FromSeconds(10);
 
-        private const int Stopped = 0;
-
-        private readonly ManualResetEvent stopping = new(false);
-        private readonly AutoResetEvent arrived = new(false);
+        private readonly BlockingCollection<string> queue = new(MaxQueued);
+        private readonly ManualResetEventSlim stopping = new(false);
         private readonly HttpClient http;
         private readonly string endpoint;
         private readonly Logger? logger;
-        private readonly NetLogSpool spool;
-        private readonly TimeSpan retryInterval;
+        private readonly NetLogSpool? spool;
         private readonly Thread worker;
+        private readonly Thread? retrier;
+        private readonly bool retriesLater;
 
-        private volatile bool stopped;
+        private int dropped;
+        private volatile bool collectorIsDown;
 
         internal NetLogSender(
             string endpoint,
-            NetLogSpool spool,
             Logger? logger = null,
             HttpMessageHandler? handler = null,
+            NetLogSpool? spool = null,
             TimeSpan? retryInterval = null)
         {
             this.endpoint = endpoint;
-            this.spool = spool;
             this.logger = logger;
-            this.retryInterval = retryInterval ?? DefaultRetryInterval;
+            this.spool = spool;
             http = handler is null ? new HttpClient() : new HttpClient(handler);
             http.Timeout = RequestTimeout;
+
+            // Without a spool there is nothing kept to offer again.
+            var interval = spool is null ? TimeSpan.Zero : retryInterval ?? TimeSpan.Zero;
+            // Settled before the worker starts, which reads it.
+            retriesLater = interval > TimeSpan.Zero;
 
             worker = new Thread(Run)
             {
@@ -57,101 +66,151 @@ namespace BrowserGuard.NetLogger
                 Name = "netlog-sender",
             };
             worker.Start();
+
+            if (!retriesLater)
+            {
+                return;
+            }
+            retrier = new Thread(() => RetryKept(interval))
+            {
+                IsBackground = true,
+                Name = "netlog-retry",
+            };
+            retrier.Start();
         }
 
-        // Written down before anything is attempted. False when the spool would
-        // not take it, which the spool reports for itself.
+        // The queue is bounded: a collector that has stopped answering must cost
+        // memory that stops growing, not memory that grows until the host dies.
+        // What will not fit is kept rather than lost, if there is a spool.
         internal bool Enqueue(string line)
         {
-            // The host is on its way out and no longer takes entries.
-            if (stopped)
+            try
             {
+                if (queue.TryAdd(line))
+                {
+                    return true;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // The host is on its way out and no longer takes entries.
                 return false;
             }
-            if (!spool.Add(line))
+
+            // Only the first drop is logged, or the diagnostic log becomes the
+            // thing filling the disk.
+            if (Interlocked.Increment(ref dropped) == 1)
             {
-                return false;
+                logger?.Log($"NetLogSender: queue is full for {endpoint}");
             }
-            arrived.Set();
-            return true;
+            return Keep(line);
         }
 
         private void Run()
         {
-            var waits = new WaitHandle[] { stopping, arrived };
-            while (true)
+            foreach (var line in queue.GetConsumingEnumerable())
             {
-                if (!SendRound())
+                // The collector has already refused, and the retry thread is
+                // what finds out it is back. Spending the attempts again on
+                // every entry only holds up writing them down.
+                if (collectorIsDown)
                 {
-                    // Wait the collector out. Entries arriving meanwhile go to
-                    // the spool and are picked up by the round after this one.
-                    if (stopping.WaitOne(retryInterval))
-                    {
-                        return;
-                    }
+                    Keep(line);
                     continue;
                 }
-                // Nothing left to send; sleep until something arrives.
-                if (WaitHandle.WaitAny(waits) == Stopped)
+                var result = Post(line, PostAttempts);
+                if (result == SendResult.Refused)
                 {
-                    // The browser has gone. Whatever came in last still goes,
-                    // so that a session's tail does not wait for the next one.
-                    SendRound();
-                    return;
+                    // Keeping it would stall every entry behind it, for a
+                    // collector that will never take this one anyway.
+                    logger?.Log($"NetLogSender: {endpoint} refused an entry, which was dropped");
+                    continue;
+                }
+                if (result == SendResult.Unavailable)
+                {
+                    collectorIsDown = retriesLater;
+                    Keep(line);
                 }
             }
         }
 
-        // True when the collector took everything the spool held, which it also
-        // did when the spool held nothing.
-        private bool SendRound()
+        private bool Keep(string line)
         {
-            var pending = spool.Take();
-            if (pending.Count == 0)
+            if (spool is null)
             {
+                return false;
+            }
+            return spool.Add(line);
+        }
+
+        private void RetryKept(TimeSpan interval)
+        {
+            while (!stopping.Wait(interval))
+            {
+                var kept = spool!.Take();
+                if (kept.Count == 0)
+                {
+                    spool.Settle();
+                    continue;
+                }
+
+                // One attempt each, and the round stops as soon as the
+                // collector is unreachable: if it is still down, working
+                // through the rest only delays them. One it refuses outright
+                // is dropped, so that it cannot stall the ones behind it.
+                var done = 0;
+                var sent = 0;
+                var refused = 0;
+                while (done < kept.Count)
+                {
+                    var result = Post(kept[done], 1);
+                    if (result == SendResult.Unavailable)
+                    {
+                        break;
+                    }
+                    if (result == SendResult.Refused)
+                    {
+                        refused++;
+                    }
+                    else
+                    {
+                        sent++;
+                    }
+                    done++;
+                }
+
+                if (done < kept.Count)
+                {
+                    spool.AddRange(kept.GetRange(done, kept.Count - done));
+                }
+                if (refused > 0)
+                {
+                    logger?.Log($"NetLogSender: {endpoint} refused {refused} kept entries, which were dropped");
+                }
+                if (sent > 0)
+                {
+                    // Anything at all getting through says the collector
+                    // answers again, so the queue may go back to posting.
+                    collectorIsDown = false;
+                    logger?.Log($"NetLogSender: sent {sent} kept entries to {endpoint}");
+                }
                 spool.Settle();
-                return true;
             }
+        }
 
-            // The round stops as soon as the collector is unreachable: if it is
-            // still down, working through the rest only delays them. One it
-            // refuses outright is dropped instead, so that a single entry it
-            // will never take cannot stall every entry behind it.
-            var done = 0;
-            var sent = 0;
-            var refused = 0;
-            while (done < pending.Count)
+        private SendResult Post(string line, int attempts)
+        {
+            for (var attempt = 1; ; attempt++)
             {
-                var result = Send(pending[done]);
-                if (result == SendResult.Unavailable)
+                var result = Send(line);
+                // Trying again only makes sense while it is the collector at
+                // fault: a refusal of this entry will be a refusal every time.
+                if (result != SendResult.Unavailable || attempt >= attempts)
                 {
-                    break;
+                    return result;
                 }
-                if (result == SendResult.Refused)
-                {
-                    refused++;
-                }
-                else
-                {
-                    sent++;
-                }
-                done++;
+                Thread.Sleep(RetryDelay);
             }
-
-            if (done < pending.Count)
-            {
-                spool.AddRange(pending.GetRange(done, pending.Count - done));
-            }
-            if (refused > 0)
-            {
-                logger?.Log($"NetLogSender: {endpoint} refused {refused} entries, which were dropped");
-            }
-            if (sent > 0)
-            {
-                logger?.Log($"NetLogSender: sent {sent} entries to {endpoint}");
-            }
-            spool.Settle();
-            return done == pending.Count;
         }
 
         private enum SendResult
@@ -188,14 +247,15 @@ namespace BrowserGuard.NetLogger
 
         public void Dispose()
         {
-            stopped = true;
             stopping.Set();
-            // What a round under way does not finish is folded back in by the
-            // spool when the host next starts.
-            worker.Join(StopTimeout);
+            queue.CompleteAdding();
+            // The browser has gone; give what is already queued a chance to
+            // leave before the process does. Whatever does not make it is kept.
+            worker.Join(FlushTimeout);
+            retrier?.Join(FlushTimeout);
             http.Dispose();
+            queue.Dispose();
             stopping.Dispose();
-            arrived.Dispose();
         }
     }
 }

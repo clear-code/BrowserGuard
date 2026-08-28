@@ -15,8 +15,11 @@
     "Sender": {
       "Enabled": false,
       "Endpoint": "",
-      "RetryIntervalMinutes": 5,
-      "MaxSpoolSizeMB": 10
+      "OnSendFailure": {
+        "SaveLocally": false,
+        "RetryIntervalMinutes": 5,
+        "MaxSizeMB": 10
+      }
     }
   },
   "UploadGuard": {
