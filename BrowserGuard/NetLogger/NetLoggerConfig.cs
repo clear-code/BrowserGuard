@@ -15,26 +15,23 @@
 
     // Handing the log to the collector. The counterpart of NetLogFileConfig:
     // one says where the log goes on this machine, the other where it goes off it.
+    //
+    // An entry is written to a spool on disk first and sent afterwards, so
+    // that spool holds what the collector has not taken yet and nothing else.
+    // Where it sits is not a setting: it drains on its own and holds nothing
+    // anyone has reason to go and read.
     internal class NetLogSenderConfig
     {
         public bool Enabled { get; set; }
         // Nothing is sent without one, so an enabled sender still needs it.
         public string Endpoint { get; set; } = "";
-        public NetLogFailureConfig OnSendFailure { get; set; } = new();
-    }
-
-    // What becomes of an entry the collector would not take, including one
-    // dropped because the queue waiting for the collector was full.
-    internal class NetLogFailureConfig
-    {
-        // Kept beside the local log, in netlog-pending.jsonl.
-        public bool SaveLocally { get; set; }
-        // How often the kept entries are offered to the collector again.
-        // 0 keeps them without ever retrying, for collection by hand.
+        // How long to wait after a round the collector refused. Below a minute
+        // is read as a minute, so that a collector which is down cannot be
+        // asked in a tight loop.
         public int RetryIntervalMinutes { get; set; } = 5;
-        // Beyond this the kept entries are dropped, so that a collector that
-        // stays down cannot fill the disk. 0 keeps them without any limit.
-        public int MaxSizeMB { get; set; } = 10;
+        // Beyond this the waiting entries are dropped, so that a collector
+        // which stays down cannot fill the disk. 0 lifts the limit.
+        public int MaxSpoolSizeMB { get; set; } = 10;
     }
 
     // Keeping the log on this machine, as one JSON object per line.

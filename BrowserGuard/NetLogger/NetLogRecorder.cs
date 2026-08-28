@@ -1,4 +1,4 @@
-using BrowserGuard.Common;
+﻿using BrowserGuard.Common;
 
 namespace BrowserGuard.NetLogger
 {
@@ -73,30 +73,22 @@ namespace BrowserGuard.NetLogger
             }
             if (config.Sender.Enabled && !string.IsNullOrWhiteSpace(config.Sender.Endpoint))
             {
+                var spool = new NetLogSpool(
+                    NetLogDirectory.ForSpool(),
+                    // 0 asks for no limit, and travels as 0.
+                    Math.Max(0, config.Sender.MaxSpoolSizeMB) * 1024L * 1024L,
+                    logger);
                 sender = new NetLogSender(
                     config.Sender.Endpoint,
+                    spool,
                     logger,
                     handler: null,
-                    spool: Spool(config),
-                    retryInterval: TimeSpan.FromMinutes(config.Sender.OnSendFailure.RetryIntervalMinutes));
-                logger?.Log($"Command: log entry, sending to {config.Sender.Endpoint}");
+                    // Below a minute is read as a minute, so that a collector
+                    // which is down cannot be asked in a tight loop.
+                    retryInterval: TimeSpan.FromMinutes(Math.Max(1, config.Sender.RetryIntervalMinutes)));
+                logger?.Log(
+                    $"Command: log entry, sending to {config.Sender.Endpoint} by way of {spool.FilePath}");
             }
-        }
-
-        private NetLogSpool? Spool(NetLoggerConfig config)
-        {
-            var failure = config.Sender.OnSendFailure;
-            if (!failure.SaveLocally)
-            {
-                return null;
-            }
-            var spool = new NetLogSpool(
-                NetLogDirectory.Resolve(config.LocalFile.Directory),
-                // 0 asks for no limit, and travels as 0.
-                Math.Max(0, failure.MaxSizeMB) * 1024L * 1024L,
-                logger);
-            logger?.Log($"Command: log entry, keeping what cannot be sent in {spool.FilePath}");
-            return spool;
         }
 
         public void Dispose() => sender?.Dispose();

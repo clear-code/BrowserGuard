@@ -136,11 +136,8 @@ namespace BrowserGuard.Tests.Configuration
                 "Sender": {
                   "Enabled": true,
                   "Endpoint": "https://collector.example.com/log",
-                  "OnSendFailure": {
-                    "SaveLocally": true,
-                    "RetryIntervalMinutes": 15,
-                    "MaxSizeMB": 50
-                  }
+                  "RetryIntervalMinutes": 15,
+                  "MaxSpoolSizeMB": 50
                 },
                 "LocalFile": {
                   "Enabled": true,
@@ -160,9 +157,8 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Equal(90, config.LocalFile.MaxDays);
             Assert.Equal(250, config.LocalFile.MaxSizeMB);
             Assert.True(config.Sender.Enabled);
-            Assert.True(config.Sender.OnSendFailure.SaveLocally);
-            Assert.Equal(15, config.Sender.OnSendFailure.RetryIntervalMinutes);
-            Assert.Equal(50, config.Sender.OnSendFailure.MaxSizeMB);
+            Assert.Equal(15, config.Sender.RetryIntervalMinutes);
+            Assert.Equal(50, config.Sender.MaxSpoolSizeMB);
         }
 
         // 0 asks for no limit rather than for a limit of nothing.
@@ -170,9 +166,9 @@ namespace BrowserGuard.Tests.Configuration
         public void ReadsAnUnlimitedSpool()
         {
             var config = ConfigLoader.ParseConf(
-                """{"NetLogger":{"Sender":{"OnSendFailure":{"SaveLocally":true,"MaxSizeMB":0}}}}""");
+                """{"NetLogger":{"Sender":{"MaxSpoolSizeMB":0}}}""");
 
-            Assert.Equal(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
+            Assert.Equal(0, config.NetLogger.Sender.MaxSpoolSizeMB);
         }
 
         // Nothing may be written to this machine unless it was asked for.
@@ -184,7 +180,6 @@ namespace BrowserGuard.Tests.Configuration
             Assert.False(config.Enabled);
             Assert.False(config.LocalFile.Enabled);
             Assert.False(config.Sender.Enabled);
-            Assert.False(config.Sender.OnSendFailure.SaveLocally);
             Assert.Equal("", config.LocalFile.Directory);
         }
 
@@ -205,7 +200,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.NotNull(config.StartupLauncher.Programs);
             Assert.NotEmpty(config.SettingPageFilter.BlockedPrefixes);
             Assert.NotEqual(0, config.NetLogger.LocalFile.MaxDays);
-            Assert.NotEqual(0, config.NetLogger.Sender.OnSendFailure.MaxSizeMB);
+            Assert.NotEqual(0, config.NetLogger.Sender.MaxSpoolSizeMB);
             Assert.NotNull(config.UsageTimeLimit.AllowedTimeRanges);
             Assert.NotEqual("", config.UsageTimeLimit.OnExceeded.Action);
         }

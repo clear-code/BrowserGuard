@@ -15,24 +15,40 @@
     "Sender": {
       "Enabled": true,
       "Endpoint": "http://localhost:8001",
-      "OnSendFailure": {
-        "SaveLocally": true,
-        "RetryIntervalMinutes": 1,
-        "MaxSizeMB": 10
-      }
+      "RetryIntervalMinutes": 1,
+      "MaxSpoolSizeMB": 10
     }
   },
   "UploadGuard": {
     "Enabled": true,
-    "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
-    "AllowedExtensions": [".pdf", ".docx", ".xlsx"],
-    "AllowedPaths": ["^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\"],
-    "BlockedPaths": ["\\\\Confidential\\\\"]
+    "BlockedExtensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".js",
+      ".vbs"
+    ],
+    "AllowedExtensions": [
+      ".pdf",
+      ".docx",
+      ".xlsx"
+    ],
+    "AllowedPaths": [
+      "^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\"
+    ],
+    "BlockedPaths": [
+      "\\\\Confidential\\\\"
+    ]
   },
   "SettingPageFilter": {
     "Enabled": true,
     "NotifyOnBlocked": true,
-    "BlockedPrefixes": ["edge://settings", "edge://flags", "edge://policy", "edge://extensions"]
+    "BlockedPrefixes": [
+      "edge://settings",
+      "edge://flags",
+      "edge://policy",
+      "edge://extensions"
+    ]
   },
   "StartupLauncher": {
     "Enabled": true,
@@ -41,7 +57,9 @@
         "Path": "C:\\BrowserGuardTest\\EnvDump.exe",
         "Arguments": [],
         "WorkingDirectory": "C:\\BrowserGuardTest",
-        "EnvironmentVariables": { "BROWSERGUARD_STARTUP_TEST": "from-config" },
+        "EnvironmentVariables": {
+          "BROWSERGUARD_STARTUP_TEST": "from-config"
+        },
         "Sha256": ""
       }
     ]
@@ -50,8 +68,14 @@
     "Enabled": true,
     "MaxContinuousMinutes": 5,
     "AllowedTimeRanges": [
-      { "Start": "09:00", "End": "12:00" },
-      { "Start": "13:00", "End": "18:00" }
+      {
+        "Start": "09:00",
+        "End": "12:00"
+      },
+      {
+        "Start": "13:00",
+        "End": "18:00"
+      }
     ],
     "OnExceeded": {
       "Action": "Terminate",
@@ -67,9 +91,14 @@
     "Enabled": true,
     "Destination": "C:\\BrowserGuardTest\\audit\\%PCNAME%\\%USERID%\\%DATE%",
     "MaxSizeMB": 10,
-    "BlockedExtensions": [".tmp", ".log"],
+    "BlockedExtensions": [
+      ".tmp",
+      ".log"
+    ],
     "AllowedExtensions": [],
-    "BlockedUrls": ["^https://localhost"],
+    "BlockedUrls": [
+      "^https://localhost"
+    ],
     "AllowedUrls": []
   }
 }

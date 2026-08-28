@@ -17,7 +17,7 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void ExpandsTheMacros()
         {
-            var resolved = NetLogDirectory.Resolve(Path.Combine(Root, "%PCNAME%", "%DATE%"), Now);
+            var resolved = NetLogDirectory.ForLog(Path.Combine(Root, "%PCNAME%", "%DATE%"), Now);
 
             Assert.Equal(
                 Path.Combine(Root, Environment.MachineName, "2026-08-20"),
@@ -33,7 +33,7 @@ namespace BrowserGuard.Tests.NetLogger
             {
                 Assert.Equal(
                     Path.Combine(Root, "netlog"),
-                    NetLogDirectory.Resolve(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
+                    NetLogDirectory.ForLog(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
             }
             finally
             {
@@ -44,7 +44,7 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void TakesAPlainPathAsItStands()
         {
-            Assert.Equal(Root, NetLogDirectory.Resolve(Root, Now));
+            Assert.Equal(Root, NetLogDirectory.ForLog(Root, Now));
         }
 
         [Fact]
@@ -54,9 +54,22 @@ namespace BrowserGuard.Tests.NetLogger
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BrowserGuard", "netlog");
 
-            Assert.Equal(expected, NetLogDirectory.Resolve("", Now));
-            Assert.Equal(expected, NetLogDirectory.Resolve("   ", Now));
-            Assert.Equal(expected, NetLogDirectory.Default());
+            Assert.Equal(expected, NetLogDirectory.ForLog("", Now));
+            Assert.Equal(expected, NetLogDirectory.ForLog("   ", Now));
+            Assert.Equal(expected, NetLogDirectory.ForLog(""));
+        }
+
+        // One is emptied as it drains and the other kept for MaxDays, so they
+        // do not share a folder even when neither is configured.
+        [Fact]
+        public void KeepsTheSpoolApartFromTheLog()
+        {
+            Assert.Equal(
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BrowserGuard", "spool"),
+                NetLogDirectory.ForSpool());
+            Assert.NotEqual(NetLogDirectory.ForLog(""), NetLogDirectory.ForSpool());
         }
     }
 }

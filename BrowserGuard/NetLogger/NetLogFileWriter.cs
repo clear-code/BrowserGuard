@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -43,7 +43,7 @@ namespace BrowserGuard.NetLogger
 
         internal NetLogFileWriter(NetLogFileConfig config, Logger? logger = null)
         {
-            directory = NetLogDirectory.Resolve(config.Directory);
+            directory = NetLogDirectory.ForLog(config.Directory);
             maxDays = Math.Max(0, config.MaxDays);
             maxSize = Math.Max(0, config.MaxSizeMB) * 1024L * 1024L;
             this.logger = logger;
