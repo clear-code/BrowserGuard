@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +14,7 @@ namespace BrowserGuard.Tests.NetLogger
 {
     public class NetLogSenderTests : IDisposable
     {
+        const string Endpoint = "https://collector.example.com/log";
         const string Entry = """{"operation":"browsing","url":"https://example.com/"}""";
 
         readonly string tempDir;
@@ -29,6 +30,12 @@ namespace BrowserGuard.Tests.NetLogger
         }
 
         NetLogSpool Spool(long maxSize = 1024 * 1024) => new(tempDir, maxSize);
+
+        // The seam the production constructor does not offer: a cap in bytes
+        // and an interval in milliseconds, so a round can be driven at once.
+        NetLogSender Sender(
+            Collector collector, NetLogSpool? spool = null, TimeSpan? retryInterval = null) =>
+            new(Endpoint, spool, retryInterval ?? TimeSpan.Zero, null, collector);
 
         string PendingPath => Path.Combine(tempDir, "netlog-pending.jsonl");
 
@@ -76,16 +83,44 @@ namespace BrowserGuard.Tests.NetLogger
                 ? body
                 : throw new TimeoutException("nothing was posted");
 
+        // The spool is the sender's own, so the constructor the host uses makes
+        // it rather than being handed one.
+        [Fact]
+        public void MakesItsOwnSpoolFromTheConfig()
+        {
+            var config = new NetLogSenderConfig
+            {
+                Enabled = true,
+                Endpoint = Endpoint,
+                Spool = new NetLogSpoolConfig { Enabled = true },
+            };
+
+            using var sender = new NetLogSender(config, tempDir);
+
+            Assert.Equal(PendingPath, sender.SpoolPath);
+        }
+
+        // Nothing is kept unless it was asked for.
+        [Fact]
+        public void MakesNoSpoolWhenItIsNotAskedFor()
+        {
+            var config = new NetLogSenderConfig { Enabled = true, Endpoint = Endpoint };
+
+            using var sender = new NetLogSender(config, tempDir);
+
+            Assert.Null(sender.SpoolPath);
+        }
+
         [Fact]
         public void PostsTheEntryToTheEndpoint()
         {
             var collector = new Collector();
-            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             Assert.True(sender.Enqueue(Entry));
 
             Assert.Equal(Entry, Take(collector));
-            Assert.Equal(new Uri("https://collector.example.com/log"), collector.LastUri);
+            Assert.Equal(new Uri(Endpoint), collector.LastUri);
             Assert.Contains("application/json", collector.ContentTypes[0]);
         }
 
@@ -93,7 +128,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void PostsEveryEntryInTurn()
         {
             var collector = new Collector();
-            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             for (var i = 0; i < 5; i++)
             {
@@ -111,7 +146,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void HandsTheEntryOverWithoutWaitingForTheCollector()
         {
             var collector = new Collector();
-            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             var elapsed = System.Diagnostics.Stopwatch.StartNew();
             for (var i = 0; i < 100; i++)
@@ -128,7 +163,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void TriesAgainAfterAFailure()
         {
             var collector = new Collector { FailuresLeft = 2 };
-            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             sender.Enqueue(Entry);
 
@@ -143,7 +178,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void SendsWhatIsQueuedBeforeItShutsDown()
         {
             var collector = new Collector();
-            var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            var sender = Sender(collector);
             for (var i = 0; i < 10; i++)
             {
                 sender.Enqueue(Entry);
@@ -158,7 +193,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void TakesNoFurtherEntriesOnceItHasShutDown()
         {
             var collector = new Collector();
-            var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            var sender = Sender(collector);
             sender.Dispose();
 
             Assert.False(sender.Enqueue(Entry));
@@ -170,8 +205,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool);
+            using var sender = Sender(collector, spool);
 
             sender.Enqueue(Entry);
 
@@ -182,8 +216,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void DropsTheEntryWhenNothingKeepsIt()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             sender.Enqueue(Entry);
 
@@ -196,9 +229,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool,
-                retryInterval: TimeSpan.FromMilliseconds(200));
+            using var sender = Sender(collector, spool, retryInterval: TimeSpan.FromMilliseconds(200));
             sender.Enqueue("""{"operation":"kept"}""");
             Assert.Equal(1, Kept(PendingPath).Length);
 
@@ -217,9 +248,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool,
-                retryInterval: TimeSpan.FromMilliseconds(100));
+            using var sender = Sender(collector, spool, retryInterval: TimeSpan.FromMilliseconds(100));
 
             sender.Enqueue("""{"operation":"kept"}""");
 
@@ -233,9 +262,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool,
-                retryInterval: TimeSpan.Zero);
+            using var sender = Sender(collector, spool, retryInterval: TimeSpan.Zero);
             sender.Enqueue(Entry);
             Assert.Single(Kept(PendingPath));
             var attempts = collector.Bodies.Count;
@@ -252,7 +279,7 @@ namespace BrowserGuard.Tests.NetLogger
         public void KeepsGoingAfterTheCollectorRefusesAnEntry()
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
-            using var sender = new NetLogSender("https://collector.example.com/log", null, collector);
+            using var sender = Sender(collector);
 
             sender.Enqueue("""{"operation":"first"}""");
 
@@ -273,8 +300,8 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.InternalServerError };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool,
+            using var sender = Sender(
+                collector, spool,
                 // Long enough that no retry round runs while the test does.
                 retryInterval: TimeSpan.FromMinutes(10));
 
@@ -302,9 +329,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var collector = new Collector { Status = HttpStatusCode.BadRequest };
             var spool = Spool();
-            using var sender = new NetLogSender(
-                "https://collector.example.com/log", null, collector, spool,
-                retryInterval: TimeSpan.FromMinutes(10));
+            using var sender = Sender(collector, spool, retryInterval: TimeSpan.FromMinutes(10));
 
             sender.Enqueue("""{"operation":"refused"}""");
             Assert.Contains("refused", Take(collector));

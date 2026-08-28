@@ -42,12 +42,26 @@ namespace BrowserGuard.NetLogger
         private int dropped;
         private volatile bool collectorIsDown;
 
+        // The spool is the sender's own: nothing else reads it, and it lives
+        // exactly as long as this does. Its directory is handed in because it
+        // belongs to the log's settings rather than to the sender's.
+        internal NetLogSender(NetLogSenderConfig config, string spoolDirectory, Logger? logger = null)
+            : this(
+                config.Endpoint,
+                Kept(config.Spool, spoolDirectory, logger),
+                RetryInterval(config.Spool),
+                logger)
+        {
+        }
+
+        // Takes the spool ready-made, so that a test can settle its size and
+        // the interval in units the config does not offer.
         internal NetLogSender(
             string endpoint,
+            NetLogSpool? spool,
+            TimeSpan retryInterval,
             Logger? logger = null,
-            HttpMessageHandler? handler = null,
-            NetLogSpool? spool = null,
-            TimeSpan? retryInterval = null)
+            HttpMessageHandler? handler = null)
         {
             this.endpoint = endpoint;
             this.logger = logger;
@@ -56,7 +70,7 @@ namespace BrowserGuard.NetLogger
             http.Timeout = RequestTimeout;
 
             // Without a spool there is nothing kept to offer again.
-            var interval = spool is null ? TimeSpan.Zero : retryInterval ?? TimeSpan.Zero;
+            var interval = spool is null ? TimeSpan.Zero : retryInterval;
             // Settled before the worker starts, which reads it.
             retriesLater = interval > TimeSpan.Zero;
 
@@ -79,6 +93,26 @@ namespace BrowserGuard.NetLogger
             retrier.Start();
         }
 
+        // Nothing is kept unless it was asked for, and then the retry below has
+        // nothing to offer again either.
+        private static NetLogSpool? Kept(NetLogSpoolConfig config, string directory, Logger? logger) =>
+            config.Enabled
+                ? new NetLogSpool(
+                    directory,
+                    // 0 asks for no limit, and travels as 0.
+                    Math.Max(0, config.MaxSizeMB) * 1024L * 1024L,
+                    logger)
+                : null;
+
+        // Zero runs no retry thread at all, which leaves the kept entries for
+        // collection by hand.
+        private static TimeSpan RetryInterval(NetLogSpoolConfig config) =>
+            config.Retry.Enabled ? TimeSpan.FromMinutes(config.Retry.IntervalMinutes) : TimeSpan.Zero;
+
+        // Where the entries that could not be sent wait, or null when none are
+        // kept. Reported by the caller, which does the rest of the logging.
+        internal string? SpoolPath => spool?.FilePath;
+
         // The queue is bounded: a collector that has stopped answering must cost
         // memory that stops growing, not memory that grows until the host dies.
         // What will not fit is kept rather than lost, if there is a spool.
@@ -93,7 +127,7 @@ namespace BrowserGuard.NetLogger
             }
             catch (InvalidOperationException)
             {
-                // The host is on its way out and no longer takes entries.
+                // The host is shutting down.
                 return false;
             }
 
@@ -216,9 +250,7 @@ namespace BrowserGuard.NetLogger
         private enum SendResult
         {
             Sent,
-            // The collector took against this entry and always will.
             Refused,
-            // The collector is not answering; the entry is fine.
             Unavailable,
         }
 
@@ -233,7 +265,6 @@ namespace BrowserGuard.NetLogger
                     return SendResult.Sent;
                 }
                 logger?.Log($"NetLogSender: {endpoint} answered {(int)response.StatusCode}");
-                // A 4xx is about the entry, a 5xx about the collector.
                 return (int)response.StatusCode is >= 400 and < 500
                     ? SendResult.Refused
                     : SendResult.Unavailable;

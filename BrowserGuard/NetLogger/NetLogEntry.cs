@@ -31,11 +31,8 @@ namespace BrowserGuard.NetLogger
             using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
             {
                 writer.WriteStartObject();
-                // The upload itself went through; keeping a copy of it did not.
                 writer.WriteString("operation", "upload-file-bridge");
                 writer.WriteString("name", file);
-                // Where it was going, so the entry reads like the ones the
-                // browser sends about the same upload.
                 writer.WriteString("url", url);
                 writer.WriteString("timestamp",
                     at.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));

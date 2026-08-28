@@ -73,36 +73,19 @@ namespace BrowserGuard.NetLogger
             }
             if (config.Sender.Enabled && !string.IsNullOrWhiteSpace(config.Sender.Endpoint))
             {
+                // The spool goes beside the log, so where that lives is settled
+                // here: it is the one place that knows both groups.
                 sender = new NetLogSender(
-                    config.Sender.Endpoint,
-                    logger,
-                    handler: null,
-                    spool: Spool(config),
-                    retryInterval: RetryInterval(config.Sender.Spool));
+                    config.Sender,
+                    NetLogDirectory.Resolve(config.LocalFile.Directory),
+                    logger);
                 logger?.Log($"Command: log entry, sending to {config.Sender.Endpoint}");
+                if (sender.SpoolPath is { } kept)
+                {
+                    logger?.Log($"Command: log entry, keeping what cannot be sent in {kept}");
+                }
             }
         }
-
-        private NetLogSpool? Spool(NetLoggerConfig config)
-        {
-            var kept = config.Sender.Spool;
-            if (!kept.Enabled)
-            {
-                return null;
-            }
-            var spool = new NetLogSpool(
-                NetLogDirectory.Resolve(config.LocalFile.Directory),
-                // 0 asks for no limit, and travels as 0.
-                Math.Max(0, kept.MaxSizeMB) * 1024L * 1024L,
-                logger);
-            logger?.Log($"Command: log entry, keeping what cannot be sent in {spool.FilePath}");
-            return spool;
-        }
-
-        // Zero is how NetLogSender is told to run no retry thread at all, which
-        // leaves the kept entries for collection by hand.
-        private static TimeSpan RetryInterval(NetLogSpoolConfig spool) =>
-            spool.Retry.Enabled ? TimeSpan.FromMinutes(spool.Retry.IntervalMinutes) : TimeSpan.Zero;
 
         public void Dispose() => sender?.Dispose();
     }
