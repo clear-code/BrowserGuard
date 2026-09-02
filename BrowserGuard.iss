@@ -1,10 +1,12 @@
 ﻿;BrowserGuard Setup--
 
+#define AppVersion "1.0.0.0"
+
 [Setup]
 AppName=BrowserGuard
-AppVerName=BrowserGuard
-VersionInfoVersion=1.0.0.0
-AppVersion=1.0.0.0
+AppVerName=BrowserGuard {#AppVersion}
+VersionInfoVersion={#AppVersion}
+AppVersion={#AppVersion}
 AppMutex=BrowserGuardSetup
 ;DefaultDirName=C:\BrowserGuard
 DefaultDirName={code:GetProgramFiles}\BrowserGuard
@@ -15,8 +17,8 @@ OutputBaseFilename=BrowserGuardSetup
 AppPublisher=BrowserGuard
 WizardImageStretch=no
 VersionInfoDescription=BrowserGuardSetup
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 DefaultGroupName=BrowserGuard
 UninstallDisplayIcon={app}\BrowserGuardHost\BrowserGuard.exe
 
@@ -24,7 +26,7 @@ UninstallDisplayIcon={app}\BrowserGuardHost\BrowserGuard.exe
 Root: HKLM; Subkey: "Software\BrowserGuard"; Flags: uninsdeletekey
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "1.0.0.0"
+Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
 Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
@@ -34,7 +36,7 @@ Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Exte
 ;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; Flags: uninsdeletekey
 ;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
 ;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "1.0.0.0"
+;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
 ;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
 ;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
