@@ -98,8 +98,9 @@ describe('_buildPayload', () => {
   it('leaves the machine and the user to the host', () => {
     const payload = NetLogger._buildPayload('browsing', 'Example', 'https://example.com/', 0);
 
-    assert.equal('pcname' in payload, false);
-    assert.equal('userid' in payload, false);
+    assert.equal('host' in payload, false);
+    assert.equal('user' in payload, false);
+    assert.equal('session' in payload, false);
   });
 });
 

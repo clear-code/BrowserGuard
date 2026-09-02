@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -11,8 +11,13 @@ namespace BrowserGuard.NetLogger
     // onto a single line here, once, before going to the file and the collector.
     internal static class NetLogEntry
     {
-        internal const string MachineProperty = "pcname";
-        internal const string UserProperty = "userid";
+        // The names the operation log read beside this one uses, so that the
+        // two can be lined up. It has no field for the machine, so "host" is
+        // this side's own.
+        internal const string HostProperty = "host";
+        internal const string UserProperty = "user";
+        internal const string DisplayNameProperty = "user_displayName";
+        internal const string SessionProperty = "session";
 
         // The log is read back as text, so the escaping is relaxed to leave
         // Japanese page titles legible rather than as \uXXXX escapes.
@@ -65,15 +70,23 @@ namespace BrowserGuard.NetLogger
                     {
                         // Whatever the sender put here is replaced below: only
                         // this side can say where the entry was recorded.
-                        if (property.NameEquals(MachineProperty) ||
-                            property.NameEquals(UserProperty))
+                        if (property.NameEquals(HostProperty) ||
+                            property.NameEquals(UserProperty) ||
+                            property.NameEquals(DisplayNameProperty) ||
+                            property.NameEquals(SessionProperty))
                         {
                             continue;
                         }
                         property.WriteTo(writer);
                     }
-                    writer.WriteString(MachineProperty, Environment.MachineName);
-                    writer.WriteString(UserProperty, Environment.UserName);
+                    writer.WriteString(HostProperty, NetLogIdentity.Host);
+                    writer.WriteString(UserProperty, NetLogIdentity.Account);
+                    // Left out when it cannot be had, as the operation log does.
+                    if (NetLogIdentity.DisplayName.Length > 0)
+                    {
+                        writer.WriteString(DisplayNameProperty, NetLogIdentity.DisplayName);
+                    }
+                    writer.WriteNumber(SessionProperty, NetLogIdentity.Session);
                     writer.WriteEndObject();
                 }
                 line = Encoding.UTF8.GetString(buffer.ToArray());

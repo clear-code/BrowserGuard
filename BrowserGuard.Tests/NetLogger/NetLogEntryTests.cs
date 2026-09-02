@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Json;
 using Xunit;
 using BrowserGuard.NetLogger;
@@ -21,15 +21,31 @@ namespace BrowserGuard.Tests.NetLogger
             Assert.Equal("https://example.com/", entry.GetProperty("url").GetString());
         }
 
-        // The browser is never told either of these, so it cannot send them.
+        // The browser is told none of these, so it cannot send them.
         [Fact]
-        public void StampsOnTheMachineAndTheUser()
+        public void StampsOnWhoRecordedTheEntryAndWhere()
         {
             NetLogEntry.Compact("""{"operation":"browsing"}""", out var line);
 
             var entry = Parse(line);
-            Assert.Equal(Environment.MachineName, entry.GetProperty("pcname").GetString());
-            Assert.Equal(Environment.UserName, entry.GetProperty("userid").GetString());
+            Assert.Equal(Environment.MachineName, entry.GetProperty("host").GetString());
+            // The operation log's shape, so the two line up on the account.
+            Assert.Equal(
+                $@"{Environment.UserDomainName}\{Environment.UserName}",
+                entry.GetProperty("user").GetString());
+            Assert.Equal(NetLogIdentity.Session, entry.GetProperty("session").GetInt32());
+        }
+
+        // The operation log leaves it out when it cannot be had, and so does this.
+        [Fact]
+        public void LeavesOutADisplayNameItCouldNotFind()
+        {
+            NetLogEntry.Compact("""{"operation":"browsing"}""", out var line);
+
+            var entry = Parse(line);
+            Assert.Equal(
+                NetLogIdentity.DisplayName.Length > 0,
+                entry.TryGetProperty("user_displayName", out _));
         }
 
         // An entry must not be able to claim it came from somewhere else.
@@ -37,14 +53,18 @@ namespace BrowserGuard.Tests.NetLogger
         public void ReplacesAMachineAndUserTheSenderSuppliedAnyway()
         {
             NetLogEntry.Compact(
-                """{"operation":"browsing","pcname":"SOMEONE-ELSE","userid":"root"}""",
+                """
+                {"operation":"browsing","host":"SOMEONE-ELSE","user":"OTHER\\root",
+                 "user_displayName":"Someone Else","session":999}
+                """,
                 out var line);
 
             var entry = Parse(line);
-            Assert.Equal(Environment.MachineName, entry.GetProperty("pcname").GetString());
-            Assert.Equal(Environment.UserName, entry.GetProperty("userid").GetString());
+            Assert.Equal(Environment.MachineName, entry.GetProperty("host").GetString());
+            Assert.Equal(NetLogIdentity.Session, entry.GetProperty("session").GetInt32());
             Assert.DoesNotContain("SOMEONE-ELSE", line);
-            Assert.DoesNotContain("root", line);
+            Assert.DoesNotContain("Someone Else", line);
+            Assert.DoesNotContain("999", line);
         }
 
         // A sender that pretty printed its entry must not break the one line per
@@ -126,8 +146,8 @@ namespace BrowserGuard.Tests.NetLogger
 
             using var document = JsonDocument.Parse(line);
             Assert.Equal(Environment.MachineName,
-                document.RootElement.GetProperty(NetLogEntry.MachineProperty).GetString());
-            Assert.Equal(Environment.UserName,
+                document.RootElement.GetProperty(NetLogEntry.HostProperty).GetString());
+            Assert.Equal(NetLogIdentity.Account,
                 document.RootElement.GetProperty(NetLogEntry.UserProperty).GetString());
         }
     }
