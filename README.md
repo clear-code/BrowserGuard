@@ -49,7 +49,7 @@ make.bat
 
 | パス | 内容 |
 | --- | --- |
-| `SetupOutput\BrowserGuardSetup.exe` | インストーラー |
+| `SetupOutput\BrowserGuardSetup-<バージョン>.exe` | インストーラー |
 | `BrowserGuard\bin\Release\net8.0\publish\win-x64\` | ホスト (自己完結型 / win-x64) |
 | `webextensions\BrowserGuardEdge.zip` | 拡張機能 (製品版) |
 | `webextensions\BrowserGuardEdgeDev.zip` | 拡張機能 (開発版・名称が異なる) |
@@ -246,13 +246,13 @@ JSON の操作は `BrowserGuard.exe policy` サブコマンドが行います
 ### サイレントインストール
 
 ```bash
-SetupOutput\BrowserGuardSetup.exe /VERYSILENT
+SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT
 ```
 
 この場合もポリシー登録は行われません。登録するには明示的に指定します。
 
 ```bash
-SetupOutput\BrowserGuardSetup.exe /VERYSILENT /TASKS="extensionpolicy"
+SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensionpolicy"
 ```
 
 ### 設定ファイル
