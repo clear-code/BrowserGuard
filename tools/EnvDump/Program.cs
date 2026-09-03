@@ -6,6 +6,15 @@ const string OutputName = "envdump.txt";
 var output = new StringBuilder();
 output.AppendLine($"WorkingDirectory={Directory.GetCurrentDirectory()}");
 output.AppendLine();
+output.AppendLine("[Arguments]");
+
+// One per line, so an argument holding a space stays one entry.
+foreach (var argument in args)
+{
+    output.AppendLine(argument);
+}
+
+output.AppendLine();
 output.AppendLine("[Environment]");
 
 var variables = Environment.GetEnvironmentVariables()

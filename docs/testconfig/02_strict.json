@@ -60,7 +60,7 @@
     "Enabled": true,
     "Programs": [
       {
-        "Path": "C:\\BrowserGuardTest\\EnvDump.exe",
+        "Path": "C:\\BrowserGuardTest\\EnvDump\\EnvDump.exe",
         "Arguments": [],
         "WorkingDirectory": "C:\\BrowserGuardTest",
         "EnvironmentVariables": {
