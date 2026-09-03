@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.IO;
 using Xunit;
+using BrowserGuard.Common;
 using BrowserGuard.UploadFileBridge;
 
 namespace BrowserGuard.Tests.UploadFileBridge
@@ -22,6 +23,17 @@ namespace BrowserGuard.Tests.UploadFileBridge
 
         // Where the upload was going. Only the URL tests care what it is.
         const string Url = "https://example.com/upload";
+
+        // The host's own log, read back to see what was said about a copy.
+        string LogPath => Path.Combine(tempDir, "log", "BrowserGuard.log");
+
+        string LogText()
+        {
+            var path = LogPath;
+            return File.Exists(path) ? File.ReadAllText(path) : "";
+        }
+
+        Logger Log() => new(Path.Combine(tempDir, "log"));
 
         // A fixed day, so a destination naming the day is the one intended here.
         static readonly DateTime Now = new(2026, 8, 20, 13, 45, 30);
@@ -359,5 +371,33 @@ namespace BrowserGuard.Tests.UploadFileBridge
 
             Assert.NotNull(failure);
         }
+        // A copy that was meant to be kept and was not has to say so, and say
+        // why: the upload itself went through, so nothing else shows it.
+        [Fact]
+        public void SaysWhyNoCopyWasKept()
+        {
+            var config = Config(destination: Path.Combine(tempDir, "audit"), maxSizeMB: 1);
+            var source = Source("report.xlsx", new string('a', 2 * 1024 * 1024));
+
+            var failure = FileBridge.Copy(config, source, Url, Now, Log());
+
+            Assert.NotNull(failure);
+            var text = LogText();
+            Assert.Contains("UploadFileBridge: no copy kept of", text);
+            Assert.Contains(source, text);
+            // The reason travels with it, rather than only reaching the caller.
+            Assert.Contains(failure!, text);
+        }
+
+        [Fact]
+        public void SaysNothingWhenTheCopyWasMade()
+        {
+            var failure = FileBridge.Copy(Config(), Source(), Url, Now, Log());
+
+            Assert.Null(failure);
+            Assert.DoesNotContain("no copy kept", LogText());
+            Assert.Contains("UploadFileBridge: copied", LogText());
+        }
+
     }
 }

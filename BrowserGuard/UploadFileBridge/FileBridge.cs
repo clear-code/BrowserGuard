@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using BrowserGuard.Common;
@@ -24,6 +24,21 @@ namespace BrowserGuard.UploadFileBridge
             string url,
             DateTime now,
             Logger? logger = null)
+        {
+            var failure = Attempt(config, source, url, now, logger);
+            if (failure is not null)
+            {
+                logger?.Log($"UploadFileBridge: no copy kept of {source}: {failure}");
+            }
+            return failure;
+        }
+
+        private static string? Attempt(
+            UploadFileBridgeConfig config,
+            string source,
+            string url,
+            DateTime now,
+            Logger? logger)
         {
             if (!config.Enabled)
             {
