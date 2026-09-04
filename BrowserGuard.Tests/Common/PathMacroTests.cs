@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Xunit;
 using BrowserGuard.Common;
 
@@ -31,7 +31,7 @@ namespace BrowserGuard.Tests.Common
         [Fact]
         public void PutsTheMachineAndTheUserIntoThePath()
         {
-            var expanded = PathMacro.Expand(@"\\server\%PCNAME%\%USERID%", Now);
+            var expanded = PathMacro.Expand(@"\\server\%MACHINENAME%\%USER%", Now);
 
             Assert.Equal($@"\\server\{System.Environment.MachineName}\{System.Environment.UserName}", expanded);
         }
@@ -39,7 +39,7 @@ namespace BrowserGuard.Tests.Common
         [Fact]
         public void ExpandsSeveralMacrosInOnePath()
         {
-            var expanded = PathMacro.Expand(@"\\server\%PCNAME%\%DATE%\%USERID%", Now);
+            var expanded = PathMacro.Expand(@"\\server\%MACHINENAME%\%DATE%\%USER%", Now);
 
             Assert.Equal(
                 $@"\\server\{System.Environment.MachineName}\2026-08-20\{System.Environment.UserName}",
@@ -47,9 +47,9 @@ namespace BrowserGuard.Tests.Common
         }
 
         [Theory]
-        [InlineData("%pcname%")]
-        [InlineData("%PcName%")]
-        [InlineData("%PCNAME%")]
+        [InlineData("%machinename%")]
+        [InlineData("%MachineName%")]
+        [InlineData("%MACHINENAME%")]
         public void DoesNotMindHowTheMacroIsSpelled(string macro)
         {
             Assert.Equal(System.Environment.MachineName, PathMacro.Expand(macro, Now));
@@ -107,6 +107,25 @@ namespace BrowserGuard.Tests.Common
         {
             WithVariable("BROWSERGUARD_LOOKS_LIKE_A_MACRO", "%DATE%", () =>
                 Assert.Equal("%DATE%", PathMacro.Expand("%BROWSERGUARD_LOOKS_LIKE_A_MACRO%", Now)));
+        }
+
+        // Why %MACHINENAME% and %USER% exist when %COMPUTERNAME% and %USERNAME%
+        // hold the same two names: the environment is the user's to set, and
+        // the evidence would then be filed under whatever they chose.
+        [Fact]
+        public void CannotBeTalkedOutOfWhoAndWhereByTheEnvironment()
+        {
+            WithVariable("USERNAME", "imposter", () =>
+                WithVariable("COMPUTERNAME", "OTHER-PC", () =>
+                {
+                    Assert.Equal(Environment.UserName, PathMacro.Expand("%USER%", Now));
+                    Assert.Equal(Environment.MachineName, PathMacro.Expand("%MACHINENAME%", Now));
+
+                    // The variables themselves still say what they were told,
+                    // which is the whole of the difference.
+                    Assert.Equal("imposter", PathMacro.Expand("%USERNAME%", Now));
+                    Assert.Equal("OTHER-PC", PathMacro.Expand("%COMPUTERNAME%", Now));
+                }));
         }
 
         // Set for the one test and put back afterwards, so the result does not

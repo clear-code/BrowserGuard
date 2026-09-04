@@ -105,7 +105,7 @@ namespace BrowserGuard.Tests.UploadFileBridge
         [Fact]
         public void ExpandsTheMacrosInTheDestination()
         {
-            var config = Config(Path.Combine(tempDir, "%DATE%", "%PCNAME%"));
+            var config = Config(Path.Combine(tempDir, "%DATE%", "%MACHINENAME%"));
 
             var failure = FileBridge.Copy(config, Source(), Url, Now);
 

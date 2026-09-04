@@ -388,7 +388,7 @@ namespace BrowserGuard.Tests.NetLogger
             var config = new NetLogFileConfig
             {
                 Enabled = true,
-                Directory = Path.Combine(tempDir, "%PCNAME%"),
+                Directory = Path.Combine(tempDir, "%MACHINENAME%"),
             };
 
             var writer = new NetLogFileWriter(config);

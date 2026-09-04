@@ -342,7 +342,7 @@ namespace BrowserGuard.Tests.Configuration
             {
               "UploadFileBridge": {
                 "Enabled": true,
-                "Destination": "\\\\fileserver\\audit\\%PCNAME%",
+                "Destination": "\\\\fileserver\\audit\\%MACHINENAME%",
                 "MaxSizeMB": 100,
                 "BlockedExtensions": [".tmp"],
                 "AllowedExtensions": [".xlsx", ".docx"]
@@ -355,7 +355,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.True(config.UploadFileBridge.Enabled);
             // The macros are left as they stand here; PathMacro expands them
             // when the copy is actually made.
-            Assert.Equal(@"\\fileserver\audit\%PCNAME%", config.UploadFileBridge.Destination);
+            Assert.Equal(@"\\fileserver\audit\%MACHINENAME%", config.UploadFileBridge.Destination);
             Assert.Equal(100, config.UploadFileBridge.MaxSizeMB);
             Assert.Equal([".tmp"], config.UploadFileBridge.BlockedExtensions);
             Assert.Equal([".xlsx", ".docx"], config.UploadFileBridge.AllowedExtensions);

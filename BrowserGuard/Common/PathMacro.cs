@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -30,11 +30,17 @@ namespace BrowserGuard.Common
 
         // The machine and the user are the ones the audit log records, so a
         // folder named after them lines up with the entries in it.
+        //
+        // %COMPUTERNAME% and %USERNAME% hold the same two names, which is why
+        // these were dropped once as redundant. They are not: an environment
+        // variable is the user's to set, so anyone could have filed their own
+        // evidence under another name, or somewhere else entirely. These read
+        // the token and the OS instead, and cannot be talked out of either.
         private static string? ResolveOriginalMacro(string name, DateTime now) =>
             name.ToUpperInvariant() switch
             {
-                "PCNAME" => Environment.MachineName,
-                "USERID" => Environment.UserName,
+                "MACHINENAME" => Environment.MachineName,
+                "USER" => Environment.UserName,
                 "DATE" => now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 "YYYY" => now.ToString("yyyy", CultureInfo.InvariantCulture),
                 "MM" => now.ToString("MM", CultureInfo.InvariantCulture),

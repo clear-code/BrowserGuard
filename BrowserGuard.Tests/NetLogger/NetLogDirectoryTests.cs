@@ -17,7 +17,7 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void ExpandsTheMacros()
         {
-            var resolved = NetLogDirectory.Resolve(Path.Combine(Root, "%PCNAME%", "%DATE%"), Now);
+            var resolved = NetLogDirectory.Resolve(Path.Combine(Root, "%MACHINENAME%", "%DATE%"), Now);
 
             Assert.Equal(
                 Path.Combine(Root, Environment.MachineName, "2026-08-20"),
