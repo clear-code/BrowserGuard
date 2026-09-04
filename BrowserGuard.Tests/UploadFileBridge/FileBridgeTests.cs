@@ -398,6 +398,34 @@ namespace BrowserGuard.Tests.UploadFileBridge
             Assert.DoesNotContain("no copy kept", LogText());
             Assert.Contains("UploadFileBridge: copied", LogText());
         }
+
+        // The lists are regular expressions, so a pattern written as if it were
+        // plain text can match more than intended. Naming the one that matched
+        // is what lets that be seen from the log alone.
+        [Fact]
+        public void NamesTheUrlPatternThatMatched()
+        {
+            // "t*" is zero or more t, so this matches plain "localhost" too.
+            var config = Config(allowedUrls: ["http://localhostt*"]);
+
+            var failure = FileBridge.Copy(config, Source(), "http://localhost:8000/", Now, Log());
+
+            Assert.Null(failure);
+            Assert.Contains(
+                "http://localhost:8000/ matched the allowed URL pattern http://localhostt*",
+                LogText());
+        }
+
+        [Fact]
+        public void NamesTheBlockedUrlPatternThatMatched()
+        {
+            var config = Config(blockedUrls: ["^http://localhost"]);
+
+            var failure = FileBridge.Copy(config, Source(), "http://localhost:8000/", Now, Log());
+
+            Assert.NotNull(failure);
+            Assert.Contains("matched the blocked URL pattern ^http://localhost", LogText());
+        }
 
     }
 }

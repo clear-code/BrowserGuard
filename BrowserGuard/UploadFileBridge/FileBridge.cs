@@ -92,11 +92,11 @@ namespace BrowserGuard.UploadFileBridge
         private static string? AllowedUrl(
             UploadFileBridgeConfig config, string url, Logger? logger)
         {
-            if (Matches(url, config.BlockedUrls, logger))
+            if (Matches(url, config.BlockedUrls, "blocked URL", logger))
             {
                 return $"uploads to {url} are not kept";
             }
-            if (config.AllowedUrls.Length > 0 && !Matches(url, config.AllowedUrls, logger))
+            if (config.AllowedUrls.Length > 0 && !Matches(url, config.AllowedUrls, "allowed URL", logger))
             {
                 return $"uploads to {url} are not among those kept";
             }
@@ -107,7 +107,7 @@ namespace BrowserGuard.UploadFileBridge
         // silently turn the whole list into "match everything" or "match
         // nothing". The timeout is there so that a pattern that backtracks for
         // ever cannot hold the host up.
-        private static bool Matches(string url, string[] patterns, Logger? logger)
+        private static bool Matches(string url, string[] patterns, string list, Logger? logger)
         {
             foreach (var pattern in patterns)
             {
@@ -115,12 +115,13 @@ namespace BrowserGuard.UploadFileBridge
                 {
                     if (Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase, MatchTimeout))
                     {
+                        logger?.Log($"UploadFileBridge: {url} matched the {list} pattern {pattern}");
                         return true;
                     }
                 }
                 catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
                 {
-                    logger?.Log($"UploadFileBridge: ignoring the URL pattern {pattern}: {ex.Message}");
+                    logger?.Log($"UploadFileBridge: ignoring the {list} pattern {pattern}: {ex.Message}");
                 }
             }
             return false;
