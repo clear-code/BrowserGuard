@@ -3,11 +3,39 @@ $url = "http://127.0.0.1:8000/"
 $listener = New-Object system.net.HttpListener
 $listener.Prefixes.Add($url)
 
+# Ctrl+C is read as ordinary input, so that the loop below can notice it and
+# shut the listener down instead of the pipeline being torn down under it.
+$readsCancelKey = $false
 try {
-    Write-Host("Running File Uploading Server: http://localhost:8000")
+    [Console]::TreatControlCAsInput = $true
+    $readsCancelKey = $true
+} catch {
+    # No console to read keys from; Ctrl+C keeps its usual behaviour.
+}
+
+function Test-CancelKey {
+    if (-not $readsCancelKey) { return $false }
+    while ([Console]::KeyAvailable) {
+        $key = [Console]::ReadKey($true)
+        if ($key.Key -eq 'C' -and ($key.Modifiers -band [ConsoleModifiers]::Control)) {
+            return $true
+        }
+    }
+    return $false
+}
+
+try {
+    Write-Host("Running File Uploading Server: http://localhost:8000 (Ctrl+C to stop)")
     $listener.Start()
-    while ($true) {
-	$context = $listener.GetContext()
+    :serve while ($true) {
+	# GetContext() blocks inside .NET, where PowerShell never gets to look
+	# at Ctrl+C. The context is waited for in short slices instead, so
+	# control comes back often enough to notice the key.
+	$task = $listener.GetContextAsync()
+	while (-not $task.Wait(200)) {
+	    if (Test-CancelKey) { break serve }
+	}
+	$context = $task.Result
 	$request = $context.Request
 	$response = $context.Response
 	$text = "N/A"
@@ -47,6 +75,8 @@ try {
 } catch {
     Write-Error($_.Exception)
 } finally {
+    Write-Host("Stopping File Uploading Server")
     $listener.Stop()
     $listener.Dispose()
+    if ($readsCancelKey) { [Console]::TreatControlCAsInput = $false }
 }
