@@ -262,6 +262,29 @@ SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensio
 
 各機能の有効・無効はこのファイルで切り替えます。初期状態ではすべて無効です。
 
+## パラメータシート
+
+[docs/parameter-sheet.xlsm](docs/parameter-sheet.xlsm) は設定内容を記録・管理するための Excel ブックです。
+機能ごとにシートが分かれており、「エクスポート」シートのボタンを押すと、記入内容から
+`BrowserGuard.json` を書き出します (出力先はブックと同じ場所の `BrowserGuard_export\<日時>\`)。
+未記入のまま出力すると [Resources/BrowserGuard.json](Resources/BrowserGuard.json) と同じ内容になります。
+
+ブックは [tools/parameter-sheet/](tools/parameter-sheet/) から生成しています。
+パラメータを増減する場合は、シートの体裁を組む `make-parameter-sheet.ps1` と、
+JSON を組み立てる `ExportConfig.bas` の両方を直してから作り直してください
+(xlsm を直接編集しても、次回の生成で失われます)。
+
+```powershell
+pwsh -File tools\parameter-sheet\make-parameter-sheet.ps1
+pwsh -File tools\parameter-sheet\test-parameter-sheet.ps1
+```
+
+生成には Excel と、トラスト センターの
+「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」が必要です。
+`test-parameter-sheet.ps1` はブックを読み取り専用で開き、初期状態の出力が
+`Resources/BrowserGuard.json` と一致すること、値を入れた場合の JSON とエスケープ、
+入力チェックの動作を確認します。
+
 ## 補足
 
 `webextensions/Makefile` は Linux 環境向けの旧ビルド定義です。
