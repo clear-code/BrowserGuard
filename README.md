@@ -262,6 +262,15 @@ SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensio
 
 各機能の有効・無効はこのファイルで切り替えます。初期状態ではすべて無効です。
 
+## ドキュメント
+
+| ファイル | 内容 |
+| --- | --- |
+| [docs/管理者ガイド.md](docs/管理者ガイド.md) | 導入・展開・運用の手順と、設定ファイルおよび監査ログの書式 |
+| [docs/連結テスト手順書.md](docs/連結テスト手順書.md) | 拡張機能・ホスト・インストーラーを組み合わせた状態での確認手順 |
+| [docs/parameter-sheet.xlsm](docs/parameter-sheet.xlsm) | 設定内容を記録・管理し、設定ファイルを出力するパラメータシート |
+
+
 ## パラメータシート
 
 [docs/parameter-sheet.xlsm](docs/parameter-sheet.xlsm) は設定内容を記録・管理するための Excel ブックです。
