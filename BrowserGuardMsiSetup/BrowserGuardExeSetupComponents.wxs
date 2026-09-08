@@ -1,0 +1,11 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<Fragment>
+		<!-- The Inno Setup installer this package carries. Build it first with
+		     make.bat in the repository root; it lands in SetupOutput. -->
+		<ComponentGroup Id="BrowserGuardExeSetupComponents" Directory="EXTRACTFOLDER">
+			<Component>
+				<File Source="..\SetupOutput\BrowserGuardSetup-$(var.Version).exe" />
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>

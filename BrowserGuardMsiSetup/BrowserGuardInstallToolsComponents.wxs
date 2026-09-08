@@ -1,0 +1,11 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<Fragment>
+		<!-- Kept installed for the life of the package, because it is what runs
+		     when the package is removed. -->
+		<ComponentGroup Id="BrowserGuardToolsComponents" Directory="INSTALLFOLDER">
+			<Component>
+				<File Source=".\tools\uninstall-exe-package.cmd" />
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>

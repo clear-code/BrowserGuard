@@ -1,0 +1,49 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<!-- ProductCode is left out on purpose, so that WiX generates a new one for
+	     every build. A pinned ProductCode would make MajorUpgrade unreachable:
+	     MSI would read the next version as the same product. -->
+	<Package Name="BrowserGuard" Manufacturer="ClearCode Inc." Version="$(var.Version)"
+			 UpgradeCode="390BAE83-8789-4D2C-BDCF-085335FA8E79">
+		<MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+		<Media Id="1" EmbedCab="yes" Cabinet="cab1.cab" />
+		<Feature Id="Main">
+			<ComponentGroupRef Id="BrowserGuardExeSetupComponents" />
+			<ComponentGroupRef Id="BrowserGuardToolsComponents" />
+		</Feature>
+
+		<!-- The Inno Setup installer is what appears in Programs and Features;
+		     this package would otherwise be listed alongside it. -->
+		<Property Id="ARPSYSTEMCOMPONENT" Value="1" />
+		<!-- Extra command line for the Inno Setup installer, e.g.
+		     msiexec /i BrowserGuardSetup-1.0.0.0.msi INNO_SETUP_ARGS="/TASKS=extensionpolicy" -->
+		<Property Id="INNO_SETUP_ARGS" Value=" " />
+		<Property Id="UNINSTALL_EXE_PACKAGE" Value="yes" />
+
+		<!-- Impersonate="no" so these run as the system account. A deferred
+		     action would otherwise run as the user who started the install,
+		     who need not be an administrator, and the Inno Setup installer
+		     writes to HKLM and Program Files.
+		     SUPPRESSMSGBOXES and NORESTART matter because a prompt nobody can
+		     answer would leave the install waiting for good. -->
+		<CustomAction Id="RunExeInstaller"
+		  Directory="EXTRACTFOLDER"
+		  ExeCommand='"[EXTRACTFOLDER]BrowserGuardSetup-$(var.Version).exe" /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART [INNO_SETUP_ARGS]'
+		  Execute="deferred"
+		  Impersonate="no"
+		  Return="check" />
+
+		<CustomAction Id="UninstallExePackage"
+		  Directory="INSTALLFOLDER"
+		  ExeCommand='"[INSTALLFOLDER]uninstall-exe-package.cmd"'
+		  Execute="deferred"
+		  Impersonate="no"
+		  Return="ignore" />
+
+		<InstallExecuteSequence>
+			<!-- Before RemoveFiles, while the script that does it is still there.
+			     Not on a major upgrade: the new version installs over it. -->
+			<Custom Action="UninstallExePackage" Before="RemoveFiles" Condition='UNINSTALL_EXE_PACKAGE = "yes" AND REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE' />
+			<Custom Action="RunExeInstaller" After="InstallFiles" Condition='(NOT Installed) OR REINSTALL' />
+		</InstallExecuteSequence>
+	</Package>
+</Wix>

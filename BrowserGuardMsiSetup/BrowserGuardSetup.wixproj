@@ -1,0 +1,9 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+    <OutputName>$(MSBuildProjectName)-$(Version)</OutputName>
+    <DefineConstants>Version=$(Version)</DefineConstants>
+    <!-- Don't produce .wixpdb files for release builds, they are not shipped. -->
+    <SuppressPdbOutput Condition=" '$(Configuration)' == 'Release' ">true</SuppressPdbOutput>
+  </PropertyGroup>
+</Project>

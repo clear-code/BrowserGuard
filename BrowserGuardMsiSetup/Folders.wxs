@@ -1,0 +1,12 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<Fragment>
+		<StandardDirectory Id="ProgramFiles6432Folder">
+			<Directory Id="INSTALLFOLDER" Name="BrowserGuardInstallTools">
+			</Directory>
+		</StandardDirectory>
+		<StandardDirectory Id="TempFolder">
+			<Directory Id="EXTRACTFOLDER" Name="BrowserGuard">
+			</Directory>
+		</StandardDirectory>
+	</Fragment>
+</Wix>
