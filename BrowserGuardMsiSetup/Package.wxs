@@ -1,9 +1,12 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-	<!-- ProductCode is left out on purpose, so that WiX generates a new one for
-	     every build. A pinned ProductCode would make MajorUpgrade unreachable:
-	     MSI would read the next version as the same product. -->
+	<!-- ProductCode is pinned because BrowserGuard.iss has to name it: removing
+	     the Inno Setup package on its own would otherwise leave this one behind.
+	     It must still differ from one version to the next, or MajorUpgrade never
+	     fires and MSI reads the new version as the same product. bump-version.ps1
+	     generates a new one and writes it to both files. -->
 	<Package Name="BrowserGuard" Manufacturer="ClearCode Inc." Version="$(var.Version)"
-			 UpgradeCode="390BAE83-8789-4D2C-BDCF-085335FA8E79">
+			 UpgradeCode="390BAE83-8789-4D2C-BDCF-085335FA8E79"
+			 ProductCode="E039FF7F-1CD4-42D7-A254-0ADD92E6517D">
 		<MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
 		<Media Id="1" EmbedCab="yes" Cabinet="cab1.cab" />
 		<Feature Id="Main">

@@ -92,6 +92,7 @@ const
   // hand or by a group policy is not removed on uninstall.
   OwnKey = 'Software\BrowserGuard';
   RegisteredFlag = 'ExtensionSettingsRegistered';
+  MsiProductCode = '{E039FF7F-1CD4-42D7-A254-0ADD92E6517D}';
 
 function GetProgramFiles(Param: string): string;
   begin
@@ -215,6 +216,29 @@ begin
   end;
 end;
 
+function MsiPackageInstalled(): Boolean;
+begin
+  Result := RegKeyExists(HKEY_LOCAL_MACHINE,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + MsiProductCode);
+end;
+
+procedure UninstallMsiPackage();
+var
+  ResultCode: Integer;
+begin
+  if ExpandConstant('{param:UninstallMsiPackage|yes}') <> 'yes' then
+    Exit;
+  if not MsiPackageInstalled() then
+    Exit;
+
+  if not Exec('msiexec.exe',
+              '/x ' + MsiProductCode + ' /qn UNINSTALL_EXE_PACKAGE=no',
+              '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    Log('Cannot start msiexec.exe')
+  else if ResultCode <> 0 then
+    Log('msiexec returned ' + IntToStr(ResultCode) + ' for ' + MsiProductCode);
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Flag: String;
@@ -227,4 +251,5 @@ begin
     if Flag = '1' then
       UnregisterExtensionSettings();
   end;
+  UninstallMsiPackage();
 end;

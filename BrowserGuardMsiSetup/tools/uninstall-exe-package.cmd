@@ -18,6 +18,6 @@ reg query "%~1" /v UninstallString %2 >nul 2>&1
 if not %errorlevel% equ 0 exit /b 0
 for /f "tokens=2*" %%A in ('reg query "%~1" /v UninstallString %2') do set "UNINSTALL_PATH=%%B"
 if not defined UNINSTALL_PATH exit /b 0
-call !UNINSTALL_PATH! /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+call !UNINSTALL_PATH! /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /UninstallMsiPackage=no
 set "UNINSTALL_PATH="
 exit /b 0
