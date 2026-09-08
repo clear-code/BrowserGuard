@@ -3,6 +3,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { i18n } from './i18n-stub.js';
+
 import { UploadGuard } from '../edge/upload-guard.js';
 
 // A blocked upload is reported through net-logger, which reaches the host over
@@ -12,6 +14,7 @@ const reported = [];
 const warnings = [];
 
 globalThis.chrome = {
+  i18n,
   runtime: {
     sendNativeMessage: (_server, payload) => {
       if (payload?.message?.startsWith('W ')) {
@@ -78,7 +81,7 @@ describe('getBlockReason', () => {
   it('blocks a blocked extension', () => {
     configure({ BlockedExtensions: ['.exe', '.bat'] });
 
-    assert.equal(UploadGuard.getBlockReason('C:\\a\\setup.exe'), '禁止された拡張子です');
+    assert.equal(UploadGuard.getBlockReason('C:\\a\\setup.exe'), 'blockedExtension');
     assert.equal(UploadGuard.getBlockReason('C:\\a\\notes.txt'), null);
   });
 
@@ -86,7 +89,7 @@ describe('getBlockReason', () => {
     configure({ AllowedExtensions: ['.pdf', '.docx'] });
 
     assert.equal(UploadGuard.getBlockReason('C:\\a\\report.pdf'), null);
-    assert.equal(UploadGuard.getBlockReason('C:\\a\\notes.txt'), '許可された拡張子ではありません');
+    assert.equal(UploadGuard.getBlockReason('C:\\a\\notes.txt'), 'extensionNotAllowed');
   });
 
   it('allows only the listed paths once AllowedPaths is set', () => {
@@ -95,7 +98,7 @@ describe('getBlockReason', () => {
     assert.equal(UploadGuard.getBlockReason('C:\\Users\\taro\\Documents\\a.txt'), null);
     assert.equal(
       UploadGuard.getBlockReason('C:\\Users\\taro\\Desktop\\a.txt'),
-      'アップロードが許可されていない場所のファイルです');
+      'pathNotAllowed');
   });
 
   it('carves a folder back out of an allowed path', () => {
@@ -104,10 +107,10 @@ describe('getBlockReason', () => {
     assert.equal(UploadGuard.getBlockReason('C:\\Users\\taro\\Documents\\a.txt'), null);
     assert.equal(
       UploadGuard.getBlockReason('C:\\Users\\taro\\Documents\\Confidential\\a.txt'),
-      'アップロードが禁止された場所のファイルです');
+      'blockedPath');
     assert.equal(
       UploadGuard.getBlockReason('C:\\Users\\taro\\Documents\\Sub\\Confidential\\a.txt'),
-      'アップロードが禁止された場所のファイルです');
+      'blockedPath');
   });
 
   // The pattern is anchored on path separators, so it must not fire on a file
@@ -135,10 +138,10 @@ describe('getBlockReason', () => {
       BlockedPaths: ['^C:\\\\Secret\\\\'],
     });
 
-    assert.equal(UploadGuard.getBlockReason('C:\\Work\\a.exe'), '禁止された拡張子です');
+    assert.equal(UploadGuard.getBlockReason('C:\\Work\\a.exe'), 'blockedExtension');
     assert.equal(
       UploadGuard.getBlockReason('C:\\Secret\\a.pdf'),
-      'アップロードが禁止された場所のファイルです');
+      'blockedPath');
   });
 });
 
@@ -186,8 +189,10 @@ describe('onBeforeRequest', () => {
     upload('C:\\a\\setup.exe');
 
     const warning = warnings.at(-1);
+    // The dialog carries the sentence from the catalogue, not the code.
     assert.ok(warning.includes('禁止された拡張子です'));
     assert.ok(warning.includes('setup.exe'));
+    assert.ok(!warning.includes('blockedExtension'));
   });
 
   // A script uploading in the background must not be handed a page of markup
@@ -244,8 +249,21 @@ describe('the audit trail', () => {
     assert.equal(entry.operation, 'upload-guard');
     assert.equal(entry.name, 'C:\\tmp\\setup.exe');
     assert.equal(entry.url, 'https://example.com/upload');
-    assert.equal(entry.reason, '禁止された拡張子です');
+    assert.equal(entry.reason, 'blockedExtension');
     assert.equal(entry.timestamp, '2026-08-07 12:34:56');
+  });
+
+  // The log is collected from machines whose browsers may be in any language.
+  // A translated reason would make the same block read differently on each.
+  it('records the reason as a code, not as the sentence shown', async () => {
+    configure({ BlockedPaths: ['\\\\Secret\\\\'] });
+
+    upload('C:\\Secret\\plan.txt');
+
+    const entry = await waitForReport(e => e.name === 'C:\\Secret\\plan.txt');
+    assert.equal(entry.reason, 'blockedPath');
+    assert.ok(!/[\u3040-\u30ff\u4e00-\u9fff]/.test(JSON.stringify(entry)),
+      'nothing in the entry should be translated');
   });
 
   // The report goes out on its own; the upload is refused straight away.

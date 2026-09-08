@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { message } from './i18n.js';
 import { readBoolean, readNumber } from './config-value.js';
 
 // Somewhere ordinary to send a tab that the browser will not close while it is
@@ -88,7 +89,7 @@ export const TabCountLimit = {
 
   async warn() {
     await showDialog(
-      `同時に開くことのできるタブの数は ${this.maxCount} 個までです。`
+      message('tabCountLimitExceededMessage', [String(this.maxCount)])
     );
   }
 }

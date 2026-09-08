@@ -3,6 +3,16 @@
 import { loadConfig } from './config-loader.js';
 import { NetLogger } from './net-logger.js';
 import { showDialog } from './dialog.js';
+import { message } from './i18n.js';
+
+// The reason codes getBlockReason returns, and what each one is called when it
+// has to be read by a person.
+const REASON_MESSAGES = {
+    blockedPath: 'uploadGuardReasonBlockedPath',
+    blockedExtension: 'uploadGuardReasonBlockedExtension',
+    pathNotAllowed: 'uploadGuardReasonPathNotAllowed',
+    extensionNotAllowed: 'uploadGuardReasonExtensionNotAllowed',
+};
 import { readArray, readBoolean } from './config-value.js';
 
 export const UploadGuard = {
@@ -65,23 +75,28 @@ export const UploadGuard = {
         return { redirectUrl: `data:text/html;charset=utf-8,${encodeURIComponent(html)}` };
     },
 
-    // Returns null when the file may be uploaded, otherwise the reason to show.
+    // Returns null when the file may be uploaded, otherwise why it may not.
     getBlockReason(file) {
         if (this.blockedPatterns.some(pattern => pattern.test(file))) {
-            return 'アップロードが禁止された場所のファイルです';
+            return 'blockedPath';
         }
         if (this.hasExtension(file, this.blockedExtensions)) {
-            return '禁止された拡張子です';
+            return 'blockedExtension';
         }
         if (this.allowedPatterns.length > 0 &&
             !this.allowedPatterns.some(pattern => pattern.test(file))) {
-            return 'アップロードが許可されていない場所のファイルです';
+            return 'pathNotAllowed';
         }
         if (this.allowedExtensions.length > 0 &&
             !this.hasExtension(file, this.allowedExtensions)) {
-            return '許可された拡張子ではありません';
+            return 'extensionNotAllowed';
         }
         return null;
+    },
+
+    blockedMessage(file, reason) {
+        return message('uploadGuardBlockedMessage',
+            [file, message(REASON_MESSAGES[reason] ?? reason)]);
     },
 
     onBeforeRequest(details) {
@@ -103,7 +118,7 @@ export const UploadGuard = {
                 NetLogger.record(
                     'upload-guard', part.file, details.url, details.timeStamp, { reason });
                 // Not awaited either: the dialog stands until it is dismissed.
-                showDialog(`アップロードがブロックされました:\n${part.file}\n\n理由: ${reason}`);
+                showDialog(this.blockedMessage(part.file, reason));
                 return this.buildCancelResponse(isMainFrame);
             }
         }

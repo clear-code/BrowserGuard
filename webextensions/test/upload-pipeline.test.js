@@ -3,6 +3,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { i18n } from './i18n-stub.js';
+
 // The guard and the bridge are the real ones: what is being checked is how
 // they are put together, so standing either of them in would check nothing.
 // Only the host is stubbed, which is where the bridge's request for a copy and
@@ -10,6 +12,7 @@ import assert from 'node:assert/strict';
 const asked = [];
 
 globalThis.chrome = {
+  i18n,
   runtime: {
     sendNativeMessage: (_server, payload) => {
       asked.push(payload.message);

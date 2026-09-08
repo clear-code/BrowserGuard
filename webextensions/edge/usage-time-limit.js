@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { message } from './i18n.js';
 import { readBoolean, readNumber } from './config-value.js';
 
 // The service worker is not kept alive, so the deadline is recomputed from
@@ -27,9 +28,11 @@ const ACTIONS = {
   terminate: 'Terminate',
 };
 
-const REASONS = {
-  continuous: '連続して使用できる時間の上限に達しました。',
-  schedule: '使用が許可された時間帯を過ぎています。',
+// The reason codes violationReason returns, and what each one is called when it
+// has to be read by a person.
+const REASON_MESSAGES = {
+  continuous: 'usageTimeLimitReasonContinuous',
+  schedule: 'usageTimeLimitReasonSchedule',
 };
 
 // Local time, to the second: a dialog that names the wait rather than the time
@@ -202,13 +205,13 @@ export const UsageTimeLimit = {
   },
 
   warningText(reason, terminateAt) {
-    const lines = [REASONS[reason] ?? '使用時間の制限を超過しました。'];
+    const lines = [message(REASON_MESSAGES[reason] ?? 'usageTimeLimitReasonUnknown')];
     if (!terminateAt) {
-      lines.push('作業中の内容を保存して、ブラウザーを終了してください。');
+      lines.push(message('usageTimeLimitSaveAndQuit'));
       return lines.join('\n');
     }
-    lines.push(`${formatClock(terminateAt)} にブラウザーを終了します。`);
-    lines.push('作業中の内容をすぐに保存してください。');
+    lines.push(message('usageTimeLimitTerminatesAt', [formatClock(terminateAt)]));
+    lines.push(message('usageTimeLimitSaveNow'));
     return lines.join('\n');
   },
 

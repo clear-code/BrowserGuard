@@ -2,6 +2,7 @@
 
 import { loadConfig } from './config-loader.js';
 import { showDialog } from './dialog.js';
+import { message } from './i18n.js';
 import { readArray, readBoolean } from './config-value.js';
 
 export const SettingPageFilter = {
@@ -34,8 +35,7 @@ export const SettingPageFilter = {
   },
 
   warningText(blockedUrl) {
-    return `アクセスがブロックされました:\n${blockedUrl}\n\n` +
-      '拡張機能のポリシーにより、このページは表示できません。';
+    return message('settingPageFilterBlockedMessage', [blockedUrl]);
   },
 
   // Taken once the navigation has committed rather than before it. A blocking

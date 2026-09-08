@@ -3,6 +3,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { i18n } from './i18n-stub.js';
+
 // usage-time-limit reaches for chrome.* when it warns or closes the browser,
 // so a stub stands in for the browser and records what it was asked to do.
 // The warning is a dialog the native host puts up, so nothing here opens a tab.
@@ -11,6 +13,7 @@ let session = {};
 let openWindows = [];
 
 globalThis.chrome = {
+  i18n,
   runtime: {
     sendNativeMessage: (server, payload) => {
       calls.warned.push({ server, ...payload });

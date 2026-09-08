@@ -1,4 +1,38 @@
 {
 	"extName": { "message": "BrowserGuard" },
-	"extDescription": { "message": "BrowserGuard for Edge" }
+	"extDescription": { "message": "BrowserGuard for Edge" },
+	"uploadGuardBlockedMessage": {
+		"message": "アップロードがブロックされました:\n$FILE$\n\n理由: $REASON$",
+		"placeholders": {
+			"file": { "content": "$1", "example": "C:\\Users\\taro\\Documents\\report.pdf" },
+			"reason": { "content": "$2", "example": "禁止された拡張子です" }
+		}
+	},
+	"uploadGuardReasonBlockedPath": { "message": "アップロードが禁止された場所のファイルです" },
+	"uploadGuardReasonBlockedExtension": { "message": "禁止された拡張子です" },
+	"uploadGuardReasonPathNotAllowed": { "message": "アップロードが許可されていない場所のファイルです" },
+	"uploadGuardReasonExtensionNotAllowed": { "message": "許可された拡張子ではありません" },
+	"settingPageFilterBlockedMessage": {
+		"message": "アクセスがブロックされました:\n$URL$\n\n拡張機能のポリシーにより、このページは表示できません。",
+		"placeholders": {
+			"url": { "content": "$1", "example": "edge://settings/privacy" }
+		}
+	},
+	"tabCountLimitExceededMessage": {
+		"message": "同時に開くことのできるタブの数は $COUNT$ 個までです。",
+		"placeholders": {
+			"count": { "content": "$1", "example": "20" }
+		}
+	},
+	"usageTimeLimitReasonContinuous": { "message": "連続して使用できる時間の上限に達しました。" },
+	"usageTimeLimitReasonSchedule": { "message": "使用が許可された時間帯を過ぎています。" },
+	"usageTimeLimitReasonUnknown": { "message": "使用時間の制限を超過しました。" },
+	"usageTimeLimitSaveAndQuit": { "message": "作業中の内容を保存して、ブラウザーを終了してください。" },
+	"usageTimeLimitTerminatesAt": {
+		"message": "$TIME$ にブラウザーを終了します。",
+		"placeholders": {
+			"time": { "content": "$1", "example": "18:00:00" }
+		}
+	},
+	"usageTimeLimitSaveNow": { "message": "作業中の内容をすぐに保存してください。" }
 }

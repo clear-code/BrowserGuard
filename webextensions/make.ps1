@@ -172,12 +172,25 @@ function Copy-ExtensionFile([string]$Destination) {
 }
 
 # Rename the dev edition so it can be installed alongside the production one.
+#
+# Only the two messages that name the extension are touched. The catalogue also
+# holds the sentences shown to the user, and some of those name the product too:
+# replacing the name everywhere would put "BrowserGuard Enterprise Developer
+# Edition" in the middle of them.
 function Rename-ToDevEdition([string]$Directory) {
     $localeDir = Join-Path $Directory '_locales'
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     Get-ChildItem -Path $localeDir -Recurse -Filter 'messages.json' -File | ForEach-Object {
         $text = [System.IO.File]::ReadAllText($_.FullName, [System.Text.Encoding]::UTF8)
-        $text = $text -replace 'BrowserGuard', $DevNameSuffix
+        foreach ($key in 'extName', 'extDescription') {
+            $pattern = '("' + $key + '"\s*:\s*\{\s*"message"\s*:\s*")([^"]*)(")'
+            $text = [regex]::Replace($text, $pattern, {
+                param($found)
+                $found.Groups[1].Value +
+                ($found.Groups[2].Value -replace 'BrowserGuard', $DevNameSuffix) +
+                $found.Groups[3].Value
+            })
+        }
         [System.IO.File]::WriteAllText($_.FullName, $text, $utf8NoBom)
     }
 }

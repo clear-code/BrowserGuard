@@ -3,6 +3,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { i18n } from './i18n-stub.js';
+
 // tab-count-limit reaches for chrome.* when it counts the tabs, closes them or
 // warns, so a stub stands in for the browser and records what it was asked to
 // do.
@@ -20,6 +22,7 @@ function findTab(tabId) {
 }
 
 globalThis.chrome = {
+  i18n,
   runtime: {
     getURL: path => `chrome-extension://testid/${path}`,
     // The host answers only once the user has dismissed the dialog.

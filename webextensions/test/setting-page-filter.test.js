@@ -3,12 +3,15 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { i18n } from './i18n-stub.js';
+
 // setting-page-filter reaches for chrome.* when it blocks something, so a stub
 // stands in for the browser and records what it was asked to do. The warning is
 // a dialog the native host puts up.
 const calls = { updates: [], goBacks: [], warned: [] };
 
 globalThis.chrome = {
+  i18n,
   runtime: {
     sendNativeMessage: (server, payload) => {
       calls.warned.push({ server, ...payload });
