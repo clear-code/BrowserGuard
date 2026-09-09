@@ -19,6 +19,7 @@ Microsoft Edge 向けのブラウザー拡張機能と、それと通信する�
 | Node.js 20 以降 | 拡張機能の lint とパッケージング | |
 | Microsoft Edge | crx の署名・パッケージング | `msedge.exe --pack-extension` を使用 |
 | Inno Setup 6 | インストーラーのコンパイル | `ISCC.exe` |
+| WiX Toolset | MSI パッケージのビルド | NuGet から自動で復元されるため、個別のインストールは不要 |
 
 ## 署名鍵の配置
 
@@ -44,12 +45,14 @@ make.bat
 2. 拡張機能の lint と zip 作成
 3. crx の署名・作成
 4. インストーラーのコンパイル
+5. MSI パッケージのビルド
 
 ### 生成物
 
 | パス | 内容 |
 | --- | --- |
 | `SetupOutput\BrowserGuardSetup-<バージョン>.exe` | インストーラー |
+| `SetupOutput\msi\ja\BrowserGuardSetup-<バージョン>.msi` | MSI パッケージ (日本語) |
 | `BrowserGuard\bin\Release\net8.0\publish\win-x64\` | ホスト (自己完結型 / win-x64) |
 | `webextensions\BrowserGuardEdge.zip` | 拡張機能 (製品版) |
 | `webextensions\BrowserGuardEdgeDev.zip` | 拡張機能 (開発版・名称が異なる) |
@@ -99,6 +102,19 @@ make.bat help
 ```
 
 crx と zip を先に作っておく必要があります。
+
+### MSI パッケージ
+
+```bash
+dotnet build BrowserGuardMsiSetup\BrowserGuardSetup.sln -c Release -p:Platform=x64
+```
+
+MSI はインストーラーの exe を同梱して実行する形式のため、
+`SetupOutput\BrowserGuardSetup-<バージョン>.exe` を先に作っておく必要があります。
+
+出力先は `BrowserGuardMsiSetup\bin\x64\Release\<カルチャ>\` です。
+`make.bat` はこのうち日本語版を `SetupOutput\msi\ja\` に配置します。
+英語版 (`en-US`) も同時に生成されますが、既定では配置されません。
 
 ## テスト
 
