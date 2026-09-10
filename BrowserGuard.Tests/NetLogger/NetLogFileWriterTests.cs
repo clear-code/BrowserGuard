@@ -346,20 +346,28 @@ namespace BrowserGuard.Tests.NetLogger
         [Fact]
         public void WaitsForAReaderRatherThanLosingTheEntry()
         {
-            var writer = Writer();
+            var writer = new NetLogFileWriter(
+                new NetLogFileConfig { Enabled = true, Directory = tempDir },
+                writeAttempts: 200);
             writer.Write(Entry("browsing"));
 
-            using (var held = new FileStream(
-                LogPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            var held = new FileStream(LogPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            // A thread of its own, so a starved thread pool cannot hold the file
+            // open any longer than intended.
+            var releasing = new Thread(() =>
             {
-                var releasing = Task.Run(() =>
-                {
-                    Thread.Sleep(150);
-                    held.Dispose();
-                });
+                Thread.Sleep(150);
+                held.Dispose();
+            });
+            releasing.Start();
 
+            try
+            {
                 Assert.Null(writer.Write(Entry("download")));
-                releasing.Wait();
+            }
+            finally
+            {
+                releasing.Join();
             }
 
             Assert.Equal(2, File.ReadAllLines(LogPath).Length);

@@ -30,7 +30,7 @@ namespace BrowserGuard.NetLogger
         internal const string FileExtension = ".jsonl";
         private const string DayFormat = "yyyy-MM-dd";
 
-        private const int WriteAttempts = 10;
+        private const int DefaultWriteAttempts = 10;
         private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(50);
 
         private readonly object gate = new();
@@ -40,13 +40,18 @@ namespace BrowserGuard.NetLogger
         // Bytes at which a day is split, or 0 to leave it whole.
         private readonly long maxSize;
         private readonly Logger? logger;
+        private readonly int writeAttempts;
 
-        internal NetLogFileWriter(NetLogFileConfig config, Logger? logger = null)
+        // The attempts are an argument so that a test holding the file can
+        // outlast a slow machine without the writer giving up first.
+        internal NetLogFileWriter(
+            NetLogFileConfig config, Logger? logger = null, int writeAttempts = DefaultWriteAttempts)
         {
             directory = NetLogDirectory.Resolve(config.Directory);
             maxDays = Math.Max(0, config.MaxDays);
             maxSize = Math.Max(0, config.MaxSizeMB) * 1024L * 1024L;
             this.logger = logger;
+            this.writeAttempts = Math.Max(1, writeAttempts);
         }
 
         internal string FilePath => Path.Combine(directory, FileNameBase + FileExtension);
@@ -89,7 +94,7 @@ namespace BrowserGuard.NetLogger
                         writer.WriteLine(line);
                         return null;
                     }
-                    catch (IOException) when (attempt < WriteAttempts)
+                    catch (IOException) when (attempt < writeAttempts)
                     {
                         // Something holds the file for a moment: a tool copying
                         // the log, or a virus scanner. Anything that opens it the
