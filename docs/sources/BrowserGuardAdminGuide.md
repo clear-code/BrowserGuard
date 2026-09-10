@@ -75,25 +75,25 @@ BrowserGuard は以下の 3 つで構成されます。
 各コンポーネントの関係は以下の通りです。
 
 ```
-   ┌──────────────────────────── Microsoft Edge ────────────────────────────┐
-   │                                                                        │
-   │   ┌────────────────────┐                                               │
-   │   │  BrowserGuard      │                                               │
-   │   │  拡張機能          │                                               │
-   │   │  (service worker)  │                                               │
-   │   └─────────┬──────────┘                                               │
-   │             │ ネイティブメッセージング (標準入出力)                    │
-   └─────────────┼──────────────────────────────────────────────────────────┘
-                 │
-      ┌──────────┴───────────┐        ┌──────────────────────┐
-      │  BrowserGuard.exe    │───────▶│  BrowserGuard.json   │
-      │  (ホスト)            │  読込  │  (設定ファイル)      │
-      └──────────┬───────────┘        └──────────────────────┘
-                 │
-      ┌──────────┴──────────┬────────────────┬────────────────────┐
-      ▼                     ▼                ▼                    ▼
-  監査ログ             収集サーバー     アップロード         起動時に実行する
-  (netlog.jsonl)       (HTTP POST)      ファイルの控え       プログラム
+ ┌──────────────────────────── Microsoft Edge ──────────────────────┐
+ │                                                                    │
+ │   ┌────────────────────┐                                           │
+ │   │  BrowserGuard      │                                           │
+ │   │  拡張機能          │                                           │
+ │   │  (service worker)  │                                           │
+ │   └─────────┬──────────┘                                           │
+ │              │ ネイティブメッセージング (標準入出力)               │
+ └─────────────┼────────────────────────────────────────────────────┘
+               │
+    ┌──────────┴───────────┐        ┌──────────────────────┐
+    │  BrowserGuard.exe    │───────▶│  BrowserGuard.json   │
+    │  (ホスト)            │  読込  │  (設定ファイル)      │
+    └──────────┬───────────┘        └──────────────────────┘
+               │
+    ┌──────────┴──────────┬────────────────┬────────────────────┐
+    ▼                     ▼                ▼                    ▼
+監査ログ             収集サーバー     アップロード         起動時に実行する
+(netlog.jsonl)       (HTTP POST)      ファイルの控え       プログラム
 ```
 
 動作の流れは以下の通りです。
@@ -239,20 +239,21 @@ Edge のポリシー `ExtensionSettings` への登録が別途必要です。
 ```
 HKLM\SOFTWARE\Policies\Microsoft\Edge
   ExtensionSettings (REG_SZ) =
-    {"<拡張機能ID>":{"installation_mode":"force_installed",
-     "update_url":"file:///<インストール先>/BrowserGuardExtension/manifest.xml",
-     "override_update_url":true}}
+    {"ddniogodiahgpmfkljajobgkaecabnif":
+     {"installation_mode":"force_installed",
+      "update_url":"file:///C:/Program Files/BrowserGuard/
+                    BrowserGuardExtension/manifest.xml",
+      "override_update_url":true}}
 ```
 
 ■ `ExtensionInstallForcelist` ではなく `ExtensionSettings` を使うのは、
   `ExtensionInstallForcelist` の `update_url` が初回インストールにしか使われないためです。
-  更新時には拡張機能自身の `manifest.json` の `update_url` が参照されますが、
-  自己ホストのビルドにはそれがありません。
-  `override_update_url` を指定した `ExtensionSettings` であれば、更新時にもこの URL が使われます。
 
 ■ `ExtensionSettings` は全拡張機能をひとつの JSON 値で表します。
   インストーラーは既存の内容を読み込んだうえで、この拡張機能の項目だけを追加・削除します。
   他の拡張機能の設定は保持されます。
+
+■ `update_url` は実際のインストール先の `manifest.xml` が使用されます。
 
 ## 動作の確認
 
@@ -439,7 +440,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
   "override_update_url":true}}
 ```
 
-* `update_url` はインストール先に合わせて読み替えます。
+* `update_url` はインストール先に合わせて変更してください。
   区切りは `\` ではなく `/` を使います。
 
 6. グループポリシー管理ツールを閉じます。
