@@ -21,6 +21,7 @@ PANDOC_OPT_PDF= -N --toc-depth=2 --table-of-contents \
                 -V header-right=" " \
                 -V table-use-row-colors=true \
                 -H deeplists.tex \
+                -H codeblocks.tex \
                 --pdf-engine=xelatex
 
 all: BrowserGuardAdminGuide BrowserGuardUserGuide

@@ -241,8 +241,7 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
   ExtensionSettings (REG_SZ) =
     {"ddniogodiahgpmfkljajobgkaecabnif":
      {"installation_mode":"force_installed",
-      "update_url":"file:///C:/Program Files/BrowserGuard/
-                    BrowserGuardExtension/manifest.xml",
+      "update_url":"file:///C:/Program Files/BrowserGuard/BrowserGuardExtension/manifest.xml",
       "override_update_url":true}}
 ```
 
