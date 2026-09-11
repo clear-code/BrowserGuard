@@ -1146,11 +1146,43 @@ msiexec /x BrowserGuardSetup-<バージョン>.msi /qn
   監査ログが有効であれば記録されます。
   通常の閲覧ではなく、拒否または失敗した操作の記録であるためです。
 
+### `reason` の値
+
+`upload-guard` の `reason` には、以下のいずれかのコードが記録されます。
+ユーザーのダイアログには、対応する文言が表示言語で表示されます。
+
+| `reason` | 中止した理由 | ダイアログの文言（日本語） |
+| --- | --- | --- |
+| `blockedPath` | `BlockedPaths` に一致した | アップロードが禁止された場所のファイルです |
+| `blockedExtension` | `BlockedExtensions` に一致した | 禁止された拡張子です |
+| `pathNotAllowed` | `AllowedPaths` のいずれにも一致しなかった | アップロードが許可されていない場所のファイルです |
+| `extensionNotAllowed` | `AllowedExtensions` のいずれにも一致しなかった | 許可された拡張子ではありません |
+
+■ 複数の条件に当てはまる場合は、表の上にあるものが記録されます。
+
+`upload-file-bridge` の `reason` には、控えを残さなかった理由がホストによって英語の文で記録されます。
+対象外として除外した場合と、コピーに失敗した場合のどちらもこの形式です。
+
+| 状況 | `reason` の例 |
+| --- | --- |
+| `Destination` が未設定 | `no destination is configured` |
+| `BlockedUrls` に一致した | `uploads to https://example.com/upload are not kept` |
+| `AllowedUrls` のいずれにも一致しなかった | `uploads to https://example.com/upload are not among those kept` |
+| `BlockedExtensions` に一致した | `C:\Users\taro\Desktop\memo.tmp has an extension that is not kept` |
+| `AllowedExtensions` のいずれにも一致しなかった | `C:\Users\taro\Desktop\memo.txt does not have an extension that is kept` |
+| `MaxSizeMB` を超えた | `C:\Users\taro\Desktop\movie.mp4 is 157286400 bytes, over the 100 MB limit` |
+| 転送先のフォルダーを作成できなかった | `cannot create \\fileserver\audit\PC-0123: ...` |
+| コピーに失敗した | `cannot copy C:\Users\taro\Desktop\report.xlsx to \\fileserver\audit\PC-0123\report.xlsx: ...` |
+
+■ `...` の部分には、OS が返したエラーメッセージがそのまま入ります。
+  文面は固定ではないため、集計や検索にはこの文字列の完全一致ではなく、先頭の語句などを用いてください。
+
 ### 記録例
 
 ```json
 {"operation":"browsing","name":"社内ポータル","url":"https://portal.example.jp/","timestamp":"2026-09-07 10:12:33","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
-{"operation":"upload-guard","name":"C:\\Users\\taro\\Desktop\\tool.exe","url":"https://example.com/upload","timestamp":"2026-09-07 10:15:02","reason":"禁止された拡張子です","host":"PC-0123","user":"EXAMPLE\\taro","session":1}
+{"operation":"upload-guard","name":"C:\\Users\\taro\\Desktop\\tool.exe","url":"https://example.com/upload","timestamp":"2026-09-07 10:15:02","reason":"blockedExtension","host":"PC-0123","user":"EXAMPLE\\taro","session":1}
+{"operation":"upload-file-bridge","name":"C:\\Users\\taro\\Desktop\\memo.tmp","url":"https://example.com/upload","timestamp":"2026-09-07 10:16:40","reason":"C:\\Users\\taro\\Desktop\\memo.tmp has an extension that is not kept","host":"PC-0123","user":"EXAMPLE\\taro","session":1}
 ```
 
 \newpage
