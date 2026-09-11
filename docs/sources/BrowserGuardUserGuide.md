@@ -160,8 +160,64 @@ edge://settings/
 | アップロード | 送信したファイルの名前と送信先 |
 | ダウンロード | 保存したファイルのパスと取得元 |
 | 印刷 | 印刷したページのアドレスとタイトル |
+| ブロックされたアップロード | 送信しようとしたファイルのパス、送信先、ブロックされた理由 |
 
 いずれの記録にも、操作した日時、コンピューター名、ユーザー名が付きます。
+ユーザーの表示名（取得できる場合）と、Windows のセッション番号も付きます。
+
+■ ブロックされたアップロードは、アップロードの記録を行わない設定であっても記録されます。
+
+## 記録の例
+
+監査ログは、1 行に 1 件の操作を JSON 形式で記録したテキストファイル（`netlog.jsonl`）です。
+以下は、ページの表示、ファイルのアップロードとダウンロード、印刷、
+ブロックされたアップロードを行ったときの記録の例です。
+
+```json
+{"operation":"browsing","name":"社内ポータル","url":"https://portal.example.jp/","timestamp":"2026-09-07 10:12:33","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+{"operation":"urlaccess","name":"portal.example.jp","url":"https://portal.example.jp/","timestamp":"2026-09-07 10:12:33","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+{"operation":"upload","name":"見積書.xlsx","url":"https://files.example.jp/upload","timestamp":"2026-09-07 10:14:05","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+{"operation":"download","name":"C:\\Users\\taro\\Downloads\\manual.pdf","url":"https://portal.example.jp/docs/manual.pdf","timestamp":"2026-09-07 10:20:41","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+{"operation":"print","name":"社内ポータル","url":"https://portal.example.jp/","timestamp":"2026-09-07 10:25:10","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+{"operation":"upload-guard","name":"C:\\Users\\taro\\Desktop\\tool.exe","url":"https://files.example.jp/upload","timestamp":"2026-09-07 10:30:02","reason":"blockedExtension","host":"PC-0123","user":"EXAMPLE\\taro","user_displayName":"山田 太郎","session":1}
+```
+
+各項目の意味は次のとおりです。
+
+| 項目 | 内容 |
+| --- | --- |
+| `operation` | 操作の種類（下表） |
+| `name` | ページのタイトル、ファイル名、通信先のホスト名など |
+| `url` | 表示したページ、送信先、取得元などのアドレス |
+| `timestamp` | 操作した日時 |
+| `reason` | ブロックされた理由（ブロックされたアップロードの場合のみ） |
+| `host` | コンピューター名 |
+| `user` | `ドメイン名\ユーザー名` 形式のユーザー名 |
+| `user_displayName` | ユーザーの表示名。取得できない場合は記録されません |
+| `session` | Windows のセッション番号 |
+
+| `operation` | 操作 |
+| --- | --- |
+| `browsing` | ページの表示 |
+| `urlaccess` | 通信先のアドレス |
+| `upload` | アップロード |
+| `download` | ダウンロード |
+| `print` | 印刷 |
+| `upload-guard` | ブロックされたアップロード |
+
+`reason` には、ダイアログに表示された理由に対応する次の値が記録されます。
+
+| `reason` | ダイアログに表示される理由 |
+| --- | --- |
+| `blockedExtension` | 禁止された拡張子です |
+| `extensionNotAllowed` | 許可された拡張子ではありません |
+| `blockedPath` | アップロードが禁止された場所のファイルです |
+| `pathNotAllowed` | アップロードが許可されていない場所のファイルです |
+
+■ ファイルのパスなどに含まれる `\` は、JSON の書式上 `\\` と記録されます。
+
+■ 1 回のページ表示で、ページ内の画像やスクリプトの取得ごとに
+  `urlaccess` の記録が複数残ることがあります。
 
 また、アップロードしたファイルそのものが、システム管理者の指定した保管先へコピーされる場合があります。
 
