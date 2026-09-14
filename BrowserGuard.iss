@@ -71,9 +71,6 @@ Source: "webextensions\BrowserGuardEdge.crx"; DestDir: "{app}\BrowserGuardExtens
 ;Update Manifest
 Source: "Resources\manifest.xml"; DestDir: "{app}\BrowserGuardExtension";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
-[Dirs]
-Name: "{app}";Permissions: users-modify
-
 [Run] 
 Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuardHost\BrowserGuard.exe"" /inheritance:r"; Flags: runhidden shellexec
 Filename: "{sys}\icacls.exe";Parameters: """{app}\BrowserGuardHost\edge.json"" /inheritance:r"; Flags: runhidden shellexec
