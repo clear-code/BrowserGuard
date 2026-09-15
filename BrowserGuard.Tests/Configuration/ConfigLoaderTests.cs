@@ -241,8 +241,8 @@ namespace BrowserGuard.Tests.Configuration
         // procedure whose configuration no longer loads sends them looking for
         // a fault in the product.
         [Theory]
-        [InlineData("docs/testconfig/01_all-disabled.json")]
-        [InlineData("docs/testconfig/02_strict.json")]
+        [InlineData("docs/verify/testconfig/01_all-disabled.json")]
+        [InlineData("docs/verify/testconfig/02_strict.json")]
         public void ParsesTheConfigFilesTheTestProcedureUses(string relativePath)
         {
             var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
