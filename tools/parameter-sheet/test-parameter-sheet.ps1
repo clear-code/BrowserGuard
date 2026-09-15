@@ -113,7 +113,7 @@ try {
     (Get-ParamCell $wb 'T_UsageTimeLimit' 'OnExceeded.Action').Value2 = 'ブラウザーを終了する'
 
     $ranges = Get-Table $wb 'A_UsageTimeLimit_AllowedTimeRanges'
-    $ranges.DataBodyRange.Cells(1, 1).Value2 = '09:00'
+    $ranges.DataBodyRange.Cells(1, 1).Value2 = '9:00'
     $ranges.DataBodyRange.Cells(1, 2).Value2 = '12:00'
     $ranges.DataBodyRange.Cells(2, 1).Value2 = '22:00'
     $ranges.DataBodyRange.Cells(2, 2).Value2 = '02:00'
@@ -146,7 +146,7 @@ try {
 
     Assert-Equal -Label 'OnExceeded.Action が内部値になる' -Expected 'Terminate' -Actual $config.UsageTimeLimit.OnExceeded.Action
     Assert-Equal -Label 'AllowedTimeRanges の件数' -Expected 2 -Actual $config.UsageTimeLimit.AllowedTimeRanges.Count
-    Assert-Equal -Label 'AllowedTimeRanges[0].Start' -Expected '09:00' -Actual $config.UsageTimeLimit.AllowedTimeRanges[0].Start
+    Assert-Equal -Label 'AllowedTimeRanges[0].Start (9:00 が 09:00 にそろう)' -Expected '09:00' -Actual $config.UsageTimeLimit.AllowedTimeRanges[0].Start
     Assert-Equal -Label 'AllowedTimeRanges[1].End (日をまたぐ)' -Expected '02:00' -Actual $config.UsageTimeLimit.AllowedTimeRanges[1].End
 
     Assert-Equal -Label 'Programs の件数' -Expected 1 -Actual $config.StartupLauncher.Programs.Count
@@ -170,7 +170,15 @@ try {
 
     $ranges.DataBodyRange.Cells(1, 1).Value2 = '9時'
     Assert-True -Label '時刻の書式が違えば止まる' -Condition ((Invoke-Macro $xl 'ValidationMessage') -match 'HH:mm')
-    $ranges.DataBodyRange.Cells(1, 1).Value2 = '09:00'
+    $ranges.DataBodyRange.Cells(1, 1).Value2 = '0900'
+    Assert-True -Label '区切りのない 0900 も止まる' -Condition ((Invoke-Macro $xl 'ValidationMessage') -match 'HH:mm')
+    $ranges.DataBodyRange.Cells(1, 1).Value2 = '9:00'
+    Assert-Equal -Label '9:00 は入力チェックを通る' -Expected '' -Actual (Invoke-Macro $xl 'ValidationMessage')
+
+    (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.MaxDays').Value2 = ''
+    Assert-True -Label '数値の欄が空欄なら止まる' `
+        -Condition ((Invoke-Macro $xl 'ValidationMessage') -match 'LocalFile.MaxDays が空欄')
+    (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.MaxDays').Value2 = 90
 
     $programs.DataBodyRange.Cells(2, 2).Value2 = '--only-args'
     Assert-True -Label 'パスのない行があれば止まる' -Condition ((Invoke-Macro $xl 'ValidationMessage') -match '実行ファイルのパス')

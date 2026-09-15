@@ -302,7 +302,7 @@ Private Function CollectProblems() As Collection
         startText = TimeText(lo, CLng(r), 1)
         endText = TimeText(lo, CLng(r), 2)
         If Not IsHourMinute(startText) Or Not IsHourMinute(endText) Then
-            problems.Add "・使用時間の制限: " & r & " 行目の時刻は HH:mm 形式で入力してください。"
+            problems.Add "・使用時間の制限: " & r & " 行目の時刻は H:mm または HH:mm 形式で入力してください。"
         End If
     Next r
 
@@ -314,7 +314,11 @@ Private Sub CheckLong(ByVal problems As Collection, ByVal tableName As String, _
     Dim v As Variant
 
     v = ParamRaw(tableName, paramName)
-    If Trim$(CStr(v & "")) = "" Then Exit Sub
+    ' 空欄は 0 として出力されてしまい、保持日数の 0 (無期限) のように意味が変わるため止める。
+    If Trim$(CStr(v & "")) = "" Then
+        problems.Add "・" & sheetLabel & ": " & paramName & " が空欄です。0 以上の整数を入力してください。"
+        Exit Sub
+    End If
 
     If Not IsNumeric(v) Then
         problems.Add "・" & sheetLabel & ": " & paramName & " には数値を入力してください。"
@@ -324,16 +328,26 @@ Private Sub CheckLong(ByVal problems As Collection, ByVal tableName As String, _
 End Sub
 
 Private Function IsHourMinute(ByVal s As String) As Boolean
+    IsHourMinute = (NormalizeHourMinute(s) <> "")
+End Function
+
+' H:mm または HH:mm を HH:mm に揃える。読めなければ空文字。
+' 時を 1 桁でも受け付けるのは、本体 (usage-time-limit.js の parseTimeOfDay) に合わせるため。
+Private Function NormalizeHourMinute(ByVal s As String) As String
+    Dim p As Long
     Dim hourPart As String
     Dim minutePart As String
 
-    If Len(s) <> 5 Or Mid$(s, 3, 1) <> ":" Then Exit Function
+    p = InStr(s, ":")
+    If p = 0 Then Exit Function
 
-    hourPart = Left$(s, 2)
-    minutePart = Right$(s, 2)
-    If Not IsNumeric(hourPart) Or Not IsNumeric(minutePart) Then Exit Function
+    hourPart = Left$(s, p - 1)
+    minutePart = Mid$(s, p + 1)
+    If Not (hourPart Like "#" Or hourPart Like "##") Then Exit Function
+    If Not (minutePart Like "##") Then Exit Function
+    If CLng(hourPart) > 23 Or CLng(minutePart) > 59 Then Exit Function
 
-    IsHourMinute = (CLng(hourPart) <= 23 And CLng(minutePart) <= 59)
+    NormalizeHourMinute = Format$(CLng(hourPart), "00") & ":" & minutePart
 End Function
 
 
@@ -446,16 +460,18 @@ Private Function CellText(ByVal lo As ListObject, ByVal rowIndex As Long, ByVal 
 End Function
 
 ' 時刻はシリアル値で入ることもあるので、どちらでも HH:mm に揃える。
+' 文字列の "0900" も IsNumeric は真を返すため、数値の型で入っているときだけ時刻として扱う。
 Private Function TimeText(ByVal lo As ListObject, ByVal rowIndex As Long, ByVal colIndex As Long) As String
     Dim v As Variant
 
     v = lo.DataBodyRange.Cells(rowIndex, colIndex).Value
     If Trim$(CStr(v & "")) = "" Then Exit Function
 
-    If IsNumeric(v) Then
+    If VarType(v) = vbDouble Or VarType(v) = vbDate Then
         TimeText = Format$(CDate(v), "hh:nn")
     Else
         TimeText = Trim$(CStr(v))
+        If IsHourMinute(TimeText) Then TimeText = NormalizeHourMinute(TimeText)
     End If
 End Function
 
