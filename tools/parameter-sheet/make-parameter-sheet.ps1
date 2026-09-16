@@ -342,7 +342,7 @@ try {
     $listRow = $row + 4
     Set-SectionLabel -Sheet $ws -Row $listRow -Column 1 -Text '拡張子'
     New-ListTable -Sheet $ws -Row ($listRow + 1) -Column 1 -Name 'L_UploadGuard_BlockedExtensions' `
-        -Header 'ブロックする拡張子' -Items @('.exe', '.bat', '.cmd', '.js', '.vbs') -BlankRows 5 | Out-Null
+        -Header 'ブロックする拡張子' -BlankRows 10 | Out-Null
     New-ListTable -Sheet $ws -Row ($listRow + 1) -Column 3 -Name 'L_UploadGuard_AllowedExtensions' `
         -Header '許可する拡張子' -BlankRows 10 | Out-Null
 

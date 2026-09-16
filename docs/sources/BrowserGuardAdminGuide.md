@@ -851,7 +851,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ```json
 "UploadGuard": {
   "Enabled": true,
-  "BlockedExtensions": [".exe", ".bat", ".cmd", ".js", ".vbs"],
+  "BlockedExtensions": [],
   "AllowedExtensions": [],
   "BlockedPaths": ["\\\\Confidential\\\\"],
   "AllowedPaths": ["^C:\\\\Users\\\\[^\\\\]+\\\\Documents\\\\"]
@@ -861,10 +861,20 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 | パラメータ | データ型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | `Enabled` | 真偽値 | `false` | この機能を有効にする |
-| `BlockedExtensions` | 文字列の配列 | `[".exe", ".bat", ".cmd", ".js", ".vbs"]` | アップロードを禁止する拡張子 |
+| `BlockedExtensions` | 文字列の配列 | `[]` | アップロードを禁止する拡張子 |
 | `AllowedExtensions` | 文字列の配列 | `[]` | アップロードを許可する拡張子 |
 | `BlockedPaths` | 文字列の配列 | `[]` | アップロードを禁止するパス（正規表現） |
 | `AllowedPaths` | 文字列の配列 | `[]` | アップロードを許可するパス（正規表現） |
+
+■ 拡張子では、そのファイルが機密情報を含むかどうかは判断できません。
+  同じ `.xlsx` でも、社外秘のものとそうでないものがあります。
+  そのため既定では拡張子による絞り込みを行いません。
+
+■ 機密情報の持ち出しを抑えるには、ファイルの置き場所で判断する
+  `BlockedPaths` と `AllowedPaths` を使ってください。
+  機密情報は置き場所と対応していることが多く、拡張子よりも実態に合います。
+  実際に何が外に出たかの確認は、「アップロードファイルの控え（UploadFileBridge）」と
+  監査ログの `Upload` で行います。
 
 判定は以下の順に行われ、最初に該当した理由でアップロードを中止します。
 

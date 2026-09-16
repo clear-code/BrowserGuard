@@ -6,7 +6,7 @@ namespace BrowserGuard.UploadGuard
     internal class UploadGuardConfig
     {
         public bool Enabled { get; set; }
-        public string[] BlockedExtensions { get; set; } = [".exe", ".bat", ".cmd", ".js", ".vbs"];
+        public string[] BlockedExtensions { get; set; } = [];
         public string[] AllowedExtensions { get; set; } = [];
         public string[] AllowedPaths { get; set; } = [];
         public string[] BlockedPaths { get; set; } = [];

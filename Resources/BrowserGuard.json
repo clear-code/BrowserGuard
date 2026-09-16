@@ -27,13 +27,7 @@
   },
   "UploadGuard": {
     "Enabled": false,
-    "BlockedExtensions": [
-      ".exe",
-      ".bat",
-      ".cmd",
-      ".js",
-      ".vbs"
-    ],
+    "BlockedExtensions": [],
     "AllowedExtensions": [],
     "AllowedPaths": [],
     "BlockedPaths": []

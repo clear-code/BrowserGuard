@@ -1,5 +1,6 @@
 ﻿using Xunit;
 using BrowserGuard.Configuration;
+using BrowserGuard.UploadGuard;
 
 namespace BrowserGuard.Tests.Configuration
 {
@@ -78,7 +79,22 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Empty(config.UploadGuard.AllowedExtensions);
             Assert.Empty(config.UploadGuard.AllowedPaths);
             Assert.Empty(config.UploadGuard.BlockedPaths);
-            Assert.Equal(new[] { ".exe", ".bat", ".cmd", ".js", ".vbs" }, config.UploadGuard.BlockedExtensions);
+            Assert.Empty(config.UploadGuard.BlockedExtensions);
+        }
+
+        // The shipped files write the key out, so it replaces the default
+        // rather than falling back to it.
+        [Theory]
+        [InlineData("Resources/BrowserGuard.json")]
+        [InlineData("BrowserGuard/BrowserGuard.sample.json")]
+        public void ShippedConfigKeepsTheDefaultBlockedExtensions(string relativePath)
+        {
+            var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            var path = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            var config = ConfigLoader.ParseConf(File.ReadAllText(path));
+
+            Assert.Equal(new UploadGuardConfig().BlockedExtensions, config.UploadGuard.BlockedExtensions);
         }
 
         [Fact]
@@ -397,7 +413,7 @@ namespace BrowserGuard.Tests.Configuration
             Assert.Equal("https://example.com/log", config.NetLogger.Sender.Endpoint);
             // Groups that are absent keep their default values.
             Assert.False(config.UploadGuard.Enabled);
-            Assert.Equal(new[] { ".exe", ".bat", ".cmd", ".js", ".vbs" }, config.UploadGuard.BlockedExtensions);
+            Assert.Empty(config.UploadGuard.BlockedExtensions);
             Assert.False(config.SettingPageFilter.Enabled);
             Assert.Equal(
                 new[] { "edge://settings", "edge://flags", "edge://policy" },
