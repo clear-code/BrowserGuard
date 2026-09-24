@@ -118,6 +118,13 @@ Set-Version -RelativePath 'webextensions\edge\manifest.json' `
     -Replacement "`${1}$Version`${2}" `
     -What 'the extension version'
 
+# Edge only updates a self hosted extension when the update manifest names a
+# version newer than the installed one, so this has to match manifest.json.
+Set-Version -RelativePath 'Resources\manifest.xml' `
+    -Pattern "(<updatecheck\s+[^>]*\bversion=')[^']*(')" `
+    -Replacement "`${1}$Version`${2}" `
+    -What 'the update manifest version'
+
 Set-Version -RelativePath 'BrowserGuardMsiSetup\BrowserGuardSetup.wixproj' `
     -Pattern '(<Version>)[^<]*(</Version>)' `
     -Replacement "`${1}$Version`${2}" `
@@ -129,8 +136,8 @@ Set-Version -RelativePath 'BrowserGuardMsiSetup\Package.wxs' `
     -What 'the example command line' `
     -Optional
 
-Set-Version -RelativePath 'docs\BrowserGuardUserGuide.md' `
-    -Pattern '(?m)^(title:.*\sv)\d+\.\d+(\s*)$' `
+Set-Version -RelativePath 'docs\sources\BrowserGuardUserGuide.md' `
+    -Pattern '(?m)^(title:.*\sv)\d+\.\d+(.*)$' `
     -Replacement "`${1}$short`${2}" `
     -What 'the title version' `
     -Optional
