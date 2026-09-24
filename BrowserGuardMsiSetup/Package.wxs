@@ -18,7 +18,7 @@
 		     this package would otherwise be listed alongside it. -->
 		<Property Id="ARPSYSTEMCOMPONENT" Value="1" />
 		<!-- Extra command line for the Inno Setup installer, e.g.
-		     msiexec /i BrowserGuardSetup-1.0.0.0.msi INNO_SETUP_ARGS="/TASKS=extensionpolicy" -->
+		     msiexec /i ChronosBrowserGuardSetup-1.0.0.0.msi INNO_SETUP_ARGS="/TASKS=extensionpolicy" -->
 		<Property Id="INNO_SETUP_ARGS" Value=" " />
 		<Property Id="UNINSTALL_EXE_PACKAGE" Value="yes" />
 
@@ -30,7 +30,7 @@
 		     answer would leave the install waiting for good. -->
 		<CustomAction Id="RunExeInstaller"
 		  Directory="EXTRACTFOLDER"
-		  ExeCommand='"[EXTRACTFOLDER]BrowserGuardSetup-$(var.Version).exe" /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART [INNO_SETUP_ARGS]'
+		  ExeCommand='"[EXTRACTFOLDER]ChronosBrowserGuardSetup-$(var.Version).exe" /VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART [INNO_SETUP_ARGS]'
 		  Execute="deferred"
 		  Impersonate="no"
 		  Return="check" />

@@ -124,7 +124,7 @@ Set-Version -RelativePath 'BrowserGuardMsiSetup\BrowserGuardSetup.wixproj' `
     -What 'the MSI version'
 
 Set-Version -RelativePath 'BrowserGuardMsiSetup\Package.wxs' `
-    -Pattern '(BrowserGuardSetup-)\d+(?:\.\d+){3}(\.msi)' `
+    -Pattern '(ChronosBrowserGuardSetup-)\d+(?:\.\d+){3}(\.msi)' `
     -Replacement "`${1}$Version`${2}" `
     -What 'the example command line' `
     -Optional

@@ -1,8 +1,8 @@
 @echo off
 rem Removes the Inno Setup package this MSI installed.
 rem
-rem BrowserGuard.iss sets no AppId, so Inno Setup derives the uninstall key from
-rem AppName. Both registry views are tried: the install is 64 bit today, but a
+rem BrowserGuard.iss pins AppId, so Inno Setup names the uninstall key after it
+rem rather than after the display name. Both registry views are tried: the install is 64 bit today, but a
 rem 32 bit build would put the key under WOW6432Node instead.
 
 setlocal enabledelayedexpansion

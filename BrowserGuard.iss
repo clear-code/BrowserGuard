@@ -3,8 +3,8 @@
 #define AppVersion "1.0.0.0"
 
 [Setup]
-AppName=BrowserGuard
-AppVerName=BrowserGuard {#AppVersion}
+AppName=Chronos BrowserGuard
+AppVerName=Chronos BrowserGuard {#AppVersion}
 VersionInfoVersion={#AppVersion}
 AppVersion={#AppVersion}
 AppMutex=BrowserGuardSetup
@@ -13,10 +13,10 @@ DefaultDirName={code:GetProgramFiles}\BrowserGuard
 Compression=lzma2
 SolidCompression=yes
 OutputDir=SetupOutput
-OutputBaseFilename=BrowserGuardSetup-{#AppVersion}
+OutputBaseFilename=ChronosBrowserGuardSetup-{#AppVersion}
 AppPublisher=BrowserGuard
 WizardImageStretch=no
-VersionInfoDescription=BrowserGuardSetup
+VersionInfoDescription=ChronosBrowserGuardSetup
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DefaultGroupName=BrowserGuard

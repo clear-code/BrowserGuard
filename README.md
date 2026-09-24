@@ -51,8 +51,8 @@ make.bat
 
 | パス | 内容 |
 | --- | --- |
-| `SetupOutput\BrowserGuardSetup-<バージョン>.exe` | インストーラー |
-| `SetupOutput\msi\ja\BrowserGuardSetup-<バージョン>.msi` | MSI パッケージ (日本語) |
+| `SetupOutput\ChronosBrowserGuardSetup-<バージョン>.exe` | インストーラー |
+| `SetupOutput\msi\ja\ChronosBrowserGuardSetup-<バージョン>.msi` | MSI パッケージ (日本語) |
 | `BrowserGuard\bin\Release\net8.0\publish\win-x64\` | ホスト (自己完結型 / win-x64) |
 | `webextensions\BrowserGuardEdge.zip` | 拡張機能 (製品版) |
 | `webextensions\BrowserGuardEdgeDev.zip` | 拡張機能 (開発版・名称が異なる) |
@@ -110,7 +110,7 @@ dotnet build BrowserGuardMsiSetup\BrowserGuardSetup.sln -c Release -p:Platform=x
 ```
 
 MSI はインストーラーの exe を同梱して実行する形式のため、
-`SetupOutput\BrowserGuardSetup-<バージョン>.exe` を先に作っておく必要があります。
+`SetupOutput\ChronosBrowserGuardSetup-<バージョン>.exe` を先に作っておく必要があります。
 
 出力先は `BrowserGuardMsiSetup\bin\x64\Release\<カルチャ>\` です。
 `make.bat` はこのうち日本語版を `SetupOutput\msi\ja\` に配置します。
@@ -262,13 +262,13 @@ JSON の操作は `BrowserGuard.exe policy` サブコマンドが行います
 ### サイレントインストール
 
 ```bash
-SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT
+SetupOutput\ChronosBrowserGuardSetup-<バージョン>.exe /VERYSILENT
 ```
 
 この場合もポリシー登録は行われません。登録するには明示的に指定します。
 
 ```bash
-SetupOutput\BrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensionpolicy"
+SetupOutput\ChronosBrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensionpolicy"
 ```
 
 ### 設定ファイル

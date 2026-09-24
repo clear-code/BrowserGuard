@@ -4,7 +4,7 @@
 		     make.bat in the repository root; it lands in SetupOutput. -->
 		<ComponentGroup Id="BrowserGuardExeSetupComponents" Directory="EXTRACTFOLDER">
 			<Component>
-				<File Source="..\SetupOutput\BrowserGuardSetup-$(var.Version).exe" />
+				<File Source="..\SetupOutput\ChronosBrowserGuardSetup-$(var.Version).exe" />
 			</Component>
 		</ComponentGroup>
 	</Fragment>

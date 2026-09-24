@@ -128,8 +128,8 @@ Chronos BrowserGuard は以下の 3 つで構成されます。
 
 | ファイル | 役割 |
 | --- | --- |
-| `BrowserGuardSetup-<バージョン>.exe` | Windows 用インストーラー。拡張機能・ホスト・設定ファイルを配置します。 |
-| `BrowserGuardSetup-<バージョン>.msi` | AD管理向けWindows用インストールパッケージ。上記インストーラーを内包しています。 |
+| `ChronosBrowserGuardSetup-<バージョン>.exe` | Windows 用インストーラー。拡張機能・ホスト・設定ファイルを配置します。 |
+| `ChronosBrowserGuardSetup-<バージョン>.msi` | AD管理向けWindows用インストールパッケージ。上記インストーラーを内包しています。 |
 | `parameter-sheet.xlsm` | パラメータシート。設定内容を記録・管理し、設定ファイルを出力します。 |
 | `parameter-sheet-default.xlsm` | パラメータシートの配布時のデフォルト値。パラメータシートの値を変更しており、デフォルト値を参照したい場合に使用します。 |
 
@@ -183,7 +183,7 @@ Chronos BrowserGuard が「止まっているのに気付かない」状態を�
 ■ インストーラーは開始時に `msedge.exe` と `BrowserGuard.exe` を強制終了します。
   実行前に、保存していない作業がないことを確認してください。
 
-1. `BrowserGuardSetup-<バージョン>.exe` を管理者権限で実行します。
+1. `ChronosBrowserGuardSetup-<バージョン>.exe` を管理者権限で実行します。
 2. タスクの選択画面で「拡張機能を Edge のポリシーに登録して自動的にインストールする」
    にチェックを入れます。
    * 検証環境では、この方法が最も手数が少なくて済みます。
@@ -317,14 +317,14 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
 資産管理ツール、スタートアップスクリプトなどから、以下を管理者権限で実行します。
 
 ```
-BrowserGuardSetup-<バージョン>.exe /VERYSILENT
+ChronosBrowserGuardSetup-<バージョン>.exe /VERYSILENT
 ```
 
 この場合、Edgeの拡張機能のポリシー登録（Edgeの拡張機能の自動登録）は行われません。
 グループポリシーの一元管理によるEdgeの拡張機能の登録を使わず、インストーラーにEdgeの拡張機能を登録させる場合のみ、以下のように指定します。
 
 ```
-BrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensionpolicy"
+ChronosBrowserGuardSetup-<バージョン>.exe /VERYSILENT /TASKS="extensionpolicy"
 ```
 
 ■ インストーラーは開始時に `msedge.exe` を強制終了します。
@@ -339,7 +339,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 サイレント実行します。配置される内容は exe 版インストーラーを直接実行した場合と同じです。
 
 ■ MSI 自体は「プログラムと機能」に表示されません。
-  一覧に表示されるのは内包されたインストーラーの「BrowserGuard」の項目のみです。
+  一覧に表示されるのは内包されたインストーラーの「Chronos BrowserGuard」の項目のみです。
   二重に表示されることを避けるための意図的な設定です。
 
 ■ バージョンアップは、新しい MSI をそのままインストールすれば置き換わります。
@@ -366,10 +366,10 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
    ファイル配布用フォルダー名は `BrowserGuard` を使用すると仮定します。
    この仮定に従い、共有フォルダーの UNC パスは以下のようになります。
    * `\\fileserver\BrowserGuard`
-3. MSI パッケージ（例：`BrowserGuardSetup-1.0.0.0.msi`）を、
+3. MSI パッケージ（例：`ChronosBrowserGuardSetup-1.0.0.0.msi`）を、
    2 で作成したフォルダーにコピーします。
    前述の仮定に従い、ファイルの UNC パスは以下のようになります。
-   * `\\fileserver\BrowserGuard\BrowserGuardSetup-1.0.0.0.msi`
+   * `\\fileserver\BrowserGuard\ChronosBrowserGuardSetup-1.0.0.0.msi`
 4. 配置したファイルの「プロパティ」を開き、「セキュリティ」タブを選択して、
    当該ファイルが「Everyone」で読み取り可能な状態になっていることを確認します。
    * そのようになっていない場合は、「編集」ボタンをクリックし、
@@ -382,7 +382,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 5. グループポリシー管理コンソールを起動します。
 6. Chronos BrowserGuard を使用する対象の OU にリンクされ適用される GPO として、
    インストール用の GPO を作成します。
-   ここでは `BrowserGuardSetup` という名前で作成したと仮定します。
+   ここでは `ChronosBrowserGuardSetup` という名前で作成したと仮定します。
 7. 作成した GPO を右クリックし「編集」を選択し、グループポリシー管理ツールを起動します。
 8. 「コンピューターの構成」
    →「ポリシー」
@@ -395,7 +395,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 9. 左ペインの「ソフトウェアのインストール」もしくは右ペインの空白領域を右クリックして、
    「新規作成」→「パッケージ」を選択します。
 10. ファイル選択ダイアログのファイル名入力欄に、3 で設置した MSI の UNC パス
-    （仮定に倣うと `\\fileserver\BrowserGuard\BrowserGuardSetup-1.0.0.0.msi`）を入力し、
+    （仮定に倣うと `\\fileserver\BrowserGuard\ChronosBrowserGuardSetup-1.0.0.0.msi`）を入力し、
     「開く」ボタンを押します。
     * ■ ドライブレターを割り当てたパスではなく、必ず UNC パスで指定してください。
       インストールは端末側で行われるため、端末から同じパスで参照できる必要があります。
@@ -610,7 +610,7 @@ icacls "C:\Program Files\BrowserGuard\BrowserGuard.json"
 新しい MSI を旧バージョンのパッケージのアップグレードとして登録します。
 
 1. 新しい MSI を、ファイル配布用フォルダーにコピーします。
-   * 例：`\\fileserver\BrowserGuard\BrowserGuardSetup-1.1.0.0.msi`
+   * 例：`\\fileserver\BrowserGuard\ChronosBrowserGuardSetup-1.1.0.0.msi`
    * 旧バージョンの MSI は、まだ削除しないでください。
 2. インストール用の GPO を編集し、「新規作成」→「パッケージ」から
    新しい MSI を UNC パスで追加します。
@@ -654,7 +654,7 @@ MSI パッケージで導入した場合は、MSI の削除でも同じ結果に
 こちらも管理者権限のコマンドプロンプトから実行します。
 
 ```
-msiexec /x BrowserGuardSetup-<バージョン>.msi /qn
+msiexec /x ChronosBrowserGuardSetup-<バージョン>.msi /qn
 ```
 
 ■ `/qn` を指定すると、ユーザーアカウント制御（UAC）の昇格の確認も表示されません。
@@ -663,7 +663,7 @@ msiexec /x BrowserGuardSetup-<バージョン>.msi /qn
 
 ■ どちらか一方を削除すれば、もう一方も併せて削除されます。
   MSI を削除すると内包されたインストーラーがアンインストールされ、
-  「プログラムと機能」から BrowserGuard を削除すると MSI の登録も削除されます。
+  「プログラムと機能」から Chronos BrowserGuard を削除すると MSI の登録も削除されます。
   片方だけが残ることはありません。
 
 アンインストール時の挙動は以下の通りです。
