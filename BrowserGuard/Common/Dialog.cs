@@ -13,7 +13,7 @@ namespace BrowserGuard.Common
         private const uint MB_SETFOREGROUND = 0x00010000;
         private const uint MB_TOPMOST = 0x00040000;
 
-        private const string Caption = "BrowserGuard";
+        private const string Caption = "Chronos BrowserGuard";
 
         // Long enough for a sentence or two; a dialog taller than the screen
         // cannot be dismissed.

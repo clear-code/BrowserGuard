@@ -242,7 +242,7 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
   ExtensionSettings (REG_SZ) =
     {"ddniogodiahgpmfkljajobgkaecabnif":
      {"installation_mode":"force_installed",
-      "update_url":"file:///C:/Program Files/BrowserGuard/BrowserGuardExtension/manifest.xml",
+      "update_url":"file:///C:/Program Files/Chronos/BrowserGuard/BrowserGuardExtension/manifest.xml",
       "override_update_url":true}}
 ```
 
@@ -401,7 +401,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
     * ■ ドライブレターを割り当てたパスではなく、必ず UNC パスで指定してください。
       インストールは端末側で行われるため、端末から同じパスで参照できる必要があります。
 11. 「割り当て済み」を選択し、「OK」ボタンを押します。
-12. 右ペインのパッケージ一覧に「BrowserGuard」が表示されたことを確認し、
+12. 右ペインのパッケージ一覧に「Chronos BrowserGuard」が表示されたことを確認し、
     右クリックして「プロパティ」を選択します。
 13. 「展開」タブを選択して「詳細」ボタンをクリックします。
 14. 「詳細展開オプション」の「このパッケージを展開するときは言語を無視する」に
@@ -440,7 +440,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 ```json
 {"ddniogodiahgpmfkljajobgkaecabnif":
  {"installation_mode":"force_installed",
-  "update_url":"file:///C:/Program Files/BrowserGuard/BrowserGuardExtension/manifest.xml",
+  "update_url":"file:///C:/Program Files/Chronos/BrowserGuard/BrowserGuardExtension/manifest.xml",
   "override_update_url":true}}
 ```
 

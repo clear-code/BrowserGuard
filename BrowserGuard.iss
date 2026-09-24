@@ -14,13 +14,13 @@ Compression=lzma2
 SolidCompression=yes
 OutputDir=SetupOutput
 OutputBaseFilename=ChronosBrowserGuardSetup-{#AppVersion}
-AppPublisher=BrowserGuard
+AppPublisher=Chronos BrowserGuard
 WizardImageStretch=no
 SetupIconFile=Resources\BrowserGuard.ico
 VersionInfoDescription=ChronosBrowserGuardSetup
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-DefaultGroupName=BrowserGuard
+DefaultGroupName=Chronos BrowserGuard
 UninstallDisplayIcon={app}\BrowserGuardHost\BrowserGuard.exe
 
 [Registry]

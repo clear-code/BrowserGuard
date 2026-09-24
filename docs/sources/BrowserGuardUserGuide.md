@@ -51,7 +51,7 @@ Chronos BrowserGuardはシステム管理者によって配布され、Edgeの�
 
 # 表示される警告
 
-Chronos BrowserGuardの警告は、Edgeの画面ではなく、**「BrowserGuard」というタイトルのダイアログ**として表示されます。
+Chronos BrowserGuardの警告は、Edgeの画面ではなく、**「Chronos BrowserGuard」というタイトルのダイアログ**として表示されます。
 ダイアログには「OK」ボタンだけがあり、クリックすると閉じます。
 
 ■ ダイアログを閉じても、制限そのものは取り消されません。
