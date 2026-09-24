@@ -3,12 +3,12 @@ CJKmainfont: Noto Sans CJK JP
 CJKoptions:
   - BoldFont=Noto Sans CJK JP Bold
 title: |
-  BrowserGuard  
+  Chronos BrowserGuard  
   管理者ガイド
-subject: BrowserGuard 管理者ガイド
+subject: Chronos BrowserGuard 管理者ガイド
 date: 2026/09
 author: 株式会社クリアコード
-keywords: [BrowserGuard, Admin Guide]
+keywords: [Chronos BrowserGuard, Admin Guide]
 titlepage: true
 colorlinks: true
 toc-title: 目次
@@ -19,16 +19,16 @@ footnotes-pretty: true
 ---
 
 
-# BrowserGuardとは
+# Chronos BrowserGuardとは
 
-BrowserGuard は、Microsoft Edge の使われ方を組織の方針に沿って制限し、
+Chronos BrowserGuard は、Microsoft Edge の使われ方を組織の方針に沿って制限し、
 その操作を証跡として記録するための Edge 用拡張機能です。
 
 ■ 本書で「■」は補足・注意事項を表します。
 
 ## 主な機能
 
-BrowserGuard は以下の 7 つの機能で構成されます。
+Chronos BrowserGuard は以下の 7 つの機能で構成されます。
 いずれも既定では無効であり、設定ファイルで個別に有効化します。
 
 | 機能 | 内容 |
@@ -64,7 +64,7 @@ Edge の子プロセスとして、ログオンしているユーザーの権限
 
 ## ソフトウェアの構成
 
-BrowserGuard は以下の 3 つで構成されます。
+Chronos BrowserGuard は以下の 3 つで構成されます。
 
 | コンポーネント | 役割 |
 | --- | --- |
@@ -135,7 +135,7 @@ BrowserGuard は以下の 3 つで構成されます。
 
 ## 設定の保持と反映のメカニズム
 
-BrowserGuard の動作を指定するには、設定ファイル（`BrowserGuard.json`）を使用します。
+Chronos BrowserGuard の動作を指定するには、設定ファイル（`BrowserGuard.json`）を使用します。
 
 ■ **ユーザーが設定を変更するための画面はありません。**
   管理者が配布した設定ファイルの内容が、そのまま全ユーザーの動作になります。
@@ -161,7 +161,7 @@ BrowserGuard の動作を指定するには、設定ファイル（`BrowserGuard
 | `ConfigFile` が指すファイルが無い、または JSON として壊れている | ホストがエラーを返します。拡張機能は組み込みの既定値で動作するため、いずれの制限も働きません。 |
 
 いずれの場合も、ブラウザーは通常どおり使用できます。
-BrowserGuard が「止まっているのに気付かない」状態を避けるため、
+Chronos BrowserGuard が「止まっているのに気付かない」状態を避けるため、
 展開後は「動作の確認」の手順で有効性を確認してください。
 
 \newpage
@@ -258,9 +258,9 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
 
 1. Edge を起動します。
 2. `edge://extensions` を開きます。
-   * BrowserGuard が一覧にあり、ポリシーによってインストールされた旨が表示されること。
+   * Chronos BrowserGuard が一覧にあり、ポリシーによってインストールされた旨が表示されること。
 3. `edge://policy` を開きます。
-   * `ExtensionSettings` に BrowserGuard の項目が含まれること。
+   * `ExtensionSettings` に Chronos BrowserGuard の項目が含まれること。
 4. ホストのログ（`%APPDATA%\BrowserGuard\BrowserGuard.log`）を開きます。
    * `Command: load config` の行があること。
      拡張機能がホストと通信し、設定を読めていることを表します。
@@ -300,7 +300,7 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
 
 以下の 3 つを各端末へ配布します。
 
-1. BrowserGuard 本体（インストーラーのサイレント実行、または MSI パッケージ）
+1. Chronos BrowserGuard 本体（インストーラーのサイレント実行、または MSI パッケージ）
 2. 拡張機能のポリシー登録（グループポリシー）
 3. 設定ファイル（グループポリシーによるファイル配布）
 
@@ -350,7 +350,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 ### グループポリシーによる配布
 
 グループポリシーの「ソフトウェアのインストール」を使用すると、
-対象の OU に属する端末へ BrowserGuard を一括でインストールできます。
+対象の OU に属する端末へ Chronos BrowserGuard を一括でインストールできます。
 
 以下の作業は、ドメインコントローラー上またはドメインコントローラーを操作可能な端末上で、
 システム管理者が管理者ユーザーアカウントで実施します。
@@ -358,7 +358,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 1. 導入対象の端末に、同種のブラウザー制御ソフトウェアがインストールされている場合は、
    あらかじめアンインストールします。
    * 動作が干渉して、期待どおりの結果が得られないことがあります。
-   * BrowserGuard の旧バージョンについては、アンインストールは不要です。
+   * Chronos BrowserGuard の旧バージョンについては、アンインストールは不要です。
      新しいバージョンが上書きします。
 2. 全端末からアクセス可能なファイル配布用サーバー上に、
    一般ユーザー権限で読み取り可能な、ファイル配布用フォルダーを作成します。
@@ -380,7 +380,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
    * ■ インストールは端末のコンピューターアカウントで実行されます。
      `Everyone` の代わりに `Domain Computers` に読み取り権限を与える方法でも構いません。
 5. グループポリシー管理コンソールを起動します。
-6. BrowserGuard を使用する対象の OU にリンクされ適用される GPO として、
+6. Chronos BrowserGuard を使用する対象の OU にリンクされ適用される GPO として、
    インストール用の GPO を作成します。
    ここでは `BrowserGuardSetup` という名前で作成したと仮定します。
 7. 作成した GPO を右クリックし「編集」を選択し、グループポリシー管理ツールを起動します。
@@ -407,11 +407,11 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
     チェックを入れて「OK」をクリックします。
     * ■ MSI は言語ごとにビルドされています（`msi\ja` は日本語版です）。
       この操作を省略すると、パッケージの言語と一致しない端末に
-      BrowserGuard がインストールされませんのでご注意ください。
+      Chronos BrowserGuard がインストールされませんのでご注意ください。
     * ■ インストールされるファイルに言語による差異はないため、言語を無視して問題ありません。
 15. グループポリシー管理ツールを閉じます。
 
-以上の操作により、対象の端末を再起動した際に、BrowserGuard が自動的にインストールされます。
+以上の操作により、対象の端末を再起動した際に、Chronos BrowserGuard が自動的にインストールされます。
 
 ■ ソフトウェアのインストールによる配布は、端末の起動時にのみ処理されます。
   `gpupdate` では実行されないため、反映には対象端末の再起動が必要です。
@@ -427,7 +427,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 システム管理者が管理者ユーザーアカウントで実施します。
 
 1. グループポリシー管理コンソールを起動します。
-2. BrowserGuard を使用する対象の OU にリンクされる GPO を作成します。
+2. Chronos BrowserGuard を使用する対象の OU にリンクされる GPO を作成します。
    ここでは `BrowserGuardPolicy` という名前で作成したと仮定します。
 3. 作成した GPO を右クリックし「編集」を選択します。
 4. 「コンピューターの構成」→「ポリシー」→「管理用テンプレート」
@@ -451,17 +451,17 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 ■ 他の拡張機能もこのポリシーで管理している場合は、
   同じ JSON オブジェクト内にそれぞれの項目を並べてください。
   このポリシーは全拡張機能をひとつの値で表すため、
-  BrowserGuard の項目だけを別のポリシー設定として追加することはできません。
+  Chronos BrowserGuard の項目だけを別のポリシー設定として追加することはできません。
 
 \newpage
 
 ## 設定ファイルの配布
 
-BrowserGuard の動作は、インストール先の設定ファイル `BrowserGuard.json` の内容で決まります。
+Chronos BrowserGuard の動作は、インストール先の設定ファイル `BrowserGuard.json` の内容で決まります。
 既定のインストール先は `C:\Program Files\BrowserGuard` です。
 
 システム管理者は、資産管理ツールなどを用いて各端末上のこのファイルを更新することで、
-BrowserGuard の動作を指定できます。
+Chronos BrowserGuard の動作を指定できます。
 ここではその例として、Active Directory のグループポリシーを用いて
 設定ファイルを配布・更新する手順を示します。
 
@@ -489,7 +489,7 @@ BrowserGuard の動作を指定できます。
    * ■ ファイルの配置は端末のコンピューターアカウントで実行されます。
      `Everyone` の代わりに `Domain Computers` に読み取り権限を与える方法でも構いません。
 4. グループポリシー管理コンソールを起動します。
-5. BrowserGuard を使用する対象の OU にリンクされ適用される GPO として、
+5. Chronos BrowserGuard を使用する対象の OU にリンクされ適用される GPO として、
    設定展開用の GPO を作成します。
    ここでは `BrowserGuardConfig` という名前で作成したと仮定します。
    * 「拡張機能のポリシー登録」で作成した GPO に追加しても構いません。
@@ -513,7 +513,7 @@ BrowserGuard の動作を指定できます。
 9. グループポリシー管理ツールを閉じます。
 
 以上の操作により、対象の端末を再起動した際に、
-BrowserGuard の設定ファイルが自動的に展開・更新されるようになります。
+Chronos BrowserGuard の設定ファイルが自動的に展開・更新されるようになります。
 
 ■ 「置換」を指定しているため、この項目は端末の起動時とグループポリシーの更新時に
   毎回適用されます。端末上で設定ファイルが書き換えられていても、
@@ -523,7 +523,7 @@ BrowserGuard の設定ファイルが自動的に展開・更新されるよう�
   インストール先を既定から変更した場合は、手順 8 のターゲットファイルを読み替えてください。
 
 ■ インストールと設定ファイルの配布は、いずれも端末の起動時に処理されますが、
-  処理の順序は保証されません。そのため、**BrowserGuard を導入した直後の起動では、
+  処理の順序は保証されません。そのため、**Chronos BrowserGuard を導入した直後の起動では、
   設定ファイルの配布が行われず、インストーラーが配置した既定の設定のまま動作することがあります。**
   この場合、次回の起動またはグループポリシーの更新時に配布されます。
   導入直後から確実に反映させる必要がある場合は、
@@ -642,7 +642,7 @@ icacls "C:\Program Files\BrowserGuard\BrowserGuard.json"
 ## アンインストール
 
 「設定 > アプリ > インストールされているアプリ」（または「プログラムと機能」）から
-BrowserGuard をアンインストールします。
+Chronos BrowserGuard をアンインストールします。
 サイレント実行する場合は、**管理者権限のコマンドプロンプト**から、
 インストール先の `unins000.exe` に `/VERYSILENT` を指定して実行します。
 
@@ -672,7 +672,7 @@ msiexec /x BrowserGuardSetup-<バージョン>.msi /qn
 | --- | --- |
 | `HKLM\SOFTWARE\BrowserGuard` | 削除されます。 |
 | ネイティブメッセージングホストの登録 | 削除されます。 |
-| `ExtensionSettings` の BrowserGuard の項目 | **インストーラー自身が登録した場合のみ**削除されます。 |
+| `ExtensionSettings` の Chronos BrowserGuard の項目 | **インストーラー自身が登録した場合のみ**削除されます。 |
 | 監査ログ | 削除されません。 |
 | アップロードファイルの控え | 削除されません。 |
 
@@ -1190,7 +1190,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 * 日付が変わった後の最初のエントリで、当日分が `netlog_YYYY-MM-DD.jsonl` として切り替わります。
   ブラウザーが動作していない間に日付が変わった場合も、次のエントリで切り替わります。
 * `MaxDays` を過ぎた `netlog_YYYY-MM-DD.jsonl` は削除されます。
-  保存先にある BrowserGuard 以外のファイルには影響しません。
+  保存先にある Chronos BrowserGuard 以外のファイルには影響しません。
 * 形式は JSON Lines（1 行に 1 つの JSON オブジェクト）です。
   文字エンコーディングは UTF-8（BOM なし）です。
 * 日本語のページタイトルなどは、`\uXXXX` に変換せずそのまま記録されます。
@@ -1374,7 +1374,7 @@ taskkill /F /IM msedge.exe /T
 
 crx を配置しただけでは Edge は拡張機能をインストールしません。
 Edge のポリシー `ExtensionSettings` への登録が別途必要です。
-`edge://policy` を開き、`ExtensionSettings` に BrowserGuard の項目が
+`edge://policy` を開き、`ExtensionSettings` に Chronos BrowserGuard の項目が
 含まれているかを確認してください。
 
 登録手順は「拡張機能の登録」または「拡張機能のポリシー登録」をご参照ください。
@@ -1447,7 +1447,7 @@ Edge のポリシー `ExtensionSettings` への登録が別途必要です。
 
 ## ユーザーが設定を変更できないようにしたい
 
-BrowserGuard にはユーザーが設定を変更するための画面がないため、
+Chronos BrowserGuard にはユーザーが設定を変更するための画面がないため、
 設定画面から変更されることはありません。
 
 また、設定ファイルは既定のインストール先（`C:\Program Files\BrowserGuard`）のアクセス権を引き継ぐため、

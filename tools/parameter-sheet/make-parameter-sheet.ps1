@@ -209,8 +209,8 @@ try {
 
     # ---------------------------------------------------------------- 説明
     $ws = $wb.Worksheets.Item('本パラメータシートについて')
-    $row = Set-SheetHeading -Sheet $ws -Title 'BrowserGuard パラメータシート' -Lines @(
-        '本パラメータシートは、BrowserGuard の設定項目を一元的に定義・管理するための文書です。',
+    $row = Set-SheetHeading -Sheet $ws -Title 'Chronos BrowserGuard パラメータシート' -Lines @(
+        '本パラメータシートは、Chronos BrowserGuard の設定項目を一元的に定義・管理するための文書です。',
         '機能ごとにシートを分けてあり、各シートの「値」列に設定内容を記入します。',
         '記入した内容は「エクスポート」シートのボタンから、BrowserGuard.json として出力できます。'
     )
@@ -264,7 +264,7 @@ try {
     # ------------------------------------------------------------ エクスポート
     $ws = $wb.Worksheets.Item('エクスポート')
     $row = Set-SheetHeading -Sheet $ws -Title 'エクスポート' -Lines @(
-        '各シートに記入した内容を、BrowserGuard の設定ファイル (JSON) として書き出します。'
+        '各シートに記入した内容を、Chronos BrowserGuard の設定ファイル (JSON) として書き出します。'
     )
 
     $button = $ws.Shapes.AddShape($msoShapeRoundedRectangle, 12, 68, 400, 48)

@@ -1,4 +1,4 @@
-# BrowserGuard
+# Chronos BrowserGuard
 
 Microsoft Edge 向けのブラウザー拡張機能と、それと通信するネイティブメッセージングホスト、
 および両者をまとめて配布するインストーラーです。

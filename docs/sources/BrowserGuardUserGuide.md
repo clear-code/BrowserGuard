@@ -2,7 +2,7 @@
 CJKmainfont: Noto Sans CJK JP
 CJKoptions:
   - BoldFont=Noto Sans CJK JP Bold
-title:     BrowserGuard for Edge \newline ユーザーガイド v1.0
+title:     Chronos BrowserGuard for Edge \newline ユーザーガイド v1.0
 author:    株式会社クリアコード
 date:      2026-09
 titlepage: true
@@ -17,12 +17,12 @@ titlepage-rule-height: 2
 ---
 
 
-# BrowserGuardとは
+# Chronos BrowserGuardとは
 
-BrowserGuard for Edge（以下、BrowserGuard）は、業務で使用するMicrosoft Edgeの操作を、
+Chronos BrowserGuard for Edge（以下、Chronos BrowserGuard）は、業務で使用するMicrosoft Edgeの操作を、
 組織の方針に沿って制限・記録するための拡張機能です。
 
-BrowserGuardはシステム管理者によって配布され、Edgeのポリシーによって自動的にインストールされます。
+Chronos BrowserGuardはシステム管理者によって配布され、Edgeのポリシーによって自動的にインストールされます。
 利用者が導入したり、取り外したりする操作は必要ありません。
 
 ## 主な機能
@@ -50,7 +50,7 @@ BrowserGuardはシステム管理者によって配布され、Edgeのポリシ�
 
 # 表示される警告
 
-BrowserGuardの警告は、Edgeの画面ではなく、**「BrowserGuard」というタイトルのダイアログ**として表示されます。
+Chronos BrowserGuardの警告は、Edgeの画面ではなく、**「BrowserGuard」というタイトルのダイアログ**として表示されます。
 ダイアログには「OK」ボタンだけがあり、クリックすると閉じます。
 
 ■ ダイアログを閉じても、制限そのものは取り消されません。
@@ -228,7 +228,7 @@ edge://settings/
 
 # 設定について
 
-BrowserGuardの設定は、**システム管理者が管理します。利用者が変更することはできません。**
+Chronos BrowserGuardの設定は、**システム管理者が管理します。利用者が変更することはできません。**
 
 設定はコンピューター内の設定ファイルに保存されており、その場所はレジストリの
 `HKEY_LOCAL_MACHINE\SOFTWARE\BrowserGuard` の `Configfile` が示しています。
@@ -239,9 +239,9 @@ BrowserGuardの設定は、**システム管理者が管理します。利用者
 
 ## 拡張機能が有効になっていることを確認する
 
-`edge://extensions` を開くと、BrowserGuardが一覧に表示されます。
+`edge://extensions` を開くと、Chronos BrowserGuardが一覧に表示されます。
 
-* 「BrowserGuard」が表示され、有効になっていること
+* 「Chronos BrowserGuard」が表示され、有効になっていること
 * 「このアドオンは管理者によって管理されています」といった表示があり、削除や無効化ができないこと
 
 ■ 設定ページの遮断が有効な場合、`edge://extensions` 自体が開けないことがあります。
@@ -251,9 +251,9 @@ BrowserGuardの設定は、**システム管理者が管理します。利用者
 
 # FAQ（よくある質問）
 
-## BrowserGuardを削除したり、無効にしたりできません
+## Chronos BrowserGuardを削除したり、無効にしたりできません
 
-BrowserGuardは、組織のポリシーによって強制的にインストールされています。
+Chronos BrowserGuardは、組織のポリシーによって強制的にインストールされています。
 仕様上、利用者の操作で削除・無効化することはできません。
 
 業務上必要な場合は、システム管理者へお問い合わせください。
@@ -285,7 +285,7 @@ BrowserGuardは、組織のポリシーによって強制的にインストー�
 
 ## 警告が表示されなくなりました
 
-BrowserGuardは、拡張機能と、コンピューター内で動作する専用のプログラムが連携して動作します。
+Chronos BrowserGuardは、拡張機能と、コンピューター内で動作する専用のプログラムが連携して動作します。
 この連携ができなくなった場合、ブラウザーの操作は妨げられませんが、制限や記録は行われません。
 
 ブラウザーの動作に問題がなくても、本来ブロックされるはずの操作が通ってしまう場合は、
@@ -305,7 +305,7 @@ BrowserGuardは、拡張機能と、コンピューター内で動作する専�
 
 # 制限事項
 
-* BrowserGuardが制限できるのは、**Microsoft Edge上での操作だけ**です。
+* Chronos BrowserGuardが制限できるのは、**Microsoft Edge上での操作だけ**です。
   他のブラウザーや、ブラウザー以外のアプリケーションからのファイルの送信は対象外です。
 * 警告のダイアログは、同時に1つだけ表示されます。
   表示中に別の警告が発生した場合、その警告は表示されません。

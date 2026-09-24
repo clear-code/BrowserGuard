@@ -1,6 +1,6 @@
 {
-	"extName": { "message": "BrowserGuard" },
-	"extDescription": { "message": "BrowserGuard for Edge" },
+	"extName": { "message": "Chronos BrowserGuard" },
+	"extDescription": { "message": "Chronos BrowserGuard for Edge" },
 	"uploadGuardBlockedMessage": {
 		"message": "アップロードがブロックされました:\n$FILE$\n\n理由: $REASON$",
 		"placeholders": {
