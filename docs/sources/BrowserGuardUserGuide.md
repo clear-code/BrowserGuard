@@ -232,7 +232,7 @@ edge://settings/
 Chronos BrowserGuardの設定は、**システム管理者が管理します。利用者が変更することはできません。**
 
 設定はコンピューター内の設定ファイルに保存されており、その場所はレジストリの
-`HKEY_LOCAL_MACHINE\SOFTWARE\BrowserGuard` の `Configfile` が示しています。
+`HKEY_LOCAL_MACHINE\SOFTWARE\ChronosBrowserGuard` の `Configfile` が示しています。
 既定では `C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json` です。
 
 制限の内容を変更したい場合や、業務上必要な操作が妨げられている場合は、

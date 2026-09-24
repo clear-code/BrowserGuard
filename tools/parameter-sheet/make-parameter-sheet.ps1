@@ -220,7 +220,7 @@ try {
     foreach ($line in @(
         'インストーラーは設定ファイルをインストール先の BrowserGuard.json に配置します。',
         '出力したファイルでこれを置き換えると、次回のブラウザー起動から反映されます。',
-        '配置先は HKLM\SOFTWARE\BrowserGuard の ConfigFile 値で決まります。')) {
+        '配置先は HKLM\SOFTWARE\ChronosBrowserGuard の ConfigFile 値で決まります。')) {
         $ws.Cells($row, 1).Value2 = $line
         $row++
     }

@@ -144,7 +144,7 @@ Chronos BrowserGuard の動作を指定するには、設定ファイル（`Brow
 設定は以下の要領で読み込まれ、動作に反映されます。
 
 1. 拡張機能のサービスワーカーが起動し、ホストへ設定を要求する。
-2. ホストがレジストリ `HKLM\SOFTWARE\BrowserGuard` の `ConfigFile` 値を読み、
+2. ホストがレジストリ `HKLM\SOFTWARE\ChronosBrowserGuard` の `ConfigFile` 値を読み、
    そのパスの設定ファイルを読み込む。
 3. 拡張機能は、受け取った設定をサービスワーカーが動作している間は保持し、読み直さない。
 4. サービスワーカーは待機状態になると停止し、次のイベントで復帰する。
@@ -210,7 +210,7 @@ Chronos BrowserGuard が「止まっているのに気付かない」状態を�
 
 いずれも文字列型（`REG_SZ`）です。
 
-`HKLM\SOFTWARE\BrowserGuard`
+`HKLM\SOFTWARE\ChronosBrowserGuard`
 
 | 値の名前 | 内容 |
 | --- | --- |
@@ -520,7 +520,7 @@ Chronos BrowserGuard の設定ファイルが自動的に展開・更新され�
   毎回適用されます。端末上で設定ファイルが書き換えられていても、
   次の適用時に配布した内容へ戻ります。
 
-■ 設定ファイルの配置先は、レジストリ `HKLM\SOFTWARE\BrowserGuard` の `Configfile` が示す先です。
+■ 設定ファイルの配置先は、レジストリ `HKLM\SOFTWARE\ChronosBrowserGuard` の `Configfile` が示す先です。
   インストール先を既定から変更した場合は、手順 8 のターゲットファイルを読み替えてください。
 
 ■ インストールと設定ファイルの配布は、いずれも端末の起動時に処理されますが、
@@ -671,13 +671,13 @@ msiexec /x ChronosBrowserGuardSetup-<バージョン>.msi /qn
 
 | 対象 | 挙動 |
 | --- | --- |
-| `HKLM\SOFTWARE\BrowserGuard` | 削除されます。 |
+| `HKLM\SOFTWARE\ChronosBrowserGuard` | 削除されます。 |
 | ネイティブメッセージングホストの登録 | 削除されます。 |
 | `ExtensionSettings` の Chronos BrowserGuard の項目 | **インストーラー自身が登録した場合のみ**削除されます。 |
 | 監査ログ | 削除されません。 |
 | アップロードファイルの控え | 削除されません。 |
 
-■ ポリシーの項目は、`HKLM\SOFTWARE\BrowserGuard` の `ExtensionSettingsRegistered` が
+■ ポリシーの項目は、`HKLM\SOFTWARE\ChronosBrowserGuard` の `ExtensionSettingsRegistered` が
   `1` の場合にのみ削除されます。手動で設定した項目や、
   グループポリシー由来の項目は残ります。
   グループポリシーで配布している場合は、GPO 側の設定も併せて削除してください。
@@ -748,7 +748,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 
 ## ファイルの位置と形式
 
-設定ファイルの位置は、レジストリ `HKLM\SOFTWARE\BrowserGuard` の `Configfile` 値が指す先です。
+設定ファイルの位置は、レジストリ `HKLM\SOFTWARE\ChronosBrowserGuard` の `Configfile` 値が指す先です。
 インストーラーの既定では `C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json` となります。
 
 * 文字エンコーディングは UTF-8 です。BOM の有無は問いません。
@@ -1393,7 +1393,7 @@ Microsoft Entra ID への登録（職場または学校アカウントの追加�
 
 以下の順に確認してください。
 
-1. 書き換えたファイルが、レジストリ `HKLM\SOFTWARE\BrowserGuard` の
+1. 書き換えたファイルが、レジストリ `HKLM\SOFTWARE\ChronosBrowserGuard` の
    `Configfile` が指すファイルであること。
    インストール先を変更した場合、想定と異なるパスを指していることがあります。
 2. Edge を再起動したこと。

@@ -35,7 +35,7 @@ namespace BrowserGuard.Configuration
 
         internal static string? GetConfigPath()
         {
-            const string registryPath = @"SOFTWARE\BrowserGuard";
+            const string registryPath = @"SOFTWARE\ChronosBrowserGuard";
             const string valueName = "ConfigFile";
             try
             {

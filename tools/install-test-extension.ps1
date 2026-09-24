@@ -85,7 +85,7 @@ $HostName      = 'com.clear_code.browser_guard'
 $PolicyKey     = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
 $SettingsValue = 'ExtensionSettings'
 $NativeHostKey = "HKLM:\SOFTWARE\Microsoft\Edge\NativeMessagingHosts\$HostName"
-$OwnKey        = 'HKLM:\Software\BrowserGuard'
+$OwnKey        = 'HKLM:\Software\ChronosBrowserGuard'
 
 function Write-Step([string]$Message) {
     Write-Host "==> $Message" -ForegroundColor Cyan

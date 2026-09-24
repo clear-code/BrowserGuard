@@ -24,22 +24,22 @@ DefaultGroupName=Chronos BrowserGuard
 UninstallDisplayIcon={app}\BrowserGuardHost\BrowserGuard.exe
 
 [Registry]
-Root: HKLM; Subkey: "Software\BrowserGuard"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
-Root: HKLM; Subkey: "Software\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
+Root: HKLM; Subkey: "Software\ChronosBrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
 ;ホストを win-x86 で発行する場合にのみ必要（32bit プロセスの HKLM\SOFTWAREがWOW6432Node へリダイレクトされるため）。
 ;現状は win-x64 で発行しているため不要。
 ;Edge 本体のアーキテクチャとは無関係。
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; Flags: uninsdeletekey
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
-;Root: HKLM; Subkey: "Software\WOW6432Node\BrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; Flags: uninsdeletekey
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; ValueType: string; ValueName: "Path"; ValueData: "{app}\"
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; ValueType: string; ValueName: "ClientType"; ValueData: ""
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; ValueType: string; ValueName: "Configfile"; ValueData: "{app}\BrowserGuard.json"
+;Root: HKLM; Subkey: "Software\WOW6432Node\ChronosBrowserGuard"; ValueType: string; ValueName: "ExtensionExecfile"; ValueData: "{app}\BrowserGuardHost\BrowserGuard.exe"
 
 
 ;Edge
@@ -88,7 +88,7 @@ const
   // than ExtensionInstallForcelist.
   // Records that this installer wrote the policy, so that an entry set up by
   // hand or by a group policy is not removed on uninstall.
-  OwnKey = 'Software\BrowserGuard';
+  OwnKey = 'Software\ChronosBrowserGuard';
   RegisteredFlag = 'ExtensionSettingsRegistered';
   MsiProductCode = '{E039FF7F-1CD4-42D7-A254-0ADD92E6517D}';
 
