@@ -192,7 +192,7 @@ Chronos BrowserGuard が「止まっているのに気付かない」状態を�
 
 ### 配置されるもの
 
-インストール先（既定では `%ProgramFiles%\BrowserGuard`）に以下が配置されます。
+インストール先（既定では `%ProgramFiles%\Chronos\BrowserGuard`）に以下が配置されます。
 
 | パス | 内容 |
 | --- | --- |
@@ -458,7 +458,7 @@ MSI は上記の exe 版インストーラーを内包しており、インス�
 ## 設定ファイルの配布
 
 Chronos BrowserGuard の動作は、インストール先の設定ファイル `BrowserGuard.json` の内容で決まります。
-既定のインストール先は `C:\Program Files\BrowserGuard` です。
+既定のインストール先は `C:\Program Files\Chronos\BrowserGuard` です。
 
 システム管理者は、資産管理ツールなどを用いて各端末上のこのファイルを更新することで、
 Chronos BrowserGuard の動作を指定できます。
@@ -508,7 +508,7 @@ Chronos BrowserGuard の動作を指定できます。
    * ソースファイル：2 で配置したファイルを、全端末から参照可能な UNC パスで指定。
      * 例：`\\fileserver\BrowserGuard\BrowserGuard.json`
    * ターゲットファイル：端末上の設定ファイルのパスを指定。
-     * 例：`C:\Program Files\BrowserGuard\BrowserGuard.json`
+     * 例：`C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json`
    * 属性：「読み取り専用」のみにチェック。
 9. グループポリシー管理ツールを閉じます。
 
@@ -539,7 +539,7 @@ Chronos BrowserGuard の設定ファイルが自動的に展開・更新され�
 
 インストーラーは設定ファイルのアクセス権を変更しません。
 設定ファイルはインストール先フォルダーのアクセス権を引き継ぐため、
-既定のインストール先（`C:\Program Files\BrowserGuard`）では、
+既定のインストール先（`C:\Program Files\Chronos\BrowserGuard`）では、
 `C:\Program Files` と同じく一般ユーザーは読み取りのみ、
 変更できるのは Administrators と SYSTEM だけになります。
 グループポリシーで配布したファイルも、同じアクセス権を引き継ぎます。
@@ -553,7 +553,7 @@ Chronos BrowserGuard の設定ファイルが自動的に展開・更新され�
   `BUILTIN\Users` に `(RX)` または `(R)` のみが付いていれば、一般ユーザーは変更できません。
 
 ```
-icacls "C:\Program Files\BrowserGuard\BrowserGuard.json"
+icacls "C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json"
 ```
 
 ■ 手順 8 の「読み取り専用」属性は、誤って編集することを防ぐためのものです。
@@ -647,7 +647,7 @@ Chronos BrowserGuard をアンインストールします。
 インストール先の `unins000.exe` に `/VERYSILENT` を指定して実行します。
 
 ```
-"C:\Program Files\BrowserGuard\unins000.exe" /VERYSILENT
+"C:\Program Files\Chronos\BrowserGuard\unins000.exe" /VERYSILENT
 ```
 
 MSI パッケージで導入した場合は、MSI の削除でも同じ結果になります。
@@ -748,7 +748,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ## ファイルの位置と形式
 
 設定ファイルの位置は、レジストリ `HKLM\SOFTWARE\BrowserGuard` の `Configfile` 値が指す先です。
-インストーラーの既定では `C:\Program Files\BrowserGuard\BrowserGuard.json` となります。
+インストーラーの既定では `C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json` となります。
 
 * 文字エンコーディングは UTF-8 です。BOM の有無は問いません。
 * JSON 形式で記載します。
@@ -1450,7 +1450,7 @@ Edge のポリシー `ExtensionSettings` への登録が別途必要です。
 Chronos BrowserGuard にはユーザーが設定を変更するための画面がないため、
 設定画面から変更されることはありません。
 
-また、設定ファイルは既定のインストール先（`C:\Program Files\BrowserGuard`）のアクセス権を引き継ぐため、
+また、設定ファイルは既定のインストール先（`C:\Program Files\Chronos\BrowserGuard`）のアクセス権を引き継ぐため、
 変更できるのは管理者だけです。インストーラーはこのアクセス権を変更しません。
 
 インストール先を `C:\Program Files` の外に変更している場合は、
