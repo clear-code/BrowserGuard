@@ -3,6 +3,7 @@ CJKmainfont: Noto Sans CJK JP
 CJKoptions:
   - BoldFont=Noto Sans CJK JP Bold
 title:     Chronos BrowserGuard for Edge \newline ユーザーガイド v1.0
+titlepage-logo: ./media/titlepage-logo.png
 author:    株式会社クリアコード
 date:      2026-09
 titlepage: true

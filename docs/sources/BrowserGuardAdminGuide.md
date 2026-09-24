@@ -5,6 +5,7 @@ CJKoptions:
 title: |
   Chronos BrowserGuard  
   管理者ガイド
+titlepage-logo: ./media/titlepage-logo.png
 subject: Chronos BrowserGuard 管理者ガイド
 date: 2026/09
 author: 株式会社クリアコード
