@@ -413,7 +413,7 @@ namespace BrowserGuard.Tests.NetLogger
 
             var expected = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "BrowserGuard", "netlog", "netlog.jsonl");
+                "Chronos", "BrowserGuard", "netlog", "netlog.jsonl");
             Assert.Equal(expected, writer.FilePath);
         }
     }

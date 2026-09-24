@@ -53,7 +53,7 @@
     {
         public bool Enabled { get; set; }
         // The macros PathMacro knows are expanded, as are Windows environment
-        // variables. Empty means %LOCALAPPDATA%\BrowserGuard\netlog.
+        // variables. Empty means %LOCALAPPDATA%\Chronos\BrowserGuard\netlog.
         public string Directory { get; set; } = "";
         // The log is rotated at the turn of the day, and a day's file is kept
         // for this many days. 0 keeps every day for good.

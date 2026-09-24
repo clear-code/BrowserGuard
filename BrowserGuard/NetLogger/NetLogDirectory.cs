@@ -17,6 +17,7 @@ namespace BrowserGuard.NetLogger
         internal static string Default() =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Chronos",
                 "BrowserGuard",
                 "netlog");
     }

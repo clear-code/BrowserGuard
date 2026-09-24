@@ -8,7 +8,7 @@
     "Print": false,
     "LocalFile": {
       "Enabled": true,
-      "Directory": "%LOCALAPPDATA%\\BrowserGuard\\netlog",
+      "Directory": "%LOCALAPPDATA%\\Chronos\\BrowserGuard\\netlog",
       "MaxDays": 30,
       "MaxSizeMB": 100
     },

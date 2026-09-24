@@ -52,7 +52,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var expected = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "BrowserGuard", "netlog");
+                "Chronos", "BrowserGuard", "netlog");
 
             Assert.Equal(expected, NetLogDirectory.Resolve("", Now));
             Assert.Equal(expected, NetLogDirectory.Resolve("   ", Now));

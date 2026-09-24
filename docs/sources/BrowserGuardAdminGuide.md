@@ -261,7 +261,7 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
    * Chronos BrowserGuard が一覧にあり、ポリシーによってインストールされた旨が表示されること。
 3. `edge://policy` を開きます。
    * `ExtensionSettings` に Chronos BrowserGuard の項目が含まれること。
-4. ホストのログ（`%APPDATA%\BrowserGuard\BrowserGuard.log`）を開きます。
+4. ホストのログ（`%APPDATA%\Chronos\BrowserGuard\BrowserGuard.log`）を開きます。
    * `Command: load config` の行があること。
      拡張機能がホストと通信し、設定を読めていることを表します。
 
@@ -583,7 +583,7 @@ icacls "C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json"
 監査ログの既定の保存先は、ユーザーごとに分かれています。
 
 ```
-%LocalAppData%\BrowserGuard\netlog\
+%LocalAppData%\Chronos\BrowserGuard\netlog\
 ```
 
 ■ ユーザーごとに分かれているのは、1 台の端末を複数人が使う構成（AVD など）で、
@@ -822,7 +822,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 | `Download` | 真偽値 | `false` | ダウンロードを記録する |
 | `Print` | 真偽値 | `false` | 印刷を記録する |
 | `LocalFile.Enabled` | 真偽値 | `false` | この端末上のファイルに記録する |
-| `LocalFile.Directory` | 文字列 | `""` | 保存先。空欄の場合は `%LocalAppData%\BrowserGuard\netlog`。パスマクロを展開する |
+| `LocalFile.Directory` | 文字列 | `""` | 保存先。空欄の場合は `%LocalAppData%\Chronos\BrowserGuard\netlog`。パスマクロを展開する |
 | `LocalFile.MaxDays` | 数値 | `30` | 日ごとのファイルを保持する日数。`0` は無制限 |
 | `LocalFile.MaxSizeMB` | 数値 | `0` | 1 日あたりのファイルの上限。超えた分は分割する。`0` は分割しない |
 | `Sender.Enabled` | 真偽値 | `false` | 収集サーバーへ送信する |
@@ -1314,7 +1314,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ネイティブメッセージングホストの動作は、以下に記録されます。
 
 ```
-%APPDATA%\BrowserGuard\BrowserGuard.log
+%APPDATA%\Chronos\BrowserGuard\BrowserGuard.log
 ```
 
 * 10 MB を超えると `BrowserGuard_1.log` 以降へ退避し、最大 10 世代を保持します。

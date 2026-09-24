@@ -199,7 +199,7 @@ dotnet build BrowserGuard\BrowserGuard.csproj -c Debug
 ```
 
 Edge はメッセージのたびにホストを起動するため、再ビルド後の最初のメッセージから
-新しいバイナリが使われます。動作は `%APPDATA%\BrowserGuard\BrowserGuard.log` で確認できます。
+新しいバイナリが使われます。動作は `%APPDATA%\Chronos\BrowserGuard\BrowserGuard.log` で確認できます。
 
 有効にする機能は `.testinstall\BrowserGuard.json` を編集して切り替えます。
 

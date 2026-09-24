@@ -309,7 +309,7 @@ try {
         (New-Param -Group '記録対象' -Label 'ダウンロードを記録する' -Value '無効' -Name 'Download' -Kind bool),
         (New-Param -Group '記録対象' -Label '印刷を記録する' -Value '無効' -Name 'Print' -Kind bool),
         (New-Param -Group 'ローカル保存' -Label 'ログをこの PC に保存する' -Value '無効' -Name 'LocalFile.Enabled' -Kind bool),
-        (New-Param -Group 'ローカル保存' -Label '保存先ディレクトリ' -Value '' -Name 'LocalFile.Directory' -Kind text -Note '空欄なら %LOCALAPPDATA%\BrowserGuard\netlog。%MACHINENAME% %USER% %DATE% %YYYY% %MM% %DD% と環境変数を展開します'),
+        (New-Param -Group 'ローカル保存' -Label '保存先ディレクトリ' -Value '' -Name 'LocalFile.Directory' -Kind text -Note '空欄なら %LOCALAPPDATA%\Chronos\BrowserGuard\netlog。%MACHINENAME% %USER% %DATE% %YYYY% %MM% %DD% と環境変数を展開します'),
         (New-Param -Group 'ローカル保存' -Label 'ログの保持日数' -Value 30 -Name 'LocalFile.MaxDays' -Kind int -Note '日付が変わるとファイルを切り替え、この日数を過ぎたものを消します。0 は無制限'),
         (New-Param -Group 'ローカル保存' -Label '1 日あたりのファイル最大サイズ (MB)' -Value 0 -Name 'LocalFile.MaxSizeMB' -Kind int -Note '超えた分は分割します。0 は分割しません'),
         (New-Param -Group '送信' -Label 'ログを収集サーバーに送信する' -Value '無効' -Name 'Sender.Enabled' -Kind bool),

@@ -55,6 +55,7 @@ namespace BrowserGuard.Common
         private static string DefaultDirectory() =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Chronos",
                 "BrowserGuard");
 
         private void NoException(Action func)
