@@ -22,6 +22,9 @@
 		"type": "module"
 	},
 	"icons": {
+		"16": "misc/16x16.png",
+		"32": "misc/32x32.png",
+		"48": "misc/48x48.png",
 		"128": "misc/128x128.png"
 	},
 	"content_scripts": [{

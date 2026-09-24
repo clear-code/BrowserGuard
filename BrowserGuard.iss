@@ -16,6 +16,7 @@ OutputDir=SetupOutput
 OutputBaseFilename=ChronosBrowserGuardSetup-{#AppVersion}
 AppPublisher=BrowserGuard
 WizardImageStretch=no
+SetupIconFile=Resources\BrowserGuard.ico
 VersionInfoDescription=ChronosBrowserGuardSetup
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
