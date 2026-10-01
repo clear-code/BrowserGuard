@@ -1,4 +1,10 @@
 @echo off
+rem This Source Code Form is subject to the terms of the Mozilla Public
+rem License, v. 2.0. If a copy of the MPL was not distributed with this
+rem file, You can obtain one at https://mozilla.org/MPL/2.0/.
+rem
+rem Copyright (c) 2026 ClearCode Inc.
+
 rem Removes the Inno Setup package this MSI installed.
 rem
 rem BrowserGuard.iss sets no AppId, so Inno Setup derives the uninstall key from

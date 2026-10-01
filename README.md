@@ -11,6 +11,27 @@ Microsoft Edge 向けのブラウザー拡張機能と、それと通信する�
 | `Resources/` | インストーラーが配置する設定ファイルとマニフェスト |
 | `BrowserGuard.iss` | Inno Setup のインストーラー定義 |
 
+## ライセンス
+
+[Mozilla Public License, v. 2.0](LICENSE) で提供します。
+
+各ソースファイルの先頭には MPL 2.0 の Exhibit A に沿った告知を記載しています。
+新しいファイルを追加する場合も、同じ告知を付けてください。
+
+```
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+Copyright (c) 2026 ClearCode Inc.
+```
+
+設定ファイルやマニフェストなど、コメントを書けない形式のファイルには付けていません。
+MPL 2.0 の Exhibit A が認めるとおり、ルートの `LICENSE` がそれらを兼ねます。
+
+インストーラーは `LICENSE` をインストール先へ配置します
+(同意画面は表示しません。MPL 2.0 は受諾の操作を求めていないためです)。
+
 ## 必要なもの
 
 | ツール | 用途 | 備考 |

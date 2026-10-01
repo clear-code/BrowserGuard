@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>..\Resources\BrowserGuard.ico</ApplicationIcon>
+    <Company>ClearCode Inc.</Company>
+    <Copyright>Copyright (c) 2026 ClearCode Inc.</Copyright>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

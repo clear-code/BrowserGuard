@@ -1,4 +1,10 @@
-﻿;BrowserGuard Setup--
+﻿; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this
+; file, You can obtain one at https://mozilla.org/MPL/2.0/.
+;
+; Copyright (c) 2026 ClearCode Inc.
+
+;BrowserGuard Setup--
 
 #define AppVersion "1.0.0.0"
 
@@ -58,6 +64,9 @@ Name: "extensionpolicy"; Description: "拡張機能を Edge のポリシーに�
 [Files]
 ;Config
 Source: "Resources\BrowserGuard.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
+
+;License
+Source: "LICENSE"; DestDir: "{app}";Flags: ignoreversion;permissions:users-readexec admins-full system-full
 
 ;Host
 Source: "BrowserGuard\bin\Release\net8.0\publish\win-x64\*.dll"; DestDir: "{app}\BrowserGuardHost";Flags: ignoreversion;permissions:users-readexec admins-full system-full

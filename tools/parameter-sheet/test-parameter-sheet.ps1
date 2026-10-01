@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Copyright (c) 2026 ClearCode Inc.
+
 # docs\parameter-sheet.xlsm の出力を検証します。
 #
 #   1. 初期状態のまま出力すると Resources\BrowserGuard.json と一致すること

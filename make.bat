@@ -1,4 +1,10 @@
 @echo off
+rem This Source Code Form is subject to the terms of the Mozilla Public
+rem License, v. 2.0. If a copy of the MPL was not distributed with this
+rem file, You can obtain one at https://mozilla.org/MPL/2.0/.
+rem
+rem Copyright (c) 2026 ClearCode Inc.
+
 rem Build everything and produce the installer:
 rem   1. publish the native messaging host (BrowserGuard)
 rem   2. build the browser extension packages

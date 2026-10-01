@@ -1,3 +1,11 @@
+<!--
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+Copyright (c) 2026 ClearCode Inc.
+-->
+
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 	<Fragment>
 		<!-- Kept installed for the life of the package, because it is what runs
