@@ -18,7 +18,7 @@ namespace BrowserGuard.NetLogger
     // Appends the browsing log, one JSON object per line.
     //
     // The day's entries go to NetLog.jsonl. At the turn of the day that file is
-    // put aside as netlog_YYYY-MM-DD.jsonl, so a day's browsing is one file and
+    // put aside as NetLog-YYYY-MM-DD.jsonl, so a day's browsing is one file and
     // a retention period is a number of days rather than a guess at a size.
     //
     // The file is opened only for the moment of the write. Holding it open is
@@ -71,8 +71,8 @@ namespace BrowserGuard.NetLogger
         {
             var stamp = day.ToString(DayFormat, CultureInfo.InvariantCulture);
             return Path.Combine(directory, segment <= 1
-                ? $"{FileNameBase}_{stamp}{FileExtension}"
-                : $"{FileNameBase}_{stamp}_{segment}{FileExtension}");
+                ? $"{FileNameBase}-{stamp}{FileExtension}"
+                : $"{FileNameBase}-{stamp}-{segment}{FileExtension}");
         }
 
         // Takes an entry already checked and put on one line by NetLogEntry.
@@ -163,7 +163,7 @@ namespace BrowserGuard.NetLogger
             }
             var oldest = DateTime.Now.Date.AddDays(-maxDays);
             foreach (var path in System.IO.Directory.GetFiles(
-                directory, $"{FileNameBase}_*{FileExtension}"))
+                directory, $"{FileNameBase}-*{FileExtension}"))
             {
                 if (!TryReadDay(path, out var day) || day >= oldest)
                 {
@@ -185,17 +185,17 @@ namespace BrowserGuard.NetLogger
         {
             day = default;
             var name = Path.GetFileNameWithoutExtension(path);
-            var prefix = FileNameBase + "_";
+            var prefix = FileNameBase + "-";
             if (!name.StartsWith(prefix, StringComparison.Ordinal))
             {
                 return false;
             }
             // The segment number a split day carries is not part of the date.
             var stamp = name[prefix.Length..];
-            var segment = stamp.IndexOf('_');
-            if (segment >= 0)
+            if (stamp.Length > DayFormat.Length)
             {
-                stamp = stamp[..segment];
+                // Has segment number, so the date is only the first part.
+                stamp = stamp[..DayFormat.Length];
             }
             return DateTime.TryParseExact(
                 stamp,

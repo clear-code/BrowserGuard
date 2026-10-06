@@ -1183,14 +1183,14 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 | ファイル | 内容 |
 | --- | --- |
 | `NetLog.jsonl` | 当日のエントリ |
-| `netlog_YYYY-MM-DD.jsonl` | 過去の日のエントリ |
-| `netlog_YYYY-MM-DD_N.jsonl` | Nは2以上の整数。同じ日で `MaxSizeMB` を超えて分割された 2 つ目以降（過去世代）。 |
-| `NetLog-pending.jsonl` | 収集サーバーへ送信できず保留しているエントリ |
-| `NetLog-pending.taken.jsonl` | 再送の処理中に一時的に作られるファイル |
+| `NetLog-YYYY-MM-DD.jsonl` | 過去の日のエントリ |
+| `NetLog-YYYY-MM-DD_N.jsonl` | Nは2以上の整数。同じ日で `MaxSizeMB` を超えて分割された 2 つ目以降（過去世代）。 |
+| `NetLogPending.jsonl` | 収集サーバーへ送信できず保留しているエントリ |
+| `NetLogPending.Taken.jsonl` | 再送の処理中に一時的に作られるファイル |
 
-* 日付が変わった後の最初のエントリで、当日分が `netlog_YYYY-MM-DD.jsonl` として切り替わります。
+* 日付が変わった後の最初のエントリで、当日分が `NetLog-YYYY-MM-DD.jsonl` として切り替わります。
   ブラウザーが動作していない間に日付が変わった場合も、次のエントリで切り替わります。
-* `MaxDays` を過ぎた `netlog_YYYY-MM-DD.jsonl` は削除されます。
+* `MaxDays` を過ぎた `NetLog-YYYY-MM-DD.jsonl` は削除されます。
   保存先にある Chronos BrowserGuard 以外のファイルには影響しません。
 * 形式は JSON Lines（1 行に 1 つの JSON オブジェクト）です。
   文字エンコーディングは UTF-8（BOM なし）です。
@@ -1288,7 +1288,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ## 保留（スプール）と再送
 
 収集サーバーが受け取らなかったエントリは、`Spool` が有効な場合、
-監査ログと同じフォルダーの `NetLog-pending.jsonl` に保留されます。
+監査ログと同じフォルダーの `NetLogPending.jsonl` に保留されます。
 
 * 一度失敗した後は、以降のエントリは送信を試みずに直接保留されます。
   応答しない収集サーバーに対して、エントリごとに待ち時間が発生することを避けるためです。
@@ -1303,7 +1303,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 
 ■ `Spool` を無効にした場合、送信できなかったエントリはその場で失われます。
   `Retry` を無効にした場合、保留されたエントリは自動では送信されず、
-  `NetLog-pending.jsonl` から手作業で回収する必要があります。
+  `NetLogPending.jsonl` から手作業で回収する必要があります。
 
 \newpage
 
@@ -1438,7 +1438,7 @@ Microsoft Entra ID への登録（職場または学校アカウントの追加�
 
 * `Sender.Endpoint` が設定されているかを確認してください。
   空欄の場合、`Sender.Enabled` が `true` でも送信は行われません。
-* 保存先に `NetLog-pending.jsonl` があるかを確認してください。
+* 保存先に `NetLogPending.jsonl` があるかを確認してください。
   存在する場合、収集サーバーに届かなかったエントリが保留されています。
 * 収集サーバーが 2xx を返しているかを確認してください。
   それ以外のステータスコードは失敗として扱われます。

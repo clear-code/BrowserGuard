@@ -23,7 +23,7 @@ namespace BrowserGuard.Tests.NetLogger
 
         public NetLogFileWriterTests()
         {
-            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-NetLog-" + Guid.NewGuid().ToString("N"));
+            tempDir = Path.Combine(Path.GetTempPath(), "BrowserGuardNetLog-" + Guid.NewGuid().ToString("N"));
             // Several tests put a day's file in place before the writer runs.
             Directory.CreateDirectory(tempDir);
         }
@@ -45,10 +45,10 @@ namespace BrowserGuard.Tests.NetLogger
         string LogPath => Path.Combine(tempDir, "NetLog.jsonl");
 
         string PathForDay(DateTime day) =>
-            Path.Combine(tempDir, $"netlog_{day:yyyy-MM-dd}.jsonl");
+            Path.Combine(tempDir, $"NetLog-{day:yyyy-MM-dd}.jsonl");
 
         string PathForSegment(DateTime day, int segment) =>
-            Path.Combine(tempDir, $"netlog_{day:yyyy-MM-dd}_{segment}.jsonl");
+            Path.Combine(tempDir, $"NetLog-{day:yyyy-MM-dd}-{segment}.jsonl");
 
         static string Entry(string operation) =>
             $$"""{"operation":"{{operation}}","url":"https://example.com/"}""";
@@ -60,7 +60,7 @@ namespace BrowserGuard.Tests.NetLogger
             File.SetLastWriteTime(LogPath, day.Date.AddHours(23));
 
         static string[] Days(string dir) =>
-            Directory.GetFiles(dir, "netlog_*.jsonl")
+            Directory.GetFiles(dir, "NetLog-*.jsonl")
                 .Select(Path.GetFileName)
                 .OrderBy(name => name, StringComparer.Ordinal)
                 .ToArray()!;
@@ -255,8 +255,9 @@ namespace BrowserGuard.Tests.NetLogger
             PretendTheLogIsFrom(today.AddDays(-1));
 
             writer.Write(Entry("today"));
+            var x = PathForDay(stale);
 
-            Assert.False(File.Exists(PathForDay(stale)));
+			Assert.False(File.Exists(PathForDay(stale)));
             Assert.False(File.Exists(PathForSegment(stale, 2)));
         }
 
@@ -308,8 +309,8 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var writer = Writer(maxDays: 1);
             Directory.CreateDirectory(tempDir);
-            var pending = Path.Combine(tempDir, "NetLog-pending.jsonl");
-            var unrelated = Path.Combine(tempDir, "netlog_not-a-date.jsonl");
+            var pending = Path.Combine(tempDir, "NetLogPending.jsonl");
+            var unrelated = Path.Combine(tempDir, "NetLog-not-a-date.jsonl");
             File.WriteAllText(pending, Entry("pending") + "\n");
             File.WriteAllText(unrelated, "whatever\n");
             File.SetLastWriteTime(pending, DateTime.Now.AddDays(-100));

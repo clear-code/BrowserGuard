@@ -20,7 +20,7 @@ namespace BrowserGuard.Tests.NetLogger
 
         public NetLogSpoolTests()
         {
-            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-spool-" + Guid.NewGuid().ToString("N"));
+            tempDir = Path.Combine(Path.GetTempPath(), "BrowserguardSpool" + Guid.NewGuid().ToString("N"));
         }
 
         public void Dispose()
@@ -30,9 +30,9 @@ namespace BrowserGuard.Tests.NetLogger
 
         NetLogSpool Spool(long maxSize = 1024 * 1024) => new(tempDir, maxSize);
 
-        string PendingPath => Path.Combine(tempDir, "NetLog-pending.jsonl");
+        string PendingPath => Path.Combine(tempDir, "NetLogPending.jsonl");
 
-        string TakenPath => Path.Combine(tempDir, "NetLog-pending.taken.jsonl");
+        string TakenPath => Path.Combine(tempDir, "NetLogPending.Taken.jsonl");
 
         static string Entry(string operation) => $$"""{"operation":"{{operation}}"}""";
 
@@ -181,7 +181,7 @@ namespace BrowserGuard.Tests.NetLogger
 
             Assert.True(spool.Add(Entry("browsing")));
 
-            Assert.True(File.Exists(Path.Combine(tempDir, "nested", "NetLog-pending.jsonl")));
+            Assert.True(File.Exists(Path.Combine(tempDir, "nested", "NetLogPending.jsonl")));
         }
     }
 }

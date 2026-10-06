@@ -33,7 +33,7 @@ namespace BrowserGuard.NetLogger
 
     // Holding the entries the collector would not take, including one dropped
     // because the queue waiting for the collector was full. Kept beside the
-    // local log, in NetLog-pending.jsonl.
+    // local log, in NetLogPending.jsonl.
     //
     // Disabled, an entry that cannot be sent is lost where it falls, and Retry
     // below has nothing left to offer again.

@@ -45,7 +45,7 @@ namespace BrowserGuard.Tests.NetLogger
             Collector collector, NetLogSpool? spool = null, TimeSpan? retryInterval = null) =>
             new(Endpoint, spool, retryInterval ?? TimeSpan.Zero, null, collector);
 
-        string PendingPath => Path.Combine(tempDir, "NetLog-pending.jsonl");
+        string PendingPath => Path.Combine(tempDir, "NetLogPending.jsonl");
 
         static string[] Kept(string path)
         {
