@@ -1184,7 +1184,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 | --- | --- |
 | `NetLog.jsonl` | 当日のエントリ |
 | `NetLog-YYYY-MM-DD.jsonl` | 過去の日のエントリ |
-| `NetLog-YYYY-MM-DD_N.jsonl` | Nは2以上の整数。同じ日で `MaxSizeMB` を超えて分割された 2 つ目以降（過去世代）。 |
+| `NetLog-YYYY-MM-DD-N.jsonl` | Nは2以上の整数。同じ日で `MaxSizeMB` を超えて分割された 2 つ目以降（過去世代）。 |
 | `NetLogPending.jsonl` | 収集サーバーへ送信できず保留しているエントリ |
 | `NetLogPending.Taken.jsonl` | 再送の処理中に一時的に作られるファイル |
 
