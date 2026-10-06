@@ -18,7 +18,7 @@ namespace BrowserGuard.Tests.NetLogger
         // A fixed day, so a directory naming the day is the one intended here.
         static readonly DateTime Now = new(2026, 8, 20, 13, 45, 30);
 
-        const string Root = @"\\fileserver\netlog";
+        const string Root = @"\\fileserver\NetLog";
 
         // The same macros the copies of uploaded files are filed under, so one
         // machine's log can be told from another's on a shared drive.
@@ -40,8 +40,8 @@ namespace BrowserGuard.Tests.NetLogger
             try
             {
                 Assert.Equal(
-                    Path.Combine(Root, "netlog"),
-                    NetLogDirectory.Resolve(Path.Combine("%BROWSERGUARD_LOGS%", "netlog")));
+                    Path.Combine(Root, "NetLog"),
+                    NetLogDirectory.Resolve(Path.Combine("%BROWSERGUARD_LOGS%", "NetLog")));
             }
             finally
             {
@@ -60,7 +60,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var expected = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Chronos", "BrowserGuard", "netlog");
+                "Chronos", "BrowserGuard", "NetLog");
 
             Assert.Equal(expected, NetLogDirectory.Resolve("", Now));
             Assert.Equal(expected, NetLogDirectory.Resolve("   ", Now));

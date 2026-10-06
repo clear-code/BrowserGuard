@@ -33,7 +33,7 @@ namespace BrowserGuard.NetLogger
 
     // Holding the entries the collector would not take, including one dropped
     // because the queue waiting for the collector was full. Kept beside the
-    // local log, in netlog-pending.jsonl.
+    // local log, in NetLog-pending.jsonl.
     //
     // Disabled, an entry that cannot be sent is lost where it falls, and Retry
     // below has nothing left to offer again.
@@ -61,7 +61,7 @@ namespace BrowserGuard.NetLogger
     {
         public bool Enabled { get; set; }
         // The macros PathMacro knows are expanded, as are Windows environment
-        // variables. Empty means %LOCALAPPDATA%\Chronos\BrowserGuard\netlog.
+        // variables. Empty means %LOCALAPPDATA%\Chronos\BrowserGuard\NetLog.
         public string Directory { get; set; } = "";
         // The log is rotated at the turn of the day, and a day's file is kept
         // for this many days. 0 keeps every day for good.

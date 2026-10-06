@@ -25,8 +25,8 @@ namespace BrowserGuard.NetLogger
     // the better of the two mistakes.
     internal sealed class NetLogSpool
     {
-        internal const string FileName = "netlog-pending.jsonl";
-        internal const string TakenFileName = "netlog-pending.taken.jsonl";
+        internal const string FileName = "NetLog-pending.jsonl";
+        internal const string TakenFileName = "NetLog-pending.taken.jsonl";
 
         private const int WriteAttempts = 10;
         private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(50);

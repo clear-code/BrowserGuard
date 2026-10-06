@@ -94,7 +94,7 @@ Chronos BrowserGuard は以下の 3 つで構成されます。
     ┌──────────┴──────────┬────────────────┬────────────────────┐
     ▼                     ▼                ▼                    ▼
 監査ログ             収集サーバー     アップロード         起動時に実行する
-(netlog.jsonl)       (HTTP POST)      ファイルの控え       プログラム
+(NetLog.jsonl)       (HTTP POST)      ファイルの控え       プログラム
 ```
 
 動作の流れは以下の通りです。
@@ -584,7 +584,7 @@ icacls "C:\Program Files\Chronos\BrowserGuard\BrowserGuard.json"
 監査ログの既定の保存先は、ユーザーごとに分かれています。
 
 ```
-%LocalAppData%\Chronos\BrowserGuard\netlog\
+%LocalAppData%\Chronos\BrowserGuard\NetLog\
 ```
 
 ■ ユーザーごとに分かれているのは、1 台の端末を複数人が使う構成（AVD など）で、
@@ -801,7 +801,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
   },
   "Sender": {
     "Enabled": true,
-    "Endpoint": "https://collector.example.jp/netlog",
+    "Endpoint": "https://collector.example.jp/NetLog",
     "Spool": {
       "Enabled": true,
       "MaxSizeMB": 10,
@@ -823,7 +823,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 | `Download` | 真偽値 | `false` | ダウンロードを記録する |
 | `Print` | 真偽値 | `false` | 印刷を記録する |
 | `LocalFile.Enabled` | 真偽値 | `false` | この端末上のファイルに記録する |
-| `LocalFile.Directory` | 文字列 | `""` | 保存先。空欄の場合は `%LocalAppData%\Chronos\BrowserGuard\netlog`。パスマクロを展開する |
+| `LocalFile.Directory` | 文字列 | `""` | 保存先。空欄の場合は `%LocalAppData%\Chronos\BrowserGuard\NetLog`。パスマクロを展開する |
 | `LocalFile.MaxDays` | 数値 | `30` | 日ごとのファイルを保持する日数。`0` は無制限 |
 | `LocalFile.MaxSizeMB` | 数値 | `0` | 1 日あたりのファイルの上限。超えた分は分割する。`0` は分割しない |
 | `Sender.Enabled` | 真偽値 | `false` | 収集サーバーへ送信する |
@@ -1158,7 +1158,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
     "LocalFile": { "Enabled": true, "Directory": "", "MaxDays": 30, "MaxSizeMB": 0 },
     "Sender": {
       "Enabled": true,
-      "Endpoint": "https://collector.example.jp/netlog",
+      "Endpoint": "https://collector.example.jp/NetLog",
       "Spool": { "Enabled": true, "MaxSizeMB": 10, "Retry": { "Enabled": true, "IntervalMinutes": 5 } }
     }
   },
@@ -1182,11 +1182,11 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 
 | ファイル | 内容 |
 | --- | --- |
-| `netlog.jsonl` | 当日のエントリ |
+| `NetLog.jsonl` | 当日のエントリ |
 | `netlog_YYYY-MM-DD.jsonl` | 過去の日のエントリ |
 | `netlog_YYYY-MM-DD_N.jsonl` | Nは2以上の整数。同じ日で `MaxSizeMB` を超えて分割された 2 つ目以降（過去世代）。 |
-| `netlog-pending.jsonl` | 収集サーバーへ送信できず保留しているエントリ |
-| `netlog-pending.taken.jsonl` | 再送の処理中に一時的に作られるファイル |
+| `NetLog-pending.jsonl` | 収集サーバーへ送信できず保留しているエントリ |
+| `NetLog-pending.taken.jsonl` | 再送の処理中に一時的に作られるファイル |
 
 * 日付が変わった後の最初のエントリで、当日分が `netlog_YYYY-MM-DD.jsonl` として切り替わります。
   ブラウザーが動作していない間に日付が変わった場合も、次のエントリで切り替わります。
@@ -1288,7 +1288,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ## 保留（スプール）と再送
 
 収集サーバーが受け取らなかったエントリは、`Spool` が有効な場合、
-監査ログと同じフォルダーの `netlog-pending.jsonl` に保留されます。
+監査ログと同じフォルダーの `NetLog-pending.jsonl` に保留されます。
 
 * 一度失敗した後は、以降のエントリは送信を試みずに直接保留されます。
   応答しない収集サーバーに対して、エントリごとに待ち時間が発生することを避けるためです。
@@ -1303,7 +1303,7 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 
 ■ `Spool` を無効にした場合、送信できなかったエントリはその場で失われます。
   `Retry` を無効にした場合、保留されたエントリは自動では送信されず、
-  `netlog-pending.jsonl` から手作業で回収する必要があります。
+  `NetLog-pending.jsonl` から手作業で回収する必要があります。
 
 \newpage
 
@@ -1438,7 +1438,7 @@ Microsoft Entra ID への登録（職場または学校アカウントの追加�
 
 * `Sender.Endpoint` が設定されているかを確認してください。
   空欄の場合、`Sender.Enabled` が `true` でも送信は行われません。
-* 保存先に `netlog-pending.jsonl` があるかを確認してください。
+* 保存先に `NetLog-pending.jsonl` があるかを確認してください。
   存在する場合、収集サーバーに届かなかったエントリが保留されています。
 * 収集サーバーが 2xx を返しているかを確認してください。
   それ以外のステータスコードは失敗として扱われます。

@@ -23,7 +23,7 @@ namespace BrowserGuard.Tests.NetLogger
 
         public NetLogFileWriterTests()
         {
-            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-netlog-" + Guid.NewGuid().ToString("N"));
+            tempDir = Path.Combine(Path.GetTempPath(), "browserguard-NetLog-" + Guid.NewGuid().ToString("N"));
             // Several tests put a day's file in place before the writer runs.
             Directory.CreateDirectory(tempDir);
         }
@@ -42,7 +42,7 @@ namespace BrowserGuard.Tests.NetLogger
                 MaxSizeMB = maxSizeMB,
             });
 
-        string LogPath => Path.Combine(tempDir, "netlog.jsonl");
+        string LogPath => Path.Combine(tempDir, "NetLog.jsonl");
 
         string PathForDay(DateTime day) =>
             Path.Combine(tempDir, $"netlog_{day:yyyy-MM-dd}.jsonl");
@@ -92,7 +92,7 @@ namespace BrowserGuard.Tests.NetLogger
 
             Assert.Null(writer.Write(Entry("browsing")));
 
-            Assert.True(File.Exists(Path.Combine(tempDir, "nested", "netlog.jsonl")));
+            Assert.True(File.Exists(Path.Combine(tempDir, "nested", "NetLog.jsonl")));
         }
 
         [Fact]
@@ -308,7 +308,7 @@ namespace BrowserGuard.Tests.NetLogger
         {
             var writer = Writer(maxDays: 1);
             Directory.CreateDirectory(tempDir);
-            var pending = Path.Combine(tempDir, "netlog-pending.jsonl");
+            var pending = Path.Combine(tempDir, "NetLog-pending.jsonl");
             var unrelated = Path.Combine(tempDir, "netlog_not-a-date.jsonl");
             File.WriteAllText(pending, Entry("pending") + "\n");
             File.WriteAllText(unrelated, "whatever\n");
@@ -410,7 +410,7 @@ namespace BrowserGuard.Tests.NetLogger
             var writer = new NetLogFileWriter(config);
             writer.Write("""{"operation":"browsing"}""");
 
-            var expected = Path.Combine(tempDir, Environment.MachineName, "netlog.jsonl");
+            var expected = Path.Combine(tempDir, Environment.MachineName, "NetLog.jsonl");
             Assert.True(File.Exists(expected), $"not found: {expected}");
         }
 
@@ -421,7 +421,7 @@ namespace BrowserGuard.Tests.NetLogger
 
             var expected = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Chronos", "BrowserGuard", "netlog", "netlog.jsonl");
+                "Chronos", "BrowserGuard", "NetLog", "NetLog.jsonl");
             Assert.Equal(expected, writer.FilePath);
         }
     }

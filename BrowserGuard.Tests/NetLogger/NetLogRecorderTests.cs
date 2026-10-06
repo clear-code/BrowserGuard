@@ -28,7 +28,7 @@ namespace BrowserGuard.Tests.NetLogger
             try { Directory.Delete(tempDir, true); } catch { }
         }
 
-        string LogPath => Path.Combine(tempDir, "netlog.jsonl");
+        string LogPath => Path.Combine(tempDir, "NetLog.jsonl");
 
         // The configuration is handed in, so the test does not go through the
         // registry to find out where the log lives.

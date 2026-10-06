@@ -17,7 +17,7 @@ namespace BrowserGuard.NetLogger
 {
     // Appends the browsing log, one JSON object per line.
     //
-    // The day's entries go to netlog.jsonl. At the turn of the day that file is
+    // The day's entries go to NetLog.jsonl. At the turn of the day that file is
     // put aside as netlog_YYYY-MM-DD.jsonl, so a day's browsing is one file and
     // a retention period is a number of days rather than a guess at a size.
     //
@@ -34,7 +34,7 @@ namespace BrowserGuard.NetLogger
     // mutex across processes.
     internal sealed class NetLogFileWriter
     {
-        internal const string FileNameBase = "netlog";
+        internal const string FileNameBase = "NetLog";
         internal const string FileExtension = ".jsonl";
         private const string DayFormat = "yyyy-MM-dd";
 

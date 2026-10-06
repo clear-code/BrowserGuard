@@ -85,7 +85,7 @@ namespace BrowserGuard.NetLogger
             worker = new Thread(Run)
             {
                 IsBackground = true,
-                Name = "netlog-sender",
+                Name = "NetLog-sender",
             };
             worker.Start();
 
@@ -96,7 +96,7 @@ namespace BrowserGuard.NetLogger
             retrier = new Thread(() => RetryKept(interval))
             {
                 IsBackground = true,
-                Name = "netlog-retry",
+                Name = "NetLog-retry",
             };
             retrier.Start();
         }

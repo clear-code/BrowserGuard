@@ -8,7 +8,7 @@
     "Print": true,
     "LocalFile": {
       "Enabled": true,
-      "Directory": "C:\\BrowserGuardTest\\netlog\\%MACHINENAME%",
+      "Directory": "C:\\BrowserGuardTest\\NetLog\\%MACHINENAME%",
       "MaxDays": 30,
       "MaxSizeMB": 0
     },

@@ -35,7 +35,7 @@ namespace BrowserGuard.Tests.Host.Handlers
         const string Url = "https://example.com/upload";
 
         string Destination => Path.Combine(tempDir, "audit");
-        string LogPath => Path.Combine(tempDir, "netlog", "netlog.jsonl");
+        string LogPath => Path.Combine(tempDir, "NetLog", "NetLog.jsonl");
 
         // The log and the copies both go under the test's own folder, so the
         // machine running the tests is left alone.
@@ -45,7 +45,7 @@ namespace BrowserGuard.Tests.Host.Handlers
             LocalFile = new NetLogFileConfig
             {
                 Enabled = true,
-                Directory = Path.Combine(tempDir, "netlog"),
+                Directory = Path.Combine(tempDir, "NetLog"),
             },
         });
 

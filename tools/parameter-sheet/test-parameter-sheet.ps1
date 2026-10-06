@@ -109,10 +109,10 @@ try {
     (Get-ParamCell $wb 'T_NetLogger' 'Enabled').Value2 = '有効'
     (Get-ParamCell $wb 'T_NetLogger' 'Upload').Value2 = '有効'
     (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.Enabled').Value2 = '有効'
-    (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.Directory').Value2 = 'C:\BrowserGuard\netlog\%MACHINENAME%'
+    (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.Directory').Value2 = 'C:\BrowserGuard\NetLog\%MACHINENAME%'
     (Get-ParamCell $wb 'T_NetLogger' 'LocalFile.MaxDays').Value2 = 90
     (Get-ParamCell $wb 'T_NetLogger' 'Sender.Enabled').Value2 = '有効'
-    (Get-ParamCell $wb 'T_NetLogger' 'Sender.Endpoint').Value2 = 'https://collector.example.jp/netlog'
+    (Get-ParamCell $wb 'T_NetLogger' 'Sender.Endpoint').Value2 = 'https://collector.example.jp/NetLog'
 
     (Get-ParamCell $wb 'T_UsageTimeLimit' 'Enabled').Value2 = '有効'
     (Get-ParamCell $wb 'T_UsageTimeLimit' 'MaxContinuousMinutes').Value2 = 45
@@ -143,12 +143,12 @@ try {
     Assert-Equal -Label 'NetLogger.Enabled' -Expected $true -Actual $config.NetLogger.Enabled
     Assert-Equal -Label 'NetLogger.Browsing は無効のまま' -Expected $false -Actual $config.NetLogger.Browsing
     Assert-Equal -Label 'LocalFile.Directory (\ のエスケープ)' `
-        -Expected 'C:\BrowserGuard\netlog\%MACHINENAME%' -Actual $config.NetLogger.LocalFile.Directory
+        -Expected 'C:\BrowserGuard\NetLog\%MACHINENAME%' -Actual $config.NetLogger.LocalFile.Directory
     Assert-True  -Label 'JSON 上で \ が 2 文字になっている' `
-        -Condition ($json -match [regex]::Escape('C:\\BrowserGuard\\netlog\\%MACHINENAME%'))
+        -Condition ($json -match [regex]::Escape('C:\\BrowserGuard\\NetLog\\%MACHINENAME%'))
     Assert-Equal -Label 'LocalFile.MaxDays' -Expected 90 -Actual $config.NetLogger.LocalFile.MaxDays
     Assert-Equal -Label 'Sender.Endpoint' `
-        -Expected 'https://collector.example.jp/netlog' -Actual $config.NetLogger.Sender.Endpoint
+        -Expected 'https://collector.example.jp/NetLog' -Actual $config.NetLogger.Sender.Endpoint
 
     Assert-Equal -Label 'OnExceeded.Action が内部値になる' -Expected 'Terminate' -Actual $config.UsageTimeLimit.OnExceeded.Action
     Assert-Equal -Label 'AllowedTimeRanges の件数' -Expected 2 -Actual $config.UsageTimeLimit.AllowedTimeRanges.Count
@@ -172,7 +172,7 @@ try {
     (Get-ParamCell $wb 'T_NetLogger' 'Sender.Endpoint').Value2 = ''
     Assert-True -Label '送信が有効でエンドポイントが空なら止まる' `
         -Condition ((Invoke-Macro $xl 'ValidationMessage') -match '送信先エンドポイント')
-    (Get-ParamCell $wb 'T_NetLogger' 'Sender.Endpoint').Value2 = 'https://collector.example.jp/netlog'
+    (Get-ParamCell $wb 'T_NetLogger' 'Sender.Endpoint').Value2 = 'https://collector.example.jp/NetLog'
 
     $ranges.DataBodyRange.Cells(1, 1).Value2 = '9時'
     Assert-True -Label '時刻の書式が違えば止まる' -Condition ((Invoke-Macro $xl 'ValidationMessage') -match 'HH:mm')

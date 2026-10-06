@@ -319,7 +319,7 @@ try {
         (New-Param -Group 'ローカル保存' -Label 'ログの保持日数' -Value 30 -Name 'LocalFile.MaxDays' -Kind int -Note '日付が変わるとファイルを切り替え、この日数を過ぎたものを消します。0 は無制限'),
         (New-Param -Group 'ローカル保存' -Label '1 日あたりのファイル最大サイズ (MB)' -Value 0 -Name 'LocalFile.MaxSizeMB' -Kind int -Note '超えた分は分割します。0 は分割しません'),
         (New-Param -Group '送信' -Label 'ログを収集サーバーに送信する' -Value '無効' -Name 'Sender.Enabled' -Kind bool),
-        (New-Param -Group '送信' -Label '送信先エンドポイント' -Value '' -Name 'Sender.Endpoint' -Kind text -Note '送信を有効にする場合は必須です (例: https://collector.example.jp/netlog)'),
+        (New-Param -Group '送信' -Label '送信先エンドポイント' -Value '' -Name 'Sender.Endpoint' -Kind text -Note '送信を有効にする場合は必須です (例: https://collector.example.jp/NetLog)'),
         (New-Param -Group '保留' -Label '送信できなかったログを保留する' -Value '無効' -Name 'Sender.Spool.Enabled' -Kind bool -Note '無効の場合、送信できなかったログはその場で失われます'),
         (New-Param -Group '保留' -Label '保留ファイルの最大サイズ (MB)' -Value 10 -Name 'Sender.Spool.MaxSizeMB' -Kind int -Note '超えた分は古いものから捨てます。0 は無制限'),
         (New-Param -Group '再送' -Label '保留したログを再送する' -Value '有効' -Name 'Sender.Spool.Retry.Enabled' -Kind bool -Note '無効にした場合、保留したログは手作業で回収することになります'),
