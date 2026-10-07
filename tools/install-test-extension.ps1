@@ -546,7 +546,7 @@ Write-Host '  Edge starts the host per message, so a rebuild takes effect withou
 Write-Host ''
 Write-Host 'Edit the test config to turn features on:'
 Write-Host "  $TestConfig"
-Write-Host "  Host log: $env:APPDATA\BrowserGuard\BrowserGuard.log"
+Write-Host "  Host log: $env:LOCALAPPDATA\Chronos\BrowserGuard\InternalLog\BrowserGuard.log"
 Write-Host ''
 Write-Host 'To put everything back:'
 Write-Host '  .\tools\install-test-extension.ps1 -Uninstall'

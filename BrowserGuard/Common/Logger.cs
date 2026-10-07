@@ -62,9 +62,10 @@ namespace BrowserGuard.Common
 
         private static string DefaultDirectory() =>
             Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Chronos",
-                "BrowserGuard");
+                "BrowserGuard",
+                "InternalLog");
 
         private void NoException(Action func)
         {
@@ -159,6 +160,6 @@ namespace BrowserGuard.Common
         private string GenerationPath(int generation) =>
             Path.Combine(LogDirectory, generation == 0
                 ? $"{LogFileNameBase}.log"
-                : $"{LogFileNameBase}_{generation}.log");
+                : $"{LogFileNameBase}-{generation}.log");
     }
 }

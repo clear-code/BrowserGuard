@@ -21,7 +21,7 @@ namespace BrowserGuard.NetLogger
         // one host under AVD do not write to a single file, and cannot read
         // each other's. The collector, not this copy, is the record of account.
         // Local rather than roaming: a month of entries is far too much to
-        // carry over the network, which is why this parts from Logger.
+        // carry over the network.
         internal static string Default() =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

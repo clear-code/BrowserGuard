@@ -31,7 +31,7 @@ namespace BrowserGuard.Tests.Common
         string LogPath => Path.Combine(tempDir, "BrowserGuard.log");
 
         string GenerationPath(int generation) =>
-            Path.Combine(tempDir, $"BrowserGuard_{generation}.log");
+            Path.Combine(tempDir, $"BrowserGuard-{generation}.log");
 
         [Fact]
         public void WritesTheMessageWithATimestamp()
@@ -126,7 +126,7 @@ namespace BrowserGuard.Tests.Common
                 .OrderBy(name => name)
                 .ToArray();
             Assert.Equal(MaxGenerations + 1, kept.Length);
-            Assert.DoesNotContain($"BrowserGuard_{MaxGenerations + 1}.log", kept);
+            Assert.DoesNotContain($"BrowserGuard-{MaxGenerations + 1}.log", kept);
         }
 
         const int MaxGenerations = 10;

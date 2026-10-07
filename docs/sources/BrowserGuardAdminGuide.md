@@ -262,7 +262,7 @@ HKLM\SOFTWARE\Policies\Microsoft\Edge
    * Chronos BrowserGuard が一覧にあり、ポリシーによってインストールされた旨が表示されること。
 3. `edge://policy` を開きます。
    * `ExtensionSettings` に Chronos BrowserGuard の項目が含まれること。
-4. ホストのログ（`%APPDATA%\Chronos\BrowserGuard\BrowserGuard.log`）を開きます。
+4. ホストのログ（`%LOCALAPPDATA%\Chronos\BrowserGuard\InternalLog\BrowserGuard.log`）を開きます。
    * `Command: load config` の行があること。
      拡張機能がホストと通信し、設定を読めていることを表します。
 
@@ -1315,10 +1315,10 @@ JSON の書式を意識せずに、機能ごとのシートの表へ設定値を
 ネイティブメッセージングホストの動作は、以下に記録されます。
 
 ```
-%APPDATA%\Chronos\BrowserGuard\BrowserGuard.log
+%LOCALAPPDATA%\Chronos\BrowserGuard\InternalLog\BrowserGuard.log
 ```
 
-* 10 MB を超えると `BrowserGuard_1.log` 以降へ退避し、最大 10 世代を保持します。
+* 10 MB を超えると `BrowserGuard-1.log` 以降へ退避し、最大 10 世代を保持します。
 * 設定の読み込み、警告ダイアログの表示、ファイルの複製、
   プログラムの実行とその失敗が記録されます。
 * 監査ログのエントリは、件数が多いため個別には記録されません。
