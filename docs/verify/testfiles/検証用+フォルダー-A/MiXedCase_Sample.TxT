@@ -1,1 +1,0 @@
-BrowserGuard integration test sample (mixed case).
